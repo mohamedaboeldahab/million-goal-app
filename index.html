@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مليونير المستقبل | Future Millionaire</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#000000">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap');
+        body { font-family: 'Tajawal', sans-serif; background: #000; color: #fff; overflow-x: hidden; }
+        .glass-card {
+            background: rgba(20, 20, 20, 0.75);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .ai-glow {
+            box-shadow: 0 0 20px rgba(34, 197, 94, 0.2);
+            border: 1px solid rgba(34, 197, 94, 0.4);
+        }
+        .nav-btn.active { background: #22c55e; color: black; box-shadow: 0 0 15px rgba(34, 197, 94, 0.5); }
+        .roadmap-line { background: linear-gradient(to bottom, #22c55e, #1f2937); }
+        .gold-glow { box-shadow: 0 0 15px rgba(250, 204, 21, 0.6); }
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 10px rgba(34,197,94,0.4); }
+            50% { box-shadow: 0 0 30px rgba(34,197,94,0.9); }
+        }
+        .level-current { animation: pulse-glow 2s infinite; }
+    </style>
+</head>
+<body class="pb-24">
+
+    <!-- Splash Screen -->
+    <div id="splash" class="fixed inset-0 z-[100] bg-black flex flex-col items-center justify-center transition-all duration-1000">
+        <div class="w-24 h-24 bg-green-500 rounded-[2rem] flex items-center justify-center animate-bounce shadow-[0_0_50px_rgba(34,197,94,0.5)]">
+            <span class="text-black text-4xl font-black">M</span>
+        </div>
+        <h1 class="mt-6 text-2xl font-black tracking-widest uppercase">مليونير المستقبل</h1>
+        <button onclick="startApp()" class="mt-10 px-10 py-4 bg-white text-black rounded-full font-bold hover:bg-green-500 transition-all active:scale-95">ابدأ الرحلة</button>
+    </div>
+
+    <!-- Main App -->
+    <main id="app" class="hidden max-w-md mx-auto px-6 pt-8">
+        
+        <!-- Header -->
+        <header class="flex justify-between items-center mb-10">
+            <div>
+                <p class="text-gray-500 text-[10px] font-bold uppercase tracking-widest">مرحباً بك في</p>
+                <h2 class="text-xl font-black text-green-500">مليونير المستقبل</h2>
+            </div>
+            <div class="relative">
+                <div id="ai-status" class="w-3 h-3 bg-green-500 rounded-full absolute -top-1 -right-1 animate-pulse"></div>
+                <div class="w-12 h-12 glass-card rounded-2xl flex items-center justify-center border border-green-500/30">
+                    <span class="text-2xl">🤖</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- ============ PAGE: Home ============ -->
+        <div id="page-home" class="page-content">
+            <!-- Balance Card -->
+            <section class="glass-card p-8 rounded-[2.5rem] mb-6 relative overflow-hidden">
+                <div class="absolute -top-10 -right-10 w-40 h-40 bg-green-500/10 rounded-full blur-3xl"></div>
+                <p class="text-gray-500 text-xs mb-2">رصيدك الحالي</p>
+                <div class="flex items-baseline gap-2">
+                    <input type="number" id="balance" value="7613" oninput="logic.sync()" class="bg-transparent text-5xl font-black w-full outline-none border-b border-gray-700 focus:border-green-400 transition-colors">
+                    <span class="text-green-500 font-bold text-lg">ج.م</span>
+                </div>
+                <div class="mt-3 flex justify-between items-center">
+                    <span id="level-name" class="text-xs bg-green-900/50 px-3 py-1 rounded-full">مرحلة التأسيس</span>
+                    <button onclick="showShareCard()" class="text-xs bg-white/10 px-4 py-2 rounded-full hover:bg-white/20 transition flex items-center gap-1">
+                        📤 مشاركة
+                    </button>
+                </div>
+            </section>
+
+            <!-- AI Advice -->
+            <section class="ai-glow p-5 rounded-3xl bg-green-500/5 mb-8">
+                <div class="flex items-center gap-3 mb-2">
+                    <span class="text-sm">🤖</span>
+                    <h3 class="text-xs font-bold text-green-400 uppercase">نصيحة الذكاء الاصطناعي</h3>
+                </div>
+                <p id="ai-text" class="text-xs text-gray-300 leading-relaxed italic">جاري تحليل بياناتك المالية...</p>
+            </section>
+
+            <!-- Monthly Challenge -->
+            <section class="glass-card p-6 rounded-3xl border-r-4 border-orange-500">
+                <h4 class="text-xs font-bold text-orange-500 mb-3 tracking-widest uppercase">تحدي الشهر 🔥</h4>
+                <p id="challenge-desc" class="text-sm font-bold mb-4">ادخر 2000 جنيه إضافية هذا الشهر</p>
+                <div class="w-full bg-gray-800 h-2 rounded-full overflow-hidden">
+                    <div id="challenge-bar" class="bg-orange-500 h-full transition-all duration-700" style="width: 30%"></div>
+                </div>
+                <p id="challenge-percent" class="text-[10px] text-gray-400 mt-1">30% تم تحقيقه</p>
+            </section>
+        </div>
+
+        <!-- ============ PAGE: Roadmap ============ -->
+        <div id="page-roadmap" class="page-content hidden">
+            <h3 class="text-center font-black text-xl mb-10">خريطة الطريق إلى المليون</h3>
+            <div id="roadmap-container" class="relative space-y-10 pb-10">
+                <div class="absolute right-[31px] top-0 bottom-0 w-0.5 roadmap-line opacity-20"></div>
+            </div>
+        </div>
+
+        <!-- ============ PAGE: Investment Calculator ============ -->
+        <div id="page-calculator" class="page-content hidden">
+            <h3 class="text-center font-black text-xl mb-8">🧮 حاسبة المليون</h3>
+            <div class="glass-card p-6 rounded-3xl space-y-5">
+                <div>
+                    <label class="text-xs text-gray-400 block mb-1">الإيداع الشهري (ج.م)</label>
+                    <input id="monthly-deposit" type="number" value="2000" class="w-full bg-gray-900 rounded-xl p-3 outline-none focus:ring-2 ring-green-500/30">
+                </div>
+                <div>
+                    <label class="text-xs text-gray-400 block mb-1">نسبة الفائدة السنوية (%)</label>
+                    <input id="annual-rate" type="number" value="10" step="0.1" class="w-full bg-gray-900 rounded-xl p-3 outline-none focus:ring-2 ring-green-500/30">
+                </div>
+                <div>
+                    <label class="text-xs text-gray-400 block mb-1">الرصيد الحالي (ج.م)</label>
+                    <input id="current-balance-calc" type="number" value="7613" class="w-full bg-gray-900 rounded-xl p-3 outline-none focus:ring-2 ring-green-500/30">
+                </div>
+                <button onclick="calculateMillion()" class="w-full py-4 bg-green-500 text-black font-black rounded-xl hover:bg-green-400 transition mt-4">
+                    احسب متى أصبح مليونيراً؟
+                </button>
+                <div id="calc-result" class="text-center text-sm mt-4 p-3 bg-green-900/30 rounded-xl hidden">سيظهر التاريخ المتوقع هنا</div>
+            </div>
+        </div>
+
+        <!-- ============ PAGE: Achievements ============ -->
+        <div id="page-achievements" class="page-content hidden">
+            <h3 class="text-center font-black text-xl mb-8">🏆 إنجازاتك</h3>
+            <div id="badges-container" class="grid grid-cols-2 gap-4"></div>
+            <div class="mt-8 glass-card p-5 rounded-3xl">
+                <h4 class="text-sm font-bold mb-3">📚 قصص نجاح</h4>
+                <div id="story-card" class="text-xs text-gray-300 leading-relaxed italic">
+                    اختر مستواك لعرض قصة ملهمة.
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Navigation -->
+        <nav class="fixed bottom-6 left-6 right-6 h-20 glass-card rounded-[2rem] flex items-center justify-around px-4 border border-white/10 shadow-2xl z-50">
+            <button onclick="nav('home')" id="nav-home" class="nav-btn p-4 rounded-2xl transition-all">🏠</button>
+            <button onclick="nav('roadmap')" id="nav-roadmap" class="nav-btn p-4 rounded-2xl transition-all">🗺️</button>
+            <button onclick="nav('calculator')" id="nav-calculator" class="nav-btn p-4 rounded-2xl transition-all">📈</button>
+            <button onclick="nav('achievements')" id="nav-achievements" class="nav-btn p-4 rounded-2xl transition-all">🏆</button>
+        </nav>
+    </main>
+
+    <!-- Hidden Canvas for Share Card -->
+    <canvas id="shareCanvas" width="1080" height="1080" class="hidden"></canvas>
+
+    <script>
+        // ==================== CORE LOGIC ====================
+        const logic = {
+            // Levels starting from 1000 EGP
+            levels: [
+                { t: 1000, n: "أول ألف", tip: "ابدأ بتوفير 10% من دخلك، الأهم الاستمرارية.", challenge: 300, story: "أحمد بدأ بـ 500 جنيه فقط ووصل لأول ألف في 3 شهور." },
+                { t: 5000, n: "صندوق الطوارئ", tip: "حاول بناء صندوق طوارئ يغطي 3 أشهر مصاريف.", challenge: 800, story: "سلمى كانت طالبة، التزمت بإيداع 150 ج شهرياً ووصلت إلى هنا." },
+                { t: 10000, n: "مرحلة التأسيس", tip: "الآن يمكنك التفكير في صناديق استثمار منخفضة المخاطر.", challenge: 1500, story: "بعد أول 10 آلاف، بدأ كريم في صندوق أسهم وحقق 12% عائد سنوي." },
+                { t: 25000, n: "انطلاقة الاستثمار", tip: "نوّع مصادر دخلك، ربما عمل حر بجانب الوظيفة.", challenge: 2500, story: "هند جمعت 25 ألف من مشروعها الصغير وأعادت استثمارها في الذهب." },
+                { t: 50000, n: "قوة الادخار", tip: "أنت على بُعد خطوات من رأس المال الجاد، استثمر في نفسك.", challenge: 4000, story: "بعد 50 ألف، فتح يوسف محفظة تداول وبدأ يتعلم التحليل." },
+                { t: 100000, n: "مرحلة الانطلاق", tip: "ابدأ في البحث عن أصول تدر دخلًا سلبيًا.", challenge: 8000, story: "رنا استثمرت 100 ألف في شقة صغيرة تؤجرها بدخل شهري ثابت." },
+                { t: 250000, n: "محفظة متنوعة", tip: "وزع أموالك على الذهب والأسهم وصناديق المؤشرات.", challenge: 12000, story: "خالد نّوع محفظته وحقق نمو بنسبة 15% سنويًا بعد هذه المرحلة." },
+                { t: 500000, n: "مرحلة القوة", tip: "أنت تملك رأس مال محترم، ابدأ بالاستثمار العقاري أو التجاري.", challenge: 20000, story: "بعد نصف مليون، افتتح علي مشروعه التجاري الصغير وحقق أرباحاً شهرية." },
+                { t: 750000, n: "قبل المليون", tip: "لا تستهلك رأس المال، حافظ على نمط حياتك وزد استثماراتك.", challenge: 25000, story: "ليلى اقتربت من المليون بفضل استثماراتها المتعددة وانضباطها." },
+                { t: 1000000, n: "نادي المليون", tip: "مبروك! الآن الأهم أن تحمي ثروتك وتستمر في تنميتها.", challenge: 30000, story: "وصل عمر إلى المليون بعد 8 سنوات من الادخار المنضبط والاستثمار الذكي." }
+            ],
+
+            badges: [
+                { id: 'first1000', name: 'أول ألف', icon: '🥉', condition: v => v >= 1000 },
+                { id: 'emergency', name: 'صندوق الطوارئ', icon: '🛡️', condition: v => v >= 5000 },
+                { id: 'foundation', name: 'مرحلة التأسيس', icon: '🏗️', condition: v => v >= 10000 },
+                { id: 'takeoff', name: 'انطلاقة', icon: '🚀', condition: v => v >= 25000 },
+                { id: 'saver50k', name: 'مدخر ذهبي', icon: '🥇', condition: v => v >= 50000 },
+                { id: 'launch100k', name: 'مستثمر جاد', icon: '💼', condition: v => v >= 100000 },
+                { id: 'quarterM', name: 'ربع مليون', icon: '💎', condition: v => v >= 250000 },
+                { id: 'halfM', name: 'نصف مليون', icon: '👑', condition: v => v >= 500000 },
+                { id: 'almostM', name: 'قريب من المليون', icon: '🌟', condition: v => v >= 750000 },
+                { id: 'million', name: 'مليونير', icon: '🏆', condition: v => v >= 1000000 }
+            ],
+
+            sync() {
+                const val = parseFloat(document.getElementById('balance').value) || 0;
+                localStorage.setItem('million_val', val);
+                document.getElementById('current-balance-calc').value = val;
+                this.updateAI(val);
+                this.renderRoadmap(val);
+                this.updateBadges(val);
+            },
+
+            updateAI(val) {
+                let currentLvl = this.levels[0];
+                for (let i = this.levels.length - 1; i >= 0; i--) {
+                    if (val >= this.levels[i].t) { currentLvl = this.levels[i]; break; }
+                }
+                let advice = currentLvl.tip;
+                if (val < 1000) advice = "لا تستصغر البداية، 1000 جنيه هي بوابتك لعالم الاستثمار. استمر!";
+                else if (val > 50000 && val < 100000) advice = "أنت في منطقة النمو السريع، حاول زيادة دخلك 20% هذا العام.";
+                document.getElementById('ai-text').innerText = advice;
+                document.getElementById('level-name').innerText = currentLvl.n;
+
+                const challengeAmount = currentLvl.challenge;
+                document.getElementById('challenge-desc').innerText = `تحدي المرحلة: ادخر ${challengeAmount.toLocaleString()} ج.م إضافية`;
+                const nextLevel = this.levels[this.levels.indexOf(currentLvl)+1];
+                const base = currentLvl.t;
+                const target = nextLevel ? nextLevel.t : currentLvl.t + 100000;
+                const range = target - base;
+                const progressInLevel = val - base;
+                const percent = range > 0 ? Math.min((progressInLevel / range) * 100, 100) : 100;
+                document.getElementById('challenge-bar').style.width = percent + '%';
+                document.getElementById('challenge-percent').innerText = percent.toFixed(1) + '% تم تحقيقه';
+            },
+
+            renderRoadmap(val) {
+                const container = document.getElementById('roadmap-container');
+                container.innerHTML = this.levels.map(l => {
+                    const active = val >= l.t;
+                    const isNext = !active && val < l.t && (this.levels.indexOf(l) === this.levels.findIndex(ll => ll.t > val));
+                    return `
+                        <div class="flex items-center gap-6 transition-all duration-300 ${active ? 'opacity-100 scale-100' : 'opacity-40 scale-95'}">
+                            <div class="w-12 h-12 rounded-2xl flex items-center justify-center font-bold glass-card ${active ? 'bg-green-500 text-black border-green-400 level-current' : ''} ${isNext ? 'ai-glow border-green-500/50' : ''}">
+                                ${active ? '✓' : (isNext ? '📍' : '🔒')}
+                            </div>
+                            <div>
+                                <p class="text-[10px] text-gray-500 font-bold uppercase tracking-tighter">${l.t.toLocaleString()} ج.م</p>
+                                <h4 class="font-black text-sm text-white">${l.n}</h4>
+                                ${active ? `<p class="text-[10px] text-green-400 mt-1">اكتملت</p>` : ''}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            },
+
+            updateBadges(val) {
+                const container = document.getElementById('badges-container');
+                const earned = JSON.parse(localStorage.getItem('badges') || '[]');
+                container.innerHTML = this.badges.map(b => {
+                    const unlocked = val >= b.condition(val) && !earned.includes(b.id);
+                    if (unlocked) {
+                        earned.push(b.id);
+                        localStorage.setItem('badges', JSON.stringify(earned));
+                        if (Notification.permission === 'granted') {
+                            new Notification('🏆 إنجاز جديد!', { body: `لقد حصلت على وسام "${b.name}"`, icon: 'icon-192.png' });
+                        }
+                    }
+                    const have = earned.includes(b.id);
+                    return `
+                        <div class="glass-card p-4 rounded-2xl flex items-center gap-3 ${have ? 'border-green-500/50 gold-glow' : 'opacity-50'}">
+                            <span class="text-2xl">${have ? b.icon : '🔒'}</span>
+                            <div>
+                                <p class="text-xs font-bold">${b.name}</p>
+                                <p class="text-[9px] text-gray-500">${have ? 'تم تحقيقه' : 'لم يتحقق بعد'}</p>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                const currentLvl = this.levels.find(l => val < l.t) || this.levels[this.levels.length-1];
+                const idx = this.levels.indexOf(currentLvl) - 1;
+                const story = idx >= 0 ? this.levels[idx].story : this.levels[0].story;
+                document.getElementById('story-card').innerText = story;
+            }
+        };
+
+        function calculateMillion() {
+            const P = parseFloat(document.getElementById('current-balance-calc').value) || 0;
+            const M = parseFloat(document.getElementById('monthly-deposit').value) || 0;
+            const rAnnual = parseFloat(document.getElementById('annual-rate').value) || 10;
+            const r = rAnnual / 100 / 12;
+            const target = 1000000;
+            if (M <= 0 && P >= target) {
+                document.getElementById('calc-result').innerHTML = "🎉 أنت بالفعل مليونير!";
+                document.getElementById('calc-result').classList.remove('hidden');
+                return;
+            }
+            if (M <= 0) {
+                document.getElementById('calc-result').innerHTML = "يرجى إدخال إيداع شهري أكبر من صفر.";
+                document.getElementById('calc-result').classList.remove('hidden');
+                return;
+            }
+            const A = target + (M / r);
+            const B = P + (M / r);
+            if (B <= 0 || A <= 0 || r <= 0) {
+                document.getElementById('calc-result').innerHTML = "لا يمكن الوصول بالمعلومات الحالية.";
+                document.getElementById('calc-result').classList.remove('hidden');
+                return;
+            }
+            const n = Math.log(A / B) / Math.log(1 + r);
+            const totalMonths = Math.ceil(n);
+            const now = new Date();
+            const future = new Date(now.getFullYear(), now.getMonth() + totalMonths, now.getDate());
+            const options = { year: 'numeric', month: 'long', day: 'numeric' };
+            document.getElementById('calc-result').innerHTML = `
+                <span class="font-bold text-green-400">🗓️ التاريخ المتوقع للمليون:</span><br>
+                <span class="text-xl">${future.toLocaleDateString('ar-EG', options)}</span><br>
+                <span class="text-xs text-gray-400">${totalMonths} شهر (${(totalMonths/12).toFixed(1)} سنة)</span>
+            `;
+            document.getElementById('calc-result').classList.remove('hidden');
+        }
+
+        function showShareCard() {
+            const val = parseFloat(document.getElementById('balance').value) || 0;
+            const level = logic.levels.find(l => val < l.t) || logic.levels[logic.levels.length-1];
+            const lvlName = level.n;
+            const canvas = document.getElementById('shareCanvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = 1080;
+            canvas.height = 1080;
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            const grad = ctx.createLinearGradient(0, 0, 1080, 1080);
+            grad.addColorStop(0, 'rgba(34,197,94,0.2)');
+            grad.addColorStop(1, 'rgba(0,0,0,1)');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, 1080, 1080);
+            ctx.font = 'bold 70px Tajawal';
+            ctx.fillStyle = '#22c55e';
+            ctx.textAlign = 'center';
+            ctx.fillText('مليونير المستقبل', 540, 250);
+            ctx.font = '900 80px Tajawal';
+            ctx.fillStyle = '#fff';
+            ctx.fillText(lvlName, 540, 450);
+            ctx.font = 'bold 100px Tajawal';
+            ctx.fillStyle = '#22c55e';
+            ctx.fillText(val.toLocaleString() + ' ج.م', 540, 700);
+            ctx.font = '40px Tajawal';
+            ctx.fillStyle = '#aaa';
+            ctx.fillText('انضم إليَّ في رحلة المليون!', 540, 900);
+            canvas.toBlob(blob => {
+                const file = new File([blob], 'million-level.png', { type: 'image/png' });
+                if (navigator.share) {
+                    navigator.share({
+                        title: 'مستواي في مليونير المستقبل',
+                        text: `وصلت إلى ${lvlName} برصيد ${val.toLocaleString()} ج.م!`,
+                        files: [file]
+                    }).catch(() => {});
+                } else {
+                    const url = URL.createObjectURL(blob);
+                    window.open(url, '_blank');
+                }
+            });
+        }
+
+        function requestNotificationPermission() {
+            if ('Notification' in window && Notification.permission === 'default') {
+                Notification.requestPermission();
+            }
+        }
+        function sendDailyTip() {
+            if (Notification.permission === 'granted') {
+                const val = parseFloat(localStorage.getItem('million_val') || '0');
+                const currentLvl = logic.levels.find(l => val < l.t) || logic.levels[logic.levels.length-1];
+                const tips = [
+                    'تذكير: خصص 10% من دخلك للاستثمار قبل أي مصروفات. 💡',
+                    'اليوم فرصة للبحث عن مصدر دخل إضافي صغير.',
+                    currentLvl.tip,
+                    'هل راجعت محفظتك الاستثمارية هذا الأسبوع؟ 📊',
+                    'التوفير المنتظم يصنع المعجزات، استمر! 🚀'
+                ];
+                const randomTip = tips[Math.floor(Math.random() * tips.length)];
+                new Notification('مليونير المستقبل', { body: randomTip, icon: 'icon-192.png' });
+            }
+        }
+
+        function startApp() {
+            document.getElementById('splash').style.opacity = '0';
+            setTimeout(() => {
+                document.getElementById('splash').classList.add('hidden');
+                document.getElementById('app').classList.remove('hidden');
+                nav('home');
+                logic.sync();
+                requestNotificationPermission();
+                setInterval(sendDailyTip, 3600000);
+            }, 800);
+        }
+
+        function nav(pageId) {
+            document.querySelectorAll('.page-content').forEach(p => p.classList.add('hidden'));
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(`page-${pageId}`).classList.remove('hidden');
+            document.getElementById(`nav-${pageId}`).classList.add('active');
+            if (pageId === 'roadmap') logic.renderRoadmap(parseFloat(document.getElementById('balance').value)||0);
+            if (pageId === 'achievements') logic.updateBadges(parseFloat(document.getElementById('balance').value)||0);
+            if (pageId === 'calculator') document.getElementById('current-balance-calc').value = document.getElementById('balance').value;
+        }
+
+        window.onload = () => {
+            const saved = localStorage.getItem('million_val');
+            if (saved) document.getElementById('balance').value = saved;
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('sw.js');
+            }
+        };
+    </script>
+</body>
+</html>
