@@ -29,45 +29,46 @@
 </style>
 
 <!-- ========== معلومات البروفايل ========== -->
-<div class="bg-white rounded-t-3xl shadow-xl -mt-8 sm:-mt-10 px-4 pb-6 pt-16 sm:pt-20 relative">
-    <!-- صورة البروفايل (مربعة بزوايا دائرية) -->
-    <div class="absolute -top-12 sm:-top-16 left-1/2 transform -translate-x-1/2 w-28 h-28 rounded-2xl border-4 border-white shadow-xl overflow-hidden bg-white group">
-        <img id="profileAvatar" class="w-full h-full object-cover" src="" alt="صورتي">
-        <!-- أيقونة الكاميرا تظهر عند التحويم -->
-        <div id="avatarOverlay" class="absolute inset-0 bg-black/30 hidden group-hover:flex items-center justify-center text-white cursor-pointer text-2xl">
-            <i class="fa-solid fa-camera"></i>
+<div class="bg-white rounded-t-3xl shadow-xl -mt-8 sm:-mt-10 px-4 pb-6 pt-4 relative">
+    <!-- صف الصورة والبيانات -->
+    <div class="flex flex-col sm:flex-row items-center sm:items-start gap-4">
+        <!-- الصورة (مربعة، على اليمين في RTL) -->
+        <div class="w-28 h-28 sm:w-32 sm:h-32 rounded-2xl border-4 border-white shadow-lg overflow-hidden bg-white group flex-shrink-0 relative -mt-16 sm:-mt-20">
+            <img id="profileAvatar" class="w-full h-full object-cover" src="" alt="صورتي">
+            <div id="avatarOverlay" class="absolute inset-0 bg-black/30 hidden group-hover:flex items-center justify-center text-white cursor-pointer text-2xl">
+                <i class="fa-solid fa-camera"></i>
+            </div>
+            <input type="file" id="avatarFileInput" accept="image/*" class="hidden">
         </div>
-        <!-- input file مخفي -->
-        <input type="file" id="avatarFileInput" accept="image/*" class="hidden">
-    </div>
 
-    <!-- الاسم + شارة توثيق -->
-    <div class="text-center flex flex-col items-center">
-        <div class="flex items-center gap-2">
-            <h1 id="profileName" class="text-2xl sm:text-3xl font-black text-gray-800" contenteditable="false">جار التحميل...</h1>
-            <span class="bg-sky-500 text-white text-xs px-2 py-0.5 rounded-full flex items-center gap-1 font-bold">
-                <i class="fa-solid fa-shield-check"></i> موثّق
-            </span>
+        <!-- البيانات (اسم، بريد، بايو، أزرار) -->
+        <div class="flex-1 text-center sm:text-right mt-2 sm:mt-0">
+            <div class="flex items-center justify-center sm:justify-start gap-2">
+                <h1 id="profileName" class="text-2xl sm:text-3xl font-black text-gray-800" contenteditable="false">جار التحميل...</h1>
+                <span class="bg-sky-500 text-white text-xs px-2 py-0.5 rounded-full flex items-center gap-1 font-bold">
+                    <i class="fa-solid fa-shield-check"></i> موثّق
+                </span>
+            </div>
+            <p id="profileEmail" class="text-sm text-gray-500"></p>
+            <p id="profileBio" class="text-sm text-gray-600 mt-1 max-w-md" contenteditable="false"></p>
+
+            <!-- أزرار التحكم -->
+            <div class="flex justify-center sm:justify-start gap-2 mt-3">
+                <button id="editProfileBtn" class="bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-2 px-5 rounded-lg text-sm transition flex items-center gap-1">
+                    <i class="fa-solid fa-pen-to-square"></i> تعديل
+                </button>
+                <button id="saveProfileBtn" class="bg-sky-500 hover:bg-sky-600 text-white font-bold py-2 px-5 rounded-lg text-sm transition hidden flex items-center gap-1">
+                    <i class="fa-solid fa-check"></i> حفظ
+                </button>
+                <button onclick="engine.logout()" class="bg-white border border-red-200 text-red-500 hover:bg-red-50 font-bold py-2 px-5 rounded-lg text-sm transition flex items-center gap-1 shadow-sm">
+                    <i class="fa-solid fa-right-from-bracket"></i> خروج
+                </button>
+            </div>
         </div>
-        <p id="profileEmail" class="text-sm text-gray-500"></p>
-        <p id="profileBio" class="text-sm text-gray-600 mt-1 max-w-md" contenteditable="false"></p>
-    </div>
-
-    <!-- أزرار التحكم -->
-    <div class="flex justify-center gap-2 mt-4">
-        <button id="editProfileBtn" class="bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-2 px-5 rounded-lg text-sm transition flex items-center gap-1">
-            <i class="fa-solid fa-pen-to-square"></i> تعديل
-        </button>
-        <button id="saveProfileBtn" class="bg-sky-500 hover:bg-sky-600 text-white font-bold py-2 px-5 rounded-lg text-sm transition hidden flex items-center gap-1">
-            <i class="fa-solid fa-check"></i> حفظ
-        </button>
-        <button onclick="engine.logout()" class="bg-white border border-red-200 text-red-500 hover:bg-red-50 font-bold py-2 px-5 rounded-lg text-sm transition flex items-center gap-1 shadow-sm">
-            <i class="fa-solid fa-right-from-bracket"></i> خروج
-        </button>
     </div>
 
     <!-- تبويبات -->
-    <div class="flex gap-1 mt-6 border-b pb-2 overflow-x-auto justify-center">
+    <div class="flex gap-1 mt-6 border-b pb-2 overflow-x-auto justify-center sm:justify-start">
         <button class="tab-btn active font-bold text-sm px-4 py-2 rounded-lg bg-gray-100" data-tab="posts">📄 المنشورات</button>
         <button class="tab-btn font-bold text-sm px-4 py-2 rounded-lg text-gray-500 hover:bg-gray-100" data-tab="about">ℹ️ عني</button>
     </div>
@@ -93,7 +94,7 @@
 
 <script>
 (() => {
-    // ---------- التبويبات ----------
+    // التبويبات
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             document.querySelectorAll('.tab-btn').forEach(b => { b.classList.remove('active','bg-gray-100'); b.classList.add('text-gray-500'); });
@@ -105,7 +106,6 @@
         });
     });
 
-    // ---------- عناصر DOM ----------
     const avatarImg = document.getElementById('profileAvatar');
     const nameEl = document.getElementById('profileName');
     const emailEl = document.getElementById('profileEmail');
@@ -116,114 +116,83 @@
     const avatarInput = document.getElementById('avatarFileInput');
     const avatarOverlay = document.getElementById('avatarOverlay');
 
-    // ---------- تحميل البيانات ----------
     async function loadProfile() {
         let profile = null;
-        try {
-            profile = await window.engine?.getOrCreateUserProfile();
-        } catch (e) {
-            console.warn("تعذر جلب الملف من Firestore، سيتم استخدام البيانات المحلية.");
-        }
+        try { profile = await window.engine?.getOrCreateUserProfile(); } catch(e) {}
+        const u = window.auth?.currentUser;
+        const defName = u?.displayName || 'مستخدم';
+        const defPhoto = u?.photoURL || '';
+        const defEmail = u?.email || '';
+        const locName = localStorage.getItem('sharkhub_name');
+        const locBio = localStorage.getItem('sharkhub_bio');
+        const locPhoto = localStorage.getItem('sharkhub_photo');
 
-        const authUser = window.auth?.currentUser;
-        const defaultName = authUser?.displayName || 'مستخدم';
-        const defaultPhoto = authUser?.photoURL || '';
-        const defaultEmail = authUser?.email || '';
+        avatarImg.src = profile?.photoURL || locPhoto || defPhoto;
+        nameEl.textContent = profile?.displayName || locName || defName;
+        const bio = profile?.bio || locBio || '🦈 مؤسس في Shark Hub';
+        bioEl.textContent = bio;
+        aboutEl.textContent = bio;
+        emailEl.textContent = defEmail;
 
-        const localName = localStorage.getItem('sharkhub_name');
-        const localBio = localStorage.getItem('sharkhub_bio');
-        const localPhoto = localStorage.getItem('sharkhub_photo');
-
-        const finalPhoto = profile?.photoURL || localPhoto || defaultPhoto;
-        const finalName = profile?.displayName || localName || defaultName;
-        const finalBio = profile?.bio || localBio || '🦈 مؤسس في Shark Hub';
-
-        avatarImg.src = finalPhoto;
-        nameEl.textContent = finalName;
-        bioEl.textContent = finalBio;
-        aboutEl.textContent = finalBio;
-        emailEl.textContent = defaultEmail;
-
-        localStorage.setItem('sharkhub_name', finalName);
-        localStorage.setItem('sharkhub_bio', finalBio);
-        localStorage.setItem('sharkhub_photo', finalPhoto);
+        localStorage.setItem('sharkhub_name', nameEl.textContent);
+        localStorage.setItem('sharkhub_bio', bio);
+        localStorage.setItem('sharkhub_photo', avatarImg.src);
     }
     loadProfile();
 
-    // ---------- المنشورات ----------
+    // المنشورات
     if (window.engine?.listenToUserPosts) {
         window.engine.listenToUserPosts('userPostsContainer');
     } else {
         document.getElementById('userPostsContainer').innerHTML = '<p class="text-red-500 text-sm">تعذر تحميل المنشورات</p>';
     }
 
-    // ---------- تغيير الصورة مباشرة ----------
+    // تغيير الصورة مباشرة
     avatarOverlay.addEventListener('click', () => avatarInput.click());
-
     avatarInput.addEventListener('change', async (e) => {
         const file = e.target.files[0];
         if (!file) return;
-
         const reader = new FileReader();
         reader.onload = async () => {
             const dataUrl = reader.result;
-            avatarImg.src = dataUrl; // عرض الصورة فوراً
-
-            // حفظ في Firestore
-            let savedToCloud = false;
-            try {
-                await window.engine.updateUserProfile({ photoURL: dataUrl });
-                savedToCloud = true;
-            } catch (err) {
-                console.error("فشل حفظ الصورة في Firestore:", err);
-            }
-            // حفظ محلي
+            avatarImg.src = dataUrl;
+            let ok = false;
+            try { await window.engine.updateUserProfile({ photoURL: dataUrl }); ok = true; } catch(e) {}
             localStorage.setItem('sharkhub_photo', dataUrl);
-            showToast(savedToCloud ? 'تم تغيير الصورة وحفظها ☁️' : 'تم تغيير الصورة (محلياً) ⚠️');
+            showToast(ok ? 'تم تغيير الصورة وحفظها ☁️' : 'تم تغيير الصورة (محلياً) ⚠️');
         };
         reader.readAsDataURL(file);
     });
 
-    // ---------- تحرير الاسم والوصف ----------
+    // تعديل الاسم والوصف
     editBtn.addEventListener('click', () => {
-        nameEl.contentEditable = 'true';
-        bioEl.contentEditable = 'true';
+        nameEl.contentEditable = nameEl.nextElementSibling.contentEditable = 'true';
         nameEl.classList.add('bg-yellow-50','px-2','rounded','outline-none');
+        bioEl.contentEditable = 'true';
         bioEl.classList.add('bg-yellow-50','px-2','rounded','outline-none');
         editBtn.classList.add('hidden');
         saveBtn.classList.remove('hidden');
     });
-
     saveBtn.addEventListener('click', async () => {
-        nameEl.contentEditable = 'false';
-        bioEl.contentEditable = 'false';
+        nameEl.contentEditable = bioEl.contentEditable = 'false';
         nameEl.classList.remove('bg-yellow-50','px-2','rounded','outline-none');
         bioEl.classList.remove('bg-yellow-50','px-2','rounded','outline-none');
         editBtn.classList.remove('hidden');
         saveBtn.classList.add('hidden');
-
-        const newName = nameEl.textContent.trim();
-        const newBio = bioEl.textContent.trim();
-
-        let saved = false;
-        try {
-            await window.engine.updateUserProfile({ displayName: newName, bio: newBio });
-            saved = true;
-        } catch (e) {
-            console.error("تعذر حفظ البيانات:", e);
-        }
-
-        localStorage.setItem('sharkhub_name', newName);
-        localStorage.setItem('sharkhub_bio', newBio);
-        aboutEl.textContent = newBio;
-
-        showToast(saved ? 'تم حفظ البيانات ☁️' : 'تم حفظ البيانات محلياً ⚠️');
+        const n = nameEl.textContent.trim();
+        const b = bioEl.textContent.trim();
+        let ok = false;
+        try { await window.engine.updateUserProfile({ displayName: n, bio: b }); ok = true; } catch(e) {}
+        localStorage.setItem('sharkhub_name', n);
+        localStorage.setItem('sharkhub_bio', b);
+        aboutEl.textContent = b;
+        showToast(ok ? 'تم حفظ البيانات ☁️' : 'تم حفظ البيانات محلياً ⚠️');
     });
 
-    function showToast(msg) {
+    function showToast(m){
         const t = document.createElement('div');
         t.className = 'fixed bottom-4 left-4 bg-gray-800 text-white px-4 py-2 rounded-lg text-sm z-50 shadow-lg animate-pulse';
-        t.textContent = msg;
+        t.textContent = m;
         document.body.appendChild(t);
         setTimeout(() => t.remove(), 2500);
     }
