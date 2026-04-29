@@ -17,12 +17,6 @@
             position: fixed; inset: 0; background: linear-gradient(135deg, #0f172a, #1e293b);
             z-index: 200; display: flex; flex-direction: column; align-items: center; justify-content: center;
         }
-        .sidebar-link {
-            display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 12px;
-            font-weight: 600; font-size: 15px; color: #1c1e21; transition: background 0.2s;
-        }
-        .sidebar-link:hover { background-color: #e4e6eb; }
-        .sidebar-link.active { color: #1877F2; background-color: #e7f3ff; }
         .post-action-btn {
             flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px;
             padding: 8px; border-radius: 8px; font-weight: 600; font-size: 14px; color: #65676b;
@@ -30,23 +24,40 @@
         }
         .post-action-btn:hover { background-color: #f0f2f5; }
 
-        /* تحسينات الجوّال */
-        @media (max-width: 768px) {
-            .desktop-sidebar, .desktop-rightbar { display: none !important; }
-            .mobile-bottom-nav { display: flex !important; }
-            /* شريط البحث يظهر عند الضغط */
-            .search-input-mobile { display: none; }
-            .search-active .search-input-mobile { display: block; }
-            .search-active .logo-fish { display: none; }
+        /* شريط التنقل العلوي */
+        .nav-link {
+            white-space: nowrap;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            color: white;
+            transition: background 0.2s;
         }
-        @media (min-width: 769px) {
-            .mobile-bottom-nav { display: none !important; }
-            .desktop-sidebar, .desktop-rightbar { display: block !important; }
-            .search-toggle-btn { display: none; }
+        .nav-link.active {
+            background-color: rgba(255,255,255,0.2);
+        }
+        .nav-link:hover {
+            background-color: rgba(255,255,255,0.1);
+        }
+        @media (max-width: 768px) {
+            .nav-links-container {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: none;
+                -ms-overflow-style: none;
+            }
+            .nav-links-container::-webkit-scrollbar {
+                display: none;
+            }
+            .nav-link {
+                padding: 6px 12px;
+                font-size: 12px;
+            }
         }
     </style>
 </head>
-<body class="pb-16 lg:pb-0">
+<body>
 
     <!-- شاشة البداية -->
     <div id="splash">
@@ -59,116 +70,66 @@
         </div>
     </div>
 
-    <!-- شريط علوي فيسبوكي -->
-    <nav class="bg-[#1877F2] shadow-md fixed top-0 left-0 right-0 z-50 h-14 flex items-center justify-between px-4 text-white">
-        <!-- الجزء الأيسر: شعار السمكة + البحث (مكتبي) -->
-        <div class="flex items-center gap-3">
-            <!-- أيقونة السمكة -->
-            <div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center logo-fish">
-                <i class="fa-solid fa-fish-fins text-2xl text-white"></i>
+    <!-- ========== شريط التنقل العلوي الشامل ========== -->
+    <nav class="bg-[#1877F2] shadow-md fixed top-0 left-0 right-0 z-50 text-white">
+        <!-- الصف الأول: الشعار + البحث + الأفاتار -->
+        <div class="flex items-center justify-between px-4 h-14">
+            <div class="flex items-center gap-3">
+                <!-- أيقونة السمكة -->
+                <div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+                    <i class="fa-solid fa-fish-fins text-2xl text-white"></i>
+                </div>
+                <!-- حقل البحث (ظاهر على المكتبي، مخفي على الجوال إلا بالضغط) -->
+                <div id="searchContainer" class="hidden sm:flex items-center bg-white/20 rounded-full px-4 py-2 gap-2">
+                    <i class="fa-solid fa-magnifying-glass text-sm"></i>
+                    <input type="text" placeholder="ابحث في Shark Hub" class="bg-transparent outline-none text-sm w-40 placeholder-white/70">
+                </div>
+                <button onclick="toggleSearch()" class="sm:hidden text-white text-xl">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </button>
             </div>
-            <!-- حقل البحث للمكتب -->
-            <div class="hidden sm:flex items-center bg-white/20 rounded-full px-4 py-2 gap-2 text-white">
-                <i class="fa-solid fa-magnifying-glass text-sm"></i>
-                <input type="text" placeholder="ابحث في Shark Hub" class="bg-transparent outline-none text-sm w-40 placeholder-white/70">
-            </div>
-            <!-- زر البحث للجوال -->
-            <button onclick="toggleMobileSearch()" class="search-toggle-btn text-white text-xl">
-                <i class="fa-solid fa-magnifying-glass"></i>
-            </button>
-            <!-- حقل البحث يظهر في الجوال عند الضغط -->
-            <div class="search-input-mobile flex-1 mx-2">
-                <input type="text" placeholder="ابحث..." class="w-full bg-white/20 rounded-full px-4 py-2 text-sm outline-none placeholder-white/70">
-            </div>
-        </div>
 
-        <!-- الجزء الأيمن: صورة المستخدم + القائمة المنسدلة -->
-        <div class="relative">
-            <button onclick="document.getElementById('profileMenu').classList.toggle('show')" id="userBtn"
-                class="w-9 h-9 rounded-full bg-white/20 overflow-hidden border-2 border-white flex items-center justify-center">
-                <i class="fa-solid fa-user text-white"></i>
-            </button>
-            <!-- قائمة منسدلة -->
-            <div id="profileMenu" class="absolute top-12 left-0 w-56 bg-white rounded-xl shadow-2xl border border-gray-100 py-2 z-[60] hidden text-gray-800">
-                <div id="userEmail" class="px-4 py-2 text-xs text-gray-500 border-b mb-1 truncate"></div>
-                <button onclick="engine.logout()" class="w-full text-right px-4 py-3 text-red-500 font-bold text-sm hover:bg-red-50 flex items-center gap-2 transition-colors">
-                    <i class="fa-solid fa-right-from-bracket"></i> تسجيل الخروج
+            <!-- صورة الملف الشخصي -->
+            <div class="relative">
+                <button onclick="document.getElementById('profileMenu').classList.toggle('show')" id="userBtn"
+                    class="w-9 h-9 rounded-full bg-white/20 overflow-hidden border-2 border-white flex items-center justify-center">
+                    <i class="fa-solid fa-user text-white"></i>
                 </button>
-            </div>
-        </div>
-    </nav>
-
-    <!-- الهيكل الرئيسي (ثلاث أعمدة) -->
-    <div class="flex justify-center mt-14 min-h-screen">
-        <!-- العمود الأيسر (قائمة جانبية) -->
-        <div class="desktop-sidebar hidden w-[280px] p-4 fixed right-0 top-14 h-full overflow-y-auto bg-white border-l border-gray-200">
-            <div class="space-y-1">
-                <button onclick="engine.loadPage('home')" class="sidebar-link active" data-page="home">
-                    <i class="fa-solid fa-house w-6 text-center"></i> الرئيسية
-                </button>
-                <button onclick="engine.loadPage('assets')" class="sidebar-link" data-page="assets">
-                    <i class="fa-solid fa-wallet w-6 text-center"></i> المحفظة
-                </button>
-                <button onclick="engine.loadPage('roadmap')" class="sidebar-link" data-page="roadmap">
-                    <i class="fa-solid fa-map w-6 text-center"></i> الخريطة
-                </button>
-                <button onclick="engine.loadPage('courses')" class="sidebar-link" data-page="courses">
-                    <i class="fa-solid fa-graduation-cap w-6 text-center"></i> الأكاديمية
-                </button>
-                <button onclick="engine.loadPage('ai-chat')" class="sidebar-link" data-page="ai-chat">
-                    <i class="fa-solid fa-robot w-6 text-center"></i> المساعد الذكي
-                </button>
-            </div>
-        </div>
-
-        <!-- المحتوى الرئيسي -->
-        <main id="app-content" class="flex-1 max-w-[680px] w-full mx-auto px-4 pt-4 lg:mr-[280px] lg:ml-[280px]">
-            <!-- يتم حقن الصفحات هنا -->
-        </main>
-
-        <!-- العمود الأيمن -->
-        <div class="desktop-rightbar hidden w-[280px] p-4 fixed left-0 top-14 h-full overflow-y-auto bg-white border-r border-gray-200">
-            <h3 class="text-gray-500 font-bold text-sm mb-4">اقتراحات للقروش</h3>
-            <div class="space-y-3">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-full bg-gray-300"></div>
-                    <div>
-                        <p class="font-bold text-sm">مستخدم جديد</p>
-                        <p class="text-xs text-gray-500">متابَع من 5 أشخاص</p>
-                    </div>
+                <div id="profileMenu" class="absolute top-12 left-0 w-56 bg-white rounded-xl shadow-2xl border border-gray-100 py-2 z-[60] hidden text-gray-800">
+                    <div id="userEmail" class="px-4 py-2 text-xs text-gray-500 border-b mb-1 truncate"></div>
+                    <button onclick="engine.logout()" class="w-full text-right px-4 py-3 text-red-500 font-bold text-sm hover:bg-red-50 flex items-center gap-2 transition-colors">
+                        <i class="fa-solid fa-right-from-bracket"></i> تسجيل الخروج
+                    </button>
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- شريط سفلي للجوال -->
-    <div class="mobile-bottom-nav fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 h-14 flex items-center justify-around z-50">
-        <button onclick="engine.loadPage('home')" class="flex flex-col items-center text-[#1877F2] text-xs font-bold" data-page="home">
-            <i class="fa-solid fa-house text-xl"></i> الرئيسية
-        </button>
-        <button onclick="engine.loadPage('assets')" class="flex flex-col items-center text-gray-500 text-xs font-bold" data-page="assets">
-            <i class="fa-solid fa-wallet text-xl"></i> المحفظة
-        </button>
-        <button onclick="engine.loadPage('roadmap')" class="flex flex-col items-center text-gray-500 text-xs font-bold" data-page="roadmap">
-            <i class="fa-solid fa-map text-xl"></i> الخريطة
-        </button>
-        <button onclick="engine.loadPage('courses')" class="flex flex-col items-center text-gray-500 text-xs font-bold" data-page="courses">
-            <i class="fa-solid fa-graduation-cap text-xl"></i> الأكاديمية
-        </button>
-        <button onclick="engine.loadPage('ai-chat')" class="flex flex-col items-center text-gray-500 text-xs font-bold" data-page="ai-chat">
-            <i class="fa-solid fa-robot text-xl"></i> الذكاء
-        </button>
-    </div>
+        <!-- الصف الثاني: روابط التنقل الرئيسية (دائماً ظاهرة) -->
+        <div class="nav-links-container flex gap-1 px-4 pb-3 pt-1">
+            <button onclick="engine.loadPage('home')" class="nav-link active" data-page="home">🏠 الرئيسية</button>
+            <button onclick="engine.loadPage('assets')" class="nav-link" data-page="assets">💰 المحفظة</button>
+            <button onclick="engine.loadPage('roadmap')" class="nav-link" data-page="roadmap">🗺️ الخريطة</button>
+            <button onclick="engine.loadPage('courses')" class="nav-link" data-page="courses">🎓 الأكاديمية</button>
+            <button onclick="engine.loadPage('ai-chat')" class="nav-link" data-page="ai-chat">🤖 المساعد</button>
+        </div>
+    </nav>
+
+    <!-- محتوى الصفحة الرئيسي -->
+    <main id="app-content" class="max-w-2xl mx-auto px-4 pt-28 pb-10">
+        <!-- يتم حقن الصفحات هنا -->
+    </main>
 
     <!-- أيقونة المساعد الذكي العائمة -->
-    <div onclick="engine.loadPage('ai-chat')" class="fixed bottom-20 left-5 lg:bottom-8 lg:left-8 w-14 h-14 bg-gradient-to-br from-[#1877F2] to-[#0b5ec7] rounded-2xl flex items-center justify-center text-white text-2xl shadow-lg cursor-pointer z-40 hover:scale-110 transition-transform">
+    <div onclick="engine.loadPage('ai-chat')" class="fixed bottom-6 left-6 w-14 h-14 bg-gradient-to-br from-[#1877F2] to-[#0b5ec7] rounded-2xl flex items-center justify-center text-white text-2xl shadow-lg cursor-pointer z-40 hover:scale-110 transition-transform">
         <i class="fa-solid fa-robot"></i>
     </div>
 
     <script>
         // تفعيل البحث في الجوال
-        function toggleMobileSearch() {
-            document.querySelector('nav').classList.toggle('search-active');
+        function toggleSearch() {
+            const container = document.getElementById('searchContainer');
+            container.classList.toggle('hidden');
+            container.classList.toggle('flex');
         }
     </script>
     <script type="module" src="app.js"></script>
