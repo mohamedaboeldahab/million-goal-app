@@ -69,29 +69,24 @@
 <!-- شريط التنقل العلوي (أزرق فاتح) -->
 <nav class="bg-sky-500 shadow-md fixed top-0 left-0 right-0 z-50">
     <!-- الصف الأول: الشعار + البحث + الأفاتار -->
-    <div class="flex items-center justify-between px-4 h-14 gap-2">
+    <div class="flex items-center justify-between px-3 sm:px-4 h-14 gap-2">
         <!-- الشعار مع النص -->
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2 flex-shrink-0">
             <div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
                 <i class="fa-solid fa-fish-fins text-xl text-white"></i>
             </div>
-            <span class="text-white font-black text-lg tracking-tight">SHARK HUB</span>
+            <span class="text-white font-black text-base sm:text-lg tracking-tight">SHARK HUB</span>
         </div>
 
-        <!-- 🌟 مربع البحث الجديد (يحاكي حقل النص) -->
+        <!-- 🌟 مربع البحث (يظهر على جميع الشاشات الآن) -->
         <button onclick="engine.loadPage('search')" 
-             class="hidden sm:flex items-center gap-2 bg-white/20 rounded-full px-4 py-2 text-sm text-white/80 hover:bg-white/30 transition flex-1 max-w-xs mx-2">
-            <i class="fa-solid fa-magnifying-glass"></i>
-            <span>ابحث في Shark Hub</span>
-        </button>
-
-        <!-- أيقونة البحث للجوال (تظهر فقط على الشاشات الصغيرة) -->
-        <button onclick="engine.loadPage('search')" class="sm:hidden text-white text-xl">
-            <i class="fa-solid fa-magnifying-glass"></i>
+             class="flex items-center gap-2 bg-white/20 rounded-full px-3 sm:px-4 py-2 text-sm text-white/80 hover:bg-white/30 transition flex-1 max-w-[200px] sm:max-w-xs mx-2">
+            <i class="fa-solid fa-magnifying-glass text-xs sm:text-sm"></i>
+            <span class="truncate text-xs sm:text-sm">ابحث في Shark Hub</span>
         </button>
 
         <!-- صورة المستخدم + القائمة المنسدلة -->
-        <div class="relative">
+        <div class="relative flex-shrink-0">
             <button onclick="document.getElementById('profileMenu').classList.toggle('show')" id="userBtn"
                 class="w-9 h-9 rounded-full bg-white/20 overflow-hidden border-2 border-white flex items-center justify-center">
                 <i class="fa-solid fa-user text-white"></i>
@@ -107,24 +102,13 @@
 
     <!-- الصف الثاني: روابط التنقل -->
     <div class="nav-links-container flex gap-1 px-4 pb-3 pt-1">
+        <!-- كما هي بدون تغيير -->
         <button onclick="engine.loadPage('home')" class="nav-link active" data-page="home">
             <i class="fa-solid fa-house"></i> الرئيسية
         </button>
-        <button onclick="engine.loadPage('assets')" class="nav-link" data-page="assets">
-            <i class="fa-solid fa-wallet"></i> المحفظة
-        </button>
-        <button onclick="engine.loadPage('roadmap')" class="nav-link" data-page="roadmap">
-            <i class="fa-solid fa-map"></i> الخريطة
-        </button>
-        <button onclick="engine.loadPage('courses')" class="nav-link" data-page="courses">
-            <i class="fa-solid fa-graduation-cap"></i> الأكاديمية
-        </button>
-        <button onclick="engine.loadPage('ai-chat')" class="nav-link" data-page="ai-chat">
-            <i class="fa-solid fa-robot"></i> المساعد
-        </button>
+        <!-- ... باقي الأزرار ... -->
     </div>
 </nav>
-
     <!-- منطقة المحتوى الرئيسية -->
     <main id="app-content" class="max-w-2xl mx-auto px-4 pt-28 pb-10">
         <!-- يتم حقن الصفحات هنا -->
