@@ -1,6 +1,6 @@
 let appData = {
     cash: 0,
-    assets: [],    // { name, val, rate }
+    assets: [],
     posts: [],
     milestonesReached: []
 };
@@ -18,18 +18,17 @@ const engine = {
         this.nav('home');
     },
 
-    // ----- تحديث الواجهة بالكامل -----
     sync() {
         const assetsTotal = appData.assets.reduce((s, a) => s + a.val, 0);
         const total = appData.cash + assetsTotal;
 
-        // تحديث الثروة في صفحة الأصول
-        document.getElementById('totalValAssets').innerText = Math.floor(total).toLocaleString();
-        document.getElementById('cashDisplay').innerText = Math.floor(appData.cash).toLocaleString() + ' ج.م';
+        const totalEl = document.getElementById('totalValAssets');
+        if (totalEl) totalEl.innerText = Math.floor(total).toLocaleString();
+        const cashEl = document.getElementById('cashDisplay');
+        if (cashEl) cashEl.innerText = Math.floor(appData.cash).toLocaleString() + ' ج.م';
 
-        // كشف المراحل (نسب الإنجاز التقليدية)
         for (let pct = 10; pct <= 100; pct += 10) {
-            const target = 10000 * pct; // 100,000 لكل 10%
+            const target = 10000 * pct;
             if (total >= target && !appData.milestonesReached.includes(pct)) {
                 appData.milestonesReached.push(pct);
                 this.addPost(`🎉 وصلت إلى ${pct}% من حلم المليون! استمر يا بطل.`);
@@ -44,22 +43,26 @@ const engine = {
         localStorage.setItem('millionaire_engine_data', JSON.stringify(appData));
     },
 
-    // ----- التنقل بين الصفحات -----
+    // --- دالة التنقل المُصحّحة ---
     nav(pageId) {
-        document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
+        // إخفاء جميع الصفحات
+        document.querySelectorAll('.page').forEach(p => {
+            if (p) p.classList.add('hidden');
+        });
+        // إظهار الصفحة المطلوبة
         const page = document.getElementById('page-' + pageId);
-        page.classList.remove('hidden');
+        if (page) page.classList.remove('hidden');
 
+        // تحديث التبويبات النشطة
         document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-        document.getElementById('tab-' + pageId).classList.add('active');
+        const tab = document.getElementById('tab-' + pageId);
+        if (tab) tab.classList.add('active');
     },
 
-    // ----- إدارة الرصيد النقدي -----
     adjustCash(sign) {
         const input = document.getElementById('cashAdjustInput');
         const amount = parseFloat(input.value);
         if (isNaN(amount)) return;
-
         const change = amount * sign;
         const newCash = appData.cash + change;
         if (newCash < 0) {
@@ -71,12 +74,10 @@ const engine = {
         this.sync();
     },
 
-    // ----- المنشورات -----
     addPost(text = null) {
         const input = document.getElementById('postInput');
         const content = text || (input ? input.value.trim() : '');
         if (!content) return;
-
         appData.posts.unshift({
             id: Date.now(),
             content: content,
@@ -109,7 +110,6 @@ const engine = {
         `).join('');
     },
 
-    // ----- إدارة الأصول (بنسبة مخصصة) -----
     addAsset() {
         const name = document.getElementById('aName').value.trim();
         const val = parseFloat(document.getElementById('aVal').value);
@@ -142,7 +142,6 @@ const engine = {
         this.sync();
     },
 
-    // ----- الخريطة (شكل سنيك باث 10×10) -----
     renderRoadmap(total) {
         const board = document.getElementById('gameBoard');
         if (!board) return;
@@ -154,38 +153,30 @@ const engine = {
         let html = '';
         for (let row = 0; row < 10; row++) {
             html += '<div class="board-row">';
-            const cells = [];
             for (let col = 0; col < 10; col++) {
                 const stageIndex = row % 2 === 0 ? row * 10 + col : row * 10 + (9 - col);
                 const targetAmount = Math.round(start + step * stageIndex);
                 const completed = total >= targetAmount;
-                cells.push(`
+                html += `
                     <div class="board-cell ${completed ? 'completed' : ''}">
                         <span class="stage-num">${stageIndex + 1}</span>
                         <span class="stage-amount">${targetAmount.toLocaleString()}</span>
-                    </div>
-                `);
+                    </div>`;
             }
-            html += cells.join('') + '</div>';
+            html += '</div>';
         }
         board.innerHTML = html;
     },
 
-    // ----- الحاسبة (تعتمد على الأصول الفعلية) -----
     recalc() {
         const monthlyInput = document.getElementById('calcMonthly');
         const monthly = monthlyInput ? parseFloat(monthlyInput.value) || 1000 : 1000;
-
         let cash = appData.cash;
         let assets = appData.assets.map(a => ({ ...a }));
         let months = 0;
 
         while (months < 600) {
-            // العائد الشهري لكل أصل
-            assets.forEach(a => {
-                a.val *= (1 + a.rate / 100 / 12);
-            });
-            // إضافة الادخار الشهري إلى النقد
+            assets.forEach(a => { a.val *= (1 + a.rate / 100 / 12); });
             cash += monthly;
             const total = cash + assets.reduce((s, a) => s + a.val, 0);
             months++;
@@ -196,24 +187,24 @@ const engine = {
         const remainMonths = months % 12;
         const res = document.getElementById('calcRes');
         if (res) {
-            if (months >= 600) res.innerText = 'قد تحتاج أكثر من 50 سنة للوصول للمليون';
-            else res.innerText = `تحقيق المليون خلال: ${years} سنة و ${remainMonths} شهر`;
+            res.innerText = months >= 600 ? 'قد تحتاج أكثر من 50 سنة للوصول للمليون' 
+                         : `تحقيق المليون خلال: ${years} سنة و ${remainMonths} شهر`;
         }
     },
 
-    // ----- المستشار الذكي (شاشة كاملة) -----
     sendPredefined(msg) {
-        document.getElementById('chatInput').value = msg;
+        const input = document.getElementById('chatInput');
+        if (input) input.value = msg;
         this.sendMessage();
     },
 
     sendMessage() {
         const input = document.getElementById('chatInput');
-        const msg = input.value.trim();
+        const msg = input ? input.value.trim() : '';
         if (!msg) return;
 
         this.addChatMessage(msg, 'user');
-        input.value = '';
+        if (input) input.value = '';
 
         setTimeout(() => {
             const reply = this.generateReply(msg);
@@ -225,10 +216,8 @@ const engine = {
         const msg = userMsg.toLowerCase();
         const assetsTotal = appData.assets.reduce((s, a) => s + a.val, 0);
         const total = appData.cash + assetsTotal;
-
         const assetList = appData.assets.map(a => `${a.name} (${a.val.toLocaleString()} ج.م, عائد ${a.rate}%)`).join('، ') || 'لا توجد أصول';
 
-        // حساب المدة المتبقية للمليون
         let cash = appData.cash;
         let assets = appData.assets.map(a => ({ ...a }));
         let months = 0;
@@ -241,30 +230,27 @@ const engine = {
         const years = Math.floor(months / 12);
         const remainMonths = months % 12;
 
-        if (msg.includes('كم') && (msg.includes('ثروت') || msg.includes('فلوس') || msg.includes('رصيد'))) {
-            return `إجمالي ثروتك حالياً ${Math.floor(total).toLocaleString()} ج.م، منها نقد ${Math.floor(appData.cash).toLocaleString()} وأصول ${Math.floor(assetsTotal).toLocaleString()}.`;
+        if (msg.includes('كم') && (msg.includes('ثروت') || msg.includes('رصيد'))) {
+            return `إجمالي ثروتك حالياً ${Math.floor(total).toLocaleString()} ج.م (نقد: ${Math.floor(appData.cash).toLocaleString()}).`;
         }
         if (msg.includes('أصول') || msg.includes('محفظة')) {
-            return appData.assets.length ? `أصولك الحالية: ${assetList}.` : 'ليس لديك أي أصول حالياً.';
+            return appData.assets.length ? `أصولك: ${assetList}` : 'لا توجد أصول بعد.';
         }
-        if (msg.includes('متى') || msg.includes('متي') || msg.includes('زمن') || msg.includes('مليونير') || msg.includes('المليون')) {
-            if (total >= 1000000) return 'أنت فعلاً مليونير! حافظ على ثروتك واستثمرها.';
-            return `بمعدل ادخارك الشهري وعوائد أصولك الحالية، ستحتاج حوالي ${years} سنة و ${remainMonths} شهر للوصول للمليون.`;
+        if (msg.includes('متى') || msg.includes('مليونير')) {
+            if (total >= 1000000) return 'أنت مليونير فعلاً!';
+            return `المدة المتوقعة: ${years} سنة و ${remainMonths} شهر.`;
         }
-        if (msg.includes('نصيحة') || msg.includes('استثمار')) {
-            return 'نصيحتي الذهبية: نوع أصولك بين أسهم وعقارات وذهب، ولا تضع كل البيض في سلة واحدة. تابع السوق باستمرار.';
+        if (msg.includes('نصيحة')) {
+            return 'نوّع استثماراتك بين العقارات والأسهم والذهب. لا تضع كل أموالك في مكان واحد.';
         }
         if (msg.includes('مخاطر') || msg.includes('خسارة')) {
-            return 'لتقليل المخاطر: خصص 40% لأصول آمنة (ودائع)، 40% متوسطة (صناديق)، 20% عالية المخاطر (أسهم).';
+            return 'لتقليل المخاطر: 40% أصول آمنة، 40% متوسطة، 20% عالية المخاطر.';
         }
-        if (msg.includes('شكر')) return 'العفو يا غالي، دايمًا في خدمتك.';
-        if (msg.includes('سلام') || msg.includes('باي')) return 'مع السلامة! حافظ على خطتك.';
-
+        if (msg.includes('شكر')) return 'العفو يا صديقي!';
         const generic = [
-            'فكرة جيدة! دعنا نتعمق في التفاصيل.',
-            `لديك حالياً ${Math.floor(total).toLocaleString()} ج.م، ومتوقع أن تصبح مليونيراً في ${years} سنوات لو حافظت على نفس الوتيرة.`,
-            'أقترح زيادة ادخارك الشهري لو أمكن لتسريع الهدف.',
-            'هل تريد أن نخطط لتنويع محفظتك؟'
+            'فكرة جيدة! دعنا نناقشها.',
+            `أنت حالياً تملك ${Math.floor(total).toLocaleString()} ج.م.`,
+            'حافظ على الادخار المنتظم.'
         ];
         return generic[Math.floor(Math.random() * generic.length)];
     },
