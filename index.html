@@ -3,34 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>مليونير المستقبل | Light Edition</title>
-    
+    <title>مليونير المستقبل | Super Edition</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0ea5e9">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2150/2150150.png">
-
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap');
-        body { font-family: 'Tajawal', sans-serif; background-color: #f8fafc; color: #1e293b; }
+        body { font-family: 'Tajawal', sans-serif; background-color: #f8fafc; color: #1e293b; overflow-x: hidden; }
         .gradient-card { background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%); }
-        .glass-nav { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px); border-top: 1px solid #e2e8f0; }
-        .roadmap-step.active .icon-box { background: #0ea5e9; color: white; transform: scale(1.1); box-shadow: 0 10px 15px -3px rgba(14, 165, 233, 0.4); }
-        .page { transition: all 0.4s ease; }
+        .glass-nav { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); border-top: 1px solid #e2e8f0; }
+        .page { transition: all 0.3s ease; min-height: 80vh; }
+        .hidden { display: none; }
         input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; }
     </style>
 </head>
 <body class="pb-24">
 
-    <header class="p-6 flex justify-between items-center bg-white border-b border-slate-100">
+    <header class="p-6 flex justify-between items-center bg-white border-b border-slate-100 sticky top-0 z-50">
         <div>
-            <h1 class="text-xl font-black text-slate-800">مليونير <span class="text-sky-500">المستقبل</span></h1>
-            <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Wealth Path v3.0</p>
+            <h1 class="text-xl font-black text-slate-800 tracking-tighter">مليونير <span class="text-sky-500 uppercase">المستقبل</span></h1>
+            <p id="progressPercent" class="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-1">جاري حساب التقدم...</p>
         </div>
-        <div class="w-10 h-10 bg-slate-50 rounded-full flex items-center justify-center border border-slate-200">
+        <div class="w-10 h-10 bg-sky-50 rounded-full flex items-center justify-center border border-sky-100">
             <i class="fa-solid fa-robot text-sky-500"></i>
         </div>
     </header>
@@ -40,7 +35,7 @@
         <div id="page-home" class="page">
             <div class="gradient-card p-8 rounded-[2.5rem] text-white shadow-xl shadow-blue-200 mb-8 relative overflow-hidden">
                 <div class="absolute -right-10 -top-10 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
-                <p class="text-white/70 text-xs font-bold mb-2">رصيدك المتاح للنمو</p>
+                <p class="text-white/70 text-[10px] font-black uppercase mb-2 tracking-widest">رصيدك الحالي للنمو</p>
                 <div class="flex items-baseline gap-2">
                     <input type="number" id="balance" value="7613" oninput="engine.sync()" class="bg-transparent text-5xl font-black w-full outline-none caret-white">
                     <span class="text-lg font-bold">ج.م</span>
@@ -49,10 +44,10 @@
 
             <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm mb-6">
                 <div class="flex items-center gap-3 mb-3 text-sky-600">
-                    <i class="fa-solid fa-bolt-lightning animate-bounce"></i>
-                    <h3 class="text-xs font-black uppercase">تحدي الذكاء الاصطناعي</h3>
+                    <i class="fa-solid fa-bolt-lightning animate-bounce text-xs"></i>
+                    <h3 class="text-[10px] font-black uppercase tracking-widest">نصيحة الذكاء الاصطناعي</h3>
                 </div>
-                <p id="aiAdvice" class="text-sm text-slate-600 leading-relaxed mb-4">نصيحة ذكية تظهر هنا...</p>
+                <p id="aiAdvice" class="text-xs text-slate-600 leading-relaxed mb-4 italic font-medium">جاري تحليل بياناتك الممالية...</p>
                 <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
                     <div id="challengeProgress" class="bg-sky-500 h-full transition-all duration-1000" style="width: 0%"></div>
                 </div>
@@ -60,8 +55,8 @@
         </div>
 
         <div id="page-roadmap" class="page hidden">
-            <h2 class="text-lg font-black text-slate-800 mb-8 text-center italic">خارطة الوصول للمليون</h2>
-            <div id="roadmapNodes" class="space-y-8 relative">
+            <h2 class="text-lg font-black text-slate-800 mb-6 text-center italic">خارطة الـ 100 خطوة</h2>
+            <div id="roadmapNodes" class="space-y-3">
                 </div>
         </div>
 
@@ -80,38 +75,167 @@
                         <input type="number" id="rate" value="18" class="w-full bg-slate-50 p-4 rounded-2xl outline-none border border-slate-100 focus:border-sky-500 font-bold" oninput="engine.calculate()">
                     </div>
                     <div class="p-6 bg-sky-50 rounded-2xl border border-sky-100 text-center">
-                        <p id="calcResult" class="text-sky-700 font-black text-lg">--</p>
+                        <p id="calcResult" class="text-sky-700 font-black text-sm leading-relaxed tracking-tight">--</p>
                     </div>
                 </div>
             </div>
         </div>
-  <div id="page-chat" class="page hidden flex flex-col h-[70vh]">
-    <div id="chatContainer" class="flex-1 overflow-y-auto p-4 bg-white rounded-3xl mb-4 border border-slate-100 shadow-inner">
+
+        <div id="page-chat" class="page hidden flex flex-col h-[65vh]">
+            <div id="chatContainer" class="flex-1 overflow-y-auto p-5 bg-white rounded-[2rem] mb-4 border border-slate-100 shadow-inner space-y-4">
+                <div class="text-right">
+                    <div class="inline-block p-3 rounded-2xl bg-slate-100 text-slate-700 text-xs font-bold">
+                        أهلاً بك يا بطل! أنا مستشارك المالي الذكي. اسألني عن أي شيء يخص رصيدك.
+                    </div>
+                </div>
+            </div>
+            <div class="flex gap-2">
+                <input type="text" id="chatInput" placeholder="اسأل المستشار..." class="flex-1 p-4 rounded-2xl bg-white outline-none border border-slate-200 focus:border-sky-500 text-xs font-bold shadow-sm">
+                <button onclick="engine.chat.ask()" class="p-4 bg-sky-500 text-white rounded-2xl w-14 shadow-lg shadow-sky-200 active:scale-90 transition-transform">
+                    <i class="fa-solid fa-paper-plane"></i>
+                </button>
+            </div>
         </div>
-    <div class="flex gap-2">
-        <input type="text" id="chatInput" placeholder="اسأل المستشار الذكي..." class="flex-1 p-4 rounded-2xl bg-slate-50 outline-none border border-slate-100 focus:border-sky-500">
-        <button onclick="engine.chat.ask(document.getElementById('chatInput').value)" class="p-4 bg-sky-500 text-white rounded-2xl w-14">
-            <i class="fa-solid fa-paper-plane"></i>
-        </button>
-    </div>
-</div>
     </main>
 
-    <nav class="fixed bottom-0 left-0 right-0 h-20 glass-nav flex justify-around items-center px-6 z-50">
-        <button onclick="engine.nav('home')" id="btn-home" class="flex flex-col items-center gap-1 text-sky-500 font-black">
-            <i class="fa-solid fa-house-chimney text-xl"></i>
-            <span class="text-[9px]">الرئيسية</span>
+    <nav class="fixed bottom-0 left-0 right-0 h-20 glass-nav flex justify-around items-center px-4 z-50">
+        <button onclick="engine.nav('home')" id="btn-home" class="flex flex-col items-center gap-1 text-sky-500 transition-all">
+            <i class="fa-solid fa-house-chimney text-lg"></i>
+            <span class="text-[8px] font-black uppercase">الرئيسية</span>
         </button>
-        <button onclick="engine.nav('roadmap')" id="btn-roadmap" class="flex flex-col items-center gap-1 text-slate-400 font-black">
-            <i class="fa-solid fa-map-location-dot text-xl"></i>
-            <span class="text-[9px]">الخريطة</span>
+        <button onclick="engine.nav('roadmap')" id="btn-roadmap" class="flex flex-col items-center gap-1 text-slate-400 transition-all">
+            <i class="fa-solid fa-map-location-dot text-lg"></i>
+            <span class="text-[8px] font-black uppercase">الخريطة</span>
         </button>
-        <button onclick="engine.nav('calc')" id="btn-calc" class="flex flex-col items-center gap-1 text-slate-400 font-black">
-            <i class="fa-solid fa-calculator text-xl"></i>
-            <span class="text-[9px]">الحاسبة</span>
+        <button onclick="engine.nav('chat')" id="btn-chat" class="flex flex-col items-center gap-1 text-slate-400 transition-all">
+            <i class="fa-solid fa-comment-dots text-lg"></i>
+            <span class="text-[8px] font-black uppercase">المستشار</span>
+        </button>
+        <button onclick="engine.nav('calc')" id="btn-calc" class="flex flex-col items-center gap-1 text-slate-400 transition-all">
+            <i class="fa-solid fa-calculator text-lg"></i>
+            <span class="text-[8px] font-black uppercase">الحاسبة</span>
         </button>
     </nav>
 
-    <script src="app.js"></script>
+    <script>
+        const engine = {
+            generateLevels(target = 1000000) {
+                const steps = [];
+                for (let i = 1; i <= 100; i++) {
+                    const amount = (target / 100) * i;
+                    steps.push({ t: amount, n: `المرحلة ${i}`, tip: this.getSmartTip(i) });
+                }
+                return steps;
+            },
+
+            getSmartTip(step) {
+                if (step < 20) return "أنت في مرحلة التأسيس، كل جنيه يفرق!";
+                if (step < 50) return "منتصف الطريق! لا تضعف الآن.";
+                if (step < 80) return "أنت الآن ضمن فئة الأثرياء الصاعدين.";
+                return "خطوات قليلة وتدخل نادي المليونير!";
+            },
+
+            chat: {
+                messages: [],
+                ask() {
+                    const input = document.getElementById('chatInput');
+                    const text = input.value;
+                    if (!text) return;
+                    
+                    this.messages.push({ role: 'user', text });
+                    input.value = '';
+                    this.render();
+
+                    setTimeout(() => {
+                        const balance = document.getElementById('balance').value;
+                        let reply = `بناءً على رصيدك (${balance} ج.م)، أنت تسير بسرعة جيدة. هل فكرت في زيادة إيداعك الشهري؟`;
+                        if (text.includes("نصيحة")) reply = "أهم نصيحة لك الآن هي الاستمرار في الاستثمار التراكمي وعدم سحب الأرباح.";
+                        
+                        this.messages.push({ role: 'ai', text: reply });
+                        this.render();
+                    }, 600);
+                },
+                render() {
+                    const container = document.getElementById('chatContainer');
+                    container.innerHTML = this.messages.map(m => `
+                        <div class="mb-2 ${m.role === 'user' ? 'text-left' : 'text-right'}">
+                            <div class="inline-block p-3 rounded-2xl ${m.role === 'user' ? 'bg-sky-500 text-white' : 'bg-slate-100 text-slate-700'} text-[11px] font-bold shadow-sm">
+                                ${m.text}
+                            </div>
+                        </div>
+                    `).join('');
+                    container.scrollTop = container.scrollHeight;
+                }
+            },
+
+            sync() {
+                const val = parseFloat(document.getElementById('balance').value) || 0;
+                localStorage.setItem('future_millionaire_data', val);
+                this.updateAI(val);
+                this.renderRoadmap(val);
+                this.calculate();
+            },
+
+            updateAI(val) {
+                const levels = this.generateLevels();
+                const currentLvl = levels.find(l => val < l.t) || levels[99];
+                const progress = Math.min((val / 1000000) * 100, 100);
+                
+                document.getElementById('aiAdvice').innerText = currentLvl.tip;
+                document.getElementById('challengeProgress').style.width = progress + "%";
+                document.getElementById('progressPercent').innerText = `أتممت ${Math.floor(progress)}% من طريق المليون`;
+            },
+
+            renderRoadmap(val) {
+                const levels = this.generateLevels();
+                const container = document.getElementById('roadmapNodes');
+                const currentIdx = levels.findIndex(l => val < l.t);
+                const displayLevels = levels.slice(Math.max(0, currentIdx - 2), currentIdx + 10);
+
+                container.innerHTML = displayLevels.map(l => {
+                    const active = val >= l.t;
+                    return `
+                        <div class="flex items-center gap-4 p-4 rounded-2xl ${active ? 'bg-sky-50 border-sky-100' : 'bg-white border-slate-100'} border transition-all">
+                            <div class="w-8 h-8 rounded-full ${active ? 'bg-sky-500' : 'bg-slate-100'} flex items-center justify-center text-white text-[10px]">
+                                ${active ? '✓' : ''}
+                            </div>
+                            <div>
+                                <h4 class="text-[11px] font-black text-slate-700">${l.n}</h4>
+                                <p class="text-[9px] text-slate-400 font-bold">${l.t.toLocaleString()} ج.م</p>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            },
+
+            calculate() {
+                const current = parseFloat(document.getElementById('balance').value) || 0;
+                const monthly = parseFloat(document.getElementById('monthly').value) || 0;
+                const rate = (parseFloat(document.getElementById('rate').value) / 100) / 12;
+                if (monthly <= 0) return;
+                let temp = current; let months = 0;
+                while (temp < 1000000 && months < 600) { temp = (temp + monthly) * (1 + rate); months++; }
+                const y = Math.floor(months / 12); const m = months % 12;
+                document.getElementById('calcResult').innerHTML = `ستصل لهدف المليون الأول خلال <br><span class="text-xl text-sky-500 font-black">${y} سنة و ${m} شهر</span>`;
+            },
+
+            nav(pageId) {
+                document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
+                document.querySelectorAll('nav button').forEach(b => {
+                    b.classList.remove('text-sky-500');
+                    b.classList.add('text-slate-400');
+                });
+                document.getElementById('page-' + pageId).classList.remove('hidden');
+                document.getElementById('btn-' + pageId).classList.add('text-sky-500');
+                document.getElementById('btn-' + pageId).classList.remove('text-slate-400');
+            }
+        };
+
+        window.onload = () => {
+            const saved = localStorage.getItem('future_millionaire_data');
+            if (saved) document.getElementById('balance').value = saved;
+            engine.sync();
+        };
+    </script>
 </body>
 </html>
