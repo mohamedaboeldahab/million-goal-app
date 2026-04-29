@@ -13,75 +13,78 @@ body {
     color: var(--text-main);
     margin: 0;
     direction: rtl;
+    padding-bottom: 70px; /* مساحة للـ nav السفلي */
 }
 
-/* Header & Nav */
+/* Header */
 header {
     background: white;
-    padding: 15px 20px;
+    padding: 12px 20px;
     display: flex;
     justify-content: space-between;
     align-items: center;
     border-bottom: 1px solid #ddd;
-}
-
-.top-nav {
-    background: white;
-    display: flex;
     position: sticky;
     top: 0;
     z-index: 100;
-    border-bottom: 1px solid #ddd;
+}
+
+/* Bottom Navigation (فيسبوك موبايل) */
+.bottom-nav {
+    background: white;
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    border-top: 1px solid #ddd;
+    padding: 5px 0;
 }
 
 .nav-tab {
     flex: 1;
-    padding: 12px 0;
-    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     color: var(--text-sub);
     border: none;
     background: none;
     cursor: pointer;
-    font-size: 20px;
-    position: relative;
+    font-size: 12px;
+    padding: 5px 0;
+    gap: 4px;
+}
+
+.nav-tab i {
+    font-size: 22px;
 }
 
 .nav-tab.active {
     color: var(--brand);
 }
 
-.nav-tab.active::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 10%;
-    right: 10%;
-    height: 3px;
-    background: var(--brand);
-    border-radius: 3px 3px 0 0;
-}
-
-/* Cards & Content */
+/* Main Content */
 main {
-    max-width: 500px;
+    max-width: 600px;
     margin: 0 auto;
-    padding: 15px;
+    padding: 10px 15px;
 }
 
+/* Cards */
 .card {
     background: white;
     border-radius: 8px;
-    padding: 20px;
-    margin-bottom: 15px;
+    padding: 15px;
+    margin-bottom: 10px;
     box-shadow: 0 1px 2px rgba(0,0,0,0.1);
-    border: 1px solid #ddd;
 }
 
 .balance-box {
     background: var(--brand);
     color: white;
     border-radius: 12px;
-    padding: 30px 15px;
+    padding: 20px;
     text-align: center;
     margin-bottom: 15px;
 }
@@ -90,10 +93,65 @@ main {
     background: var(--brand);
     color: white;
     width: 100%;
-    padding: 12px;
+    padding: 10px;
     border-radius: 6px;
     font-weight: bold;
     border: none;
+    font-size: 14px;
+}
+
+/* Post Creator */
+.post-creator .creator-top {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+/* Post Card (فيسبوك ستايل) */
+.post-card {
+    background: white;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+
+.post-header {
+    display: flex;
+    gap: 10px;
+    padding: 12px;
+    align-items: center;
+}
+
+.post-body {
+    padding: 0 15px 15px;
+    font-size: 15px;
+    line-height: 1.5;
+}
+
+.post-actions {
+    display: flex;
+    justify-content: space-around;
+    border-top: 1px solid #ddd;
+    padding: 8px;
+}
+
+.action-btn {
+    background: none;
+    border: none;
+    color: var(--text-sub);
+    font-size: 13px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+    padding: 5px 15px;
+    border-radius: 4px;
+}
+
+.action-btn:hover {
+    background: #f0f2f5;
 }
 
 /* Roadmap Steps */
@@ -117,7 +175,7 @@ main {
     box-shadow: 0 0 8px var(--brand);
 }
 
-/* Chat Styles */
+/* Chat */
 #chatBox {
     height: 400px;
     overflow-y: auto;
@@ -139,3 +197,5 @@ main {
 .msg.user { background: var(--brand); color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
 
 .hidden { display: none; }
+.text-brand { color: var(--brand); }
+.text-center { text-align: center; }
