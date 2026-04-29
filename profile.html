@@ -1,66 +1,76 @@
-<!-- غلاف القرش (معدل للجوال) -->
-<div class="relative h-56 sm:h-64 bg-gradient-to-b from-[#0ea5e9] to-[#0284c7] overflow-hidden">
-    <!-- موجات متحركة واضحة -->
-    <div class="absolute bottom-0 left-0 w-full h-16">
-        <svg class="wave-anim" viewBox="0 0 1440 120" preserveAspectRatio="none">
-            <path fill="rgba(255,255,255,0.25)" d="M0,60 C240,120 480,0 720,60 C960,120 1200,0 1440,60 L1440,120 L0,120 Z"></path>
-        </svg>
-        <svg class="wave-anim2" viewBox="0 0 1440 120" preserveAspectRatio="none">
-            <path fill="rgba(255,255,255,0.15)" d="M0,80 C240,40 480,120 720,80 C960,40 1200,120 1440,80 L1440,120 L0,120 Z"></path>
-        </svg>
+<!-- غلاف المحيط (أنيق، بتدرج سماوي مع فقاعات) -->
+<div class="relative h-48 sm:h-72 bg-gradient-to-br from-cyan-400 via-sky-500 to-blue-500 overflow-hidden">
+    <!-- فقاعات متحركة -->
+    <div class="absolute inset-0 opacity-30">
+        <span class="bubble" style="--size:6rem; --duration:8s; --left:10%;"></span>
+        <span class="bubble" style="--size:4rem; --duration:12s; --left:30%; animation-delay: -2s;"></span>
+        <span class="bubble" style="--size:8rem; --duration:10s; --left:60%; animation-delay: -4s;"></span>
+        <span class="bubble" style="--size:3rem; --duration:7s; --left:80%; animation-delay: -1s;"></span>
+        <span class="bubble" style="--size:5rem; --duration:11s; --left:50%; animation-delay: -3s;"></span>
     </div>
-    <!-- قرش + سمكات صغيرة -->
-    <div class="absolute bottom-6 left-0 w-full flex justify-between px-4">
-        <span class="text-4xl sm:text-5xl filter drop-shadow-lg" style="animation: swimShark 6s ease-in-out infinite alternate;">🦈</span>
-        <span class="text-lg opacity-80" style="animation: swimFish 4s linear infinite alternate;">🐟🐟🐟</span>
+    <!-- سمكة قرش تسبح -->
+    <div class="absolute bottom-4 right-4 text-5xl sm:text-7xl filter drop-shadow-lg" style="animation: swimShark 6s ease-in-out infinite alternate;">
+        🦈
     </div>
     <style>
-        .wave-anim, .wave-anim2 {
-            position: absolute; bottom: 0; left: 0; width: 200%; height: 60px;
-            animation: waveMove 8s linear infinite;
+        .bubble {
+            display: block;
+            width: var(--size);
+            height: var(--size);
+            background: rgba(255,255,255,0.2);
+            border-radius: 50%;
+            position: absolute;
+            bottom: -20%;
+            left: var(--left);
+            animation: floatUp var(--duration) linear infinite;
         }
-        .wave-anim2 { bottom: 10px; opacity: 0.6; animation-duration: 12s; animation-delay: -2s; }
-        @keyframes waveMove {
-            0% { transform: translateX(0); }
-            100% { transform: translateX(-50%); }
+        @keyframes floatUp {
+            0% { transform: translateY(0) scale(1); opacity: 0.7; }
+            100% { transform: translateY(-120vh) scale(0.5); opacity: 0; }
         }
         @keyframes swimShark {
-            0% { transform: translateX(0); }
-            100% { transform: translateX(30px); }
-        }
-        @keyframes swimFish {
-            0% { transform: translateX(0); }
-            100% { transform: translateX(-20px); }
+            0% { transform: translateX(0) rotate(-2deg); }
+            100% { transform: translateX(-40px) rotate(2deg); }
         }
     </style>
 </div>
 
-<!-- معلومات البروفايل -->
-<div class="bg-white rounded-b-2xl shadow-md -mt-12 sm:-mt-16 px-4 pb-6 pt-14 sm:pt-20 relative">
-    <!-- صورة البروفايل قابلة للتغيير -->
-    <div class="absolute -top-10 sm:-top-14 right-4 sm:right-6 w-20 h-20 sm:w-28 sm:h-28 rounded-full border-4 border-white shadow-lg overflow-hidden bg-white group">
-        <img id="profileAvatar" class="w-full h-full object-cover" src="" alt="صورتي">
-        <div id="avatarOverlay" class="absolute inset-0 bg-black/40 hidden group-hover:flex items-center justify-center text-white cursor-pointer text-sm">
+<!-- قسم المعلومات -->
+<div class="bg-white rounded-b-2xl shadow-md -mt-16 sm:-mt-24 px-4 pb-6 pt-20 sm:pt-28 relative">
+    <!-- صورة بروفايل كبيرة مع شارة التوثيق -->
+    <div class="absolute -top-16 sm:-top-24 right-6 w-28 h-28 sm:w-36 sm:h-36 rounded-full border-4 border-white shadow-xl overflow-hidden bg-white group">
+        <img id="profileAvatar" class="w-full h-full object-cover" src="" alt="صورة المستخدم">
+        <div id="avatarOverlay" class="absolute inset-0 bg-black/40 hidden group-hover:flex items-center justify-center text-white cursor-pointer text-sm transition">
             <i class="fa-solid fa-camera"></i>
         </div>
         <input type="file" id="avatarFileInput" accept="image/*" class="hidden">
+        <!-- شارة التوثيق (سمكة ذهبية) -->
+        <span class="absolute bottom-1 right-1 bg-yellow-400 text-white text-xs w-6 h-6 rounded-full flex items-center justify-center shadow-md border-2 border-white" title="حساب موثق">
+            🐟
+        </span>
     </div>
 
-    <!-- الاسم والبريد (قابلان للتعديل والحفظ) -->
+    <!-- الاسم والبايو وأزرار التحكم -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-            <h1 id="profileName" class="text-xl sm:text-2xl font-black text-gray-800" contenteditable="false">جار التحميل...</h1>
-            <p id="profileEmail" class="text-sm text-gray-500"></p>
-            <p id="profileBio" class="text-sm text-gray-600 mt-1" contenteditable="false">🦈 مؤسس في Shark Hub</p>
+            <div class="flex items-center gap-2">
+                <h1 id="profileName" class="text-2xl sm:text-3xl font-black text-gray-800" contenteditable="false">اسم المستخدم</h1>
+                <!-- أيقونة توثيق ثانية بجانب الاسم -->
+                <span class="bg-sky-100 text-sky-600 text-xs px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
+                    <i class="fa-solid fa-check-circle"></i> موثوق
+                </span>
+            </div>
+            <p id="profileEmail" class="text-sm text-gray-500 mt-1"></p>
+            <p id="profileBio" class="text-sm text-gray-600 mt-2 max-w-lg" contenteditable="false">🦈 مؤسس في Shark Hub</p>
         </div>
         <div class="flex gap-2">
-            <button id="editProfileBtn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg text-sm transition flex items-center gap-1">
+            <button id="editProfileBtn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2.5 px-5 rounded-lg text-sm transition flex items-center gap-2">
                 <i class="fa-solid fa-pen-to-square"></i> تعديل
             </button>
-            <button id="saveProfileBtn" class="bg-sky-500 hover:bg-sky-600 text-white font-bold py-2 px-4 rounded-lg text-sm transition hidden flex items-center gap-1">
+            <button id="saveProfileBtn" class="bg-sky-500 hover:bg-sky-600 text-white font-bold py-2.5 px-5 rounded-lg text-sm transition hidden flex items-center gap-2">
                 <i class="fa-solid fa-check"></i> حفظ
             </button>
-            <button onclick="engine.logout()" class="bg-white border border-red-200 text-red-500 hover:bg-red-50 font-bold py-2 px-4 rounded-lg text-sm transition flex items-center gap-1 shadow-sm">
+            <button onclick="engine.logout()" class="bg-white border border-red-200 text-red-500 hover:bg-red-50 font-bold py-2.5 px-5 rounded-lg text-sm transition flex items-center gap-2 shadow-sm">
                 <i class="fa-solid fa-right-from-bracket"></i> خروج
             </button>
         </div>
