@@ -80,11 +80,21 @@ window.engine = {
         `;
     },
 
-    async addPost() {
-        const content = document.getElementById('postInput').value;
-        if (!content.trim()) return;
-        await addDoc(collection(db, "posts"), {
-            content,
+  async addPost() {
+    const input = document.getElementById('postInput');
+    const content = input.value;
+    
+    if (!auth.currentUser) {
+        alert("يجب تسجيل الدخول أولاً بالنقر على الزر في الشاشة الرئيسية");
+        return;
+    }
+    
+    if (!content.trim()) return;
+
+    try {
+        console.log("جاري النشر...");
+        const docRef = await addDoc(collection(db, "posts"), {
+            content: content,
             authorName: auth.currentUser.displayName,
             authorPhoto: auth.currentUser.photoURL,
             authorId: auth.currentUser.uid,
@@ -92,8 +102,13 @@ window.engine = {
             likes: [],
             commentsCount: 0
         });
-        document.getElementById('postInput').value = '';
-    },
+        console.log("تم النشر بنجاح، ID المنشور: ", docRef.id);
+        input.value = '';
+    } catch (error) {
+        console.error("خطأ أثناء النشر: ", error);
+        alert("فشل النشر: " + error.message);
+    }
+},
 
     async toggleLike(postId, isLiked) {
         const ref = doc(db, "posts", postId);
