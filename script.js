@@ -1,141 +1,98 @@
-let appData = {
+// البيانات الأساسية للتطبيق
+let data = {
     cash: 7613,
     assets: [],
-    monthly: 1000,
-    rate: 18,
-    posts: [],           // منشورات الأعمال
-    milestonesReached: [] // النسب المئوية اللي تم تحقيقها
+    monthly: 1000
 };
 
+let activeOp = 'add';
+
 const engine = {
+    // تشغيل التطبيق أول مرة
     init() {
-        const saved = localStorage.getItem('millionaire_engine_data');
-        if (saved) {
-            const parsed = JSON.parse(saved);
-            appData = { ...appData, ...parsed };
-        }
-        if (!appData.posts) appData.posts = [];
-        if (!appData.milestonesReached) appData.milestonesReached = [];
+        const saved = localStorage.getItem('millionaire_v6_data');
+        if (saved) data = JSON.parse(saved);
         this.sync();
         this.nav('home');
     },
 
+    // حفظ ومزامنة البيانات مع الواجهة
     sync() {
-        const assetsTotal = appData.assets.reduce((s, a) => s + a.val, 0);
-        const total = appData.cash + assetsTotal;
+        localStorage.setItem('millionaire_v6_data', JSON.stringify(data));
+        const assetsSum = data.assets.reduce((s, a) => s + a.val, 0);
+        const total = data.cash + assetsSum;
 
-        if (document.getElementById('totalVal'))
-            document.getElementById('totalVal').innerText = Math.floor(total).toLocaleString();
+        document.getElementById('totalWealth').innerText = Math.floor(total).toLocaleString();
+        
+        // نصيحة سريعة
+        document.getElementById('quickAdvice').innerText = total < 500000 
+            ? "استمر في بناء الأصول، الطريق للمليون يحتاج صبر." 
+            : "رائع! تجاوزت منتصف الطريق، ركز على العوائد السنوية.";
 
-        for (let pct = 10; pct <= 100; pct += 10) {
-            const target = 10000 * pct;
-            if (total >= target && !appData.milestonesReached.includes(pct)) {
-                appData.milestonesReached.push(pct);
-                this.addPost(`🎉 وصلت إلى ${pct}% من حلم المليون! استمر يا بطل.`);
-            }
-        }
-
-        this.renderFeed();
         this.renderAssets();
         this.renderRoadmap(total);
-        this.calculate();
-
-        localStorage.setItem('millionaire_engine_data', JSON.stringify(appData));
+        this.calculate(total);
     },
 
-    nav(pageId) {
+    // التنقل بين الصفحات
+    nav(id) {
         document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
-        document.getElementById('page-' + pageId).classList.remove('hidden');
-
+        document.getElementById('page-' + id).classList.remove('hidden');
         document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-        document.getElementById('tab-' + pageId).classList.add('active');
+        document.getElementById('tab-' + id).classList.add('active');
     },
 
-    addPost(text = null) {
-        const input = document.getElementById('postInput');
-        const content = text || (input ? input.value.trim() : '');
-        if (!content) return;
+    // إضافة أصل جديد
+    addAsset() {
+        const name = document.getElementById('aName').value;
+        const val = parseFloat(document.getElementById('aVal').value);
+        const rate = parseFloat(document.getElementById('aRate').value) || 0;
 
-        const post = {
-            id: Date.now(),
-            content: content,
-            date: new Date().toLocaleString('ar-EG', { hour12: true })
-        };
-        appData.posts.unshift(post);
-        if (input) input.value = '';
-        this.sync();
-    },
-
-    renderFeed() {
-        const container = document.getElementById('feedList');
-        if (!container) return;
-
-        if (appData.posts.length === 0) {
-            container.innerHTML = `
-                <div class="card" style="text-align:center; color:#65676b">
-                    لا توجد تحديثات بعد. ابدأ بنشر أول فرصة!
-                </div>`;
-            return;
+        if (name && val) {
+            data.assets.push({ name, val, rate });
+            this.sync();
+            toggleAssetInp();
+            document.getElementById('aName').value = '';
+            document.getElementById('aVal').value = '';
         }
-
-        container.innerHTML = appData.posts.map(p => `
-            <div class="post-card">
-                <div class="post-header">
-                    <i class="fa-solid fa-circle-user" style="font-size:40px; color:#0ea5e9"></i>
-                    <div>
-                        <b style="font-size:14px">أنت</b>
-                        <br><small style="color:#65676b">${p.date}</small>
-                    </div>
-                </div>
-                <div class="post-body">${p.content}</div>
-                <div class="post-actions">
-                    <button class="action-btn"><i class="fa-regular fa-thumbs-up"></i> أعجبني</button>
-                    <button class="action-btn"><i class="fa-regular fa-comment"></i> تعليق</button>
-                    <button class="action-btn"><i class="fa-regular fa-share-from-square"></i> مشاركة</button>
-                </div>
-            </div>
-        `).join('');
-    },
-
-    addAsset(name, val, rate) {
-        if (!name || !val) return;
-        appData.assets.push({ name, val: parseFloat(val), rate: parseFloat(rate) });
-        this.addPost(`📈 أصل جديد: ${name} بقيمة ${parseFloat(val).toLocaleString()} ج.م (عائد ${rate}%)`);
-        this.sync();
     },
 
     renderAssets() {
-        const container = document.getElementById('assetsList');
-        if (!container) return;
-        container.innerHTML = appData.assets.map((a, i) => `
-            <div class="card" style="padding:12px; display:flex; justify-content:space-between; align-items:center;">
-                <div><b style="font-size:14px">${a.name}</b><br><small>${a.rate}% سنوي</small></div>
-                <div style="text-align:left">
-                    <b class="text-brand">${a.val.toLocaleString()}</b><br>
-                    <button onclick="engine.deleteAsset(${i})" style="color:red; font-size:10px">حذف</button>
+        const list = document.getElementById('assetsList');
+        if (!list) return;
+        list.innerHTML = data.assets.map((a, i) => `
+            <div class="card flex justify-between items-center">
+                <div>
+                    <p class="font-black text-sm">${a.name}</p>
+                    <p class="text-[10px] font-bold text-sky-500">عائد ${a.rate}%</p>
+                </div>
+                <div class="text-right">
+                    <p class="font-black text-[#0ea5e9]">${a.val.toLocaleString()} ج.م</p>
+                    <button onclick="engine.delAsset(${i})" class="text-[10px] text-red-400 font-bold">حذف</button>
                 </div>
             </div>
         `).join('');
     },
 
-    deleteAsset(i) {
-        appData.assets.splice(i, 1);
+    delAsset(i) {
+        data.assets.splice(i, 1);
         this.sync();
     },
 
+    // الخريطة الذكية
     renderRoadmap(total) {
-        const container = document.getElementById('roadmapList');
-        if (!container) return;
+        const container = document.getElementById('roadmapNodes');
         let html = '';
-        const step = 100000;
-        for (let target = step; target <= 1000000; target += step) {
-            const pct = Math.round((target / 1000000) * 100);
-            if (total >= target - 50000) {
+        for (let i = 1; i <= 100; i++) {
+            const target = (1000000 / 100) * i;
+            // إظهار المحطات القريبة من الرصيد الحالي فقط
+            if (total >= target - 50000 && total <= target + 150000) {
+                const active = total >= target;
                 html += `
-                <div class="step-item ${total >= target ? 'completed' : ''}">
-                    <div class="step-circle"></div>
-                    <div class="card" style="flex:1; margin-bottom:0; padding:10px">
-                        <b>${pct}%</b> - ${target.toLocaleString()} ج.م
+                <div class="flex items-center gap-4 mb-4 ${active ? 'text-sky-500' : 'text-gray-300'}">
+                    <div class="w-3 h-3 rounded-full bg-current shadow-sm"></div>
+                    <div class="card flex-1 mb-0 p-3">
+                        <p class="text-[11px] font-black">المحطة ${i} - ${target.toLocaleString()} ج.م</p>
                     </div>
                 </div>`;
             }
@@ -143,18 +100,67 @@ const engine = {
         container.innerHTML = html;
     },
 
-    calculate() {
-        let temp = appData.cash + appData.assets.reduce((s, a) => s + a.val, 0);
-        let months = 0;
-        const monthlyRate = (appData.rate / 100) / 12;
-
-        while (temp < 1000000 && months < 600) {
-            temp = (temp + appData.monthly) * (1 + monthlyRate);
-            months++;
+    // الحاسبة
+    calculate(total) {
+        const monthly = parseFloat(document.getElementById('monthlyInp').value) || 1000;
+        let temp = total; let m = 0;
+        while (temp < 1000000 && m < 600) {
+            temp = (temp + monthly) * 1.015; // افتراض نمو 1.5% شهرياً
+            m++;
         }
-        const res = document.getElementById('calcRes');
-        if (res) res.innerText = `تحقيق المليون خلال: ${Math.floor(months/12)} سنة و ${months%12} شهر`;
+        document.getElementById('calcRes').innerText = `ستصل للمليون خلال: ${Math.floor(m/12)} سنة و ${m%12} شهر`;
+    },
+
+    // المستشار الذكي
+    chat: {
+        ask() {
+            const inp = document.getElementById('chatInput');
+            const box = document.getElementById('chatBox');
+            if (!inp.value) return;
+
+            box.innerHTML += `<div class="msg user">${inp.value}</div>`;
+            const userTxt = inp.value;
+            inp.value = '';
+
+            setTimeout(() => {
+                const total = data.cash + data.assets.reduce((s, a) => s + a.val, 0);
+                let reply = "بصفتي مستشارك، أرى أن خطتك المالية مستقرة. هل فكرت في زيادة أصولك؟";
+                
+                if (userTxt.includes("مليون")) {
+                    reply = `رصيدك الحالي ${total.toLocaleString()} ج.م. أنت على بعد ${(1000000 - total).toLocaleString()} ج.م من المليون الأول.`;
+                } else if (userTxt.includes("نصيحة")) {
+                    reply = "أفضل نصيحة لك هي تنويع الأصول بين الذهب وصناديق الاستثمار لتقليل المخاطر.";
+                }
+
+                box.innerHTML += `<div class="msg ai">${reply}</div>`;
+                box.scrollTop = box.scrollHeight;
+            }, 600);
+        }
     }
 };
 
+// وظائف مساعدة للواجهة
+function openModal(op) {
+    activeOp = op;
+    document.getElementById('modalTitle').innerText = op === 'add' ? 'إضافة أرباح' : 'خصم مصروفات';
+    document.getElementById('opModal').classList.remove('hidden');
+}
+
+function closeModal() { document.getElementById('opModal').classList.add('hidden'); }
+
+document.getElementById('modalConfirm').onclick = () => {
+    const val = parseFloat(document.getElementById('modalAmount').value) || 0;
+    if (val > 0) {
+        data.cash = activeOp === 'add' ? data.cash + val : data.cash - val;
+        engine.sync();
+        document.getElementById('modalAmount').value = '';
+        closeModal();
+    }
+};
+
+function toggleAssetInp() {
+    document.getElementById('assetInputArea').classList.toggle('hidden');
+}
+
+// بدء التشغيل
 window.onload = () => engine.init();
