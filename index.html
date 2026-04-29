@@ -83,18 +83,12 @@
                 <span class="truncate text-xs sm:text-sm">ابحث في Shark Hub</span>
             </button>
 
-            <div class="relative flex-shrink-0">
-                <button onclick="document.getElementById('profileMenu').classList.toggle('show')" id="userBtn"
-                    class="w-9 h-9 rounded-full bg-white/20 overflow-hidden border-2 border-white flex items-center justify-center">
-                    <i class="fa-solid fa-user text-white"></i>
-                </button>
-                <div id="profileMenu" class="absolute top-12 left-0 w-56 bg-white rounded-xl shadow-2xl border border-gray-100 py-2 z-[60] hidden text-gray-800">
-                    <div id="userEmail" class="px-4 py-2 text-xs text-gray-500 border-b mb-1 truncate"></div>
-                    <button onclick="engine.logout()" class="w-full text-right px-4 py-3 text-red-500 font-bold text-sm hover:bg-red-50 flex items-center gap-2 transition-colors">
-                        <i class="fa-solid fa-right-from-bracket"></i> تسجيل الخروج
-                    </button>
-                </div>
-            </div>
+  <!-- صورة المستخدم (تفتح صفحة البروفايل) -->
+<button onclick="engine.loadPage('profile')" id="userBtn"
+    class="w-9 h-9 rounded-full bg-white/20 overflow-hidden border-2 border-white flex items-center justify-center flex-shrink-0">
+    <i class="fa-solid fa-user text-white"></i>
+</button>
+            
         </div>
         <div class="nav-links-container flex gap-1 px-4 pb-3 pt-1">
             <button onclick="engine.loadPage('home')" class="nav-link active" data-page="home">
