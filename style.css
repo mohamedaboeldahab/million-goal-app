@@ -48,9 +48,7 @@ header {
     position: relative;
 }
 
-.nav-tab.active {
-    color: var(--brand);
-}
+.nav-tab.active { color: var(--brand); }
 
 .nav-tab.active::after {
     content: '';
@@ -148,7 +146,6 @@ main {
 }
 .action-btn:hover { background: #f0f2f5; }
 
-/* الخريطة – شكل لعبة */
 #gameBoard {
     display: flex;
     flex-direction: column;
@@ -161,10 +158,7 @@ main {
     overflow-x: auto;
 }
 
-.board-row {
-    display: flex;
-    gap: 5px;
-}
+.board-row { display: flex; gap: 5px; }
 
 .board-cell {
     width: 40px;
@@ -178,7 +172,6 @@ main {
     font-size: 9px;
     font-weight: bold;
     color: #65676b;
-    position: relative;
     transition: 0.2s;
 }
 
@@ -188,20 +181,12 @@ main {
     box-shadow: 0 0 10px var(--brand);
 }
 
-.stage-num {
-    font-size: 11px;
-    line-height: 1;
-}
+.stage-num { font-size: 11px; }
+.stage-amount { font-size: 7px; white-space: nowrap; }
 
-.stage-amount {
-    font-size: 7px;
-    white-space: nowrap;
-}
-
-/* صفحة المستشار – شاشة كاملة */
 #page-chat.full-chat {
     position: fixed;
-    top: 104px; /* ارتفاع الهيدر + الناف */
+    top: 104px;
     bottom: 0;
     left: 0;
     right: 0;
@@ -258,6 +243,6 @@ main {
 .msg.ai { background: #e4e6eb; align-self: flex-start; border-bottom-left-radius: 4px; }
 .msg.user { background: var(--brand); color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
 
-.hidden { display: none; }
+.hidden { display: none !important; }
 .text-brand { color: var(--brand); }
 .text-center { text-align: center; }
