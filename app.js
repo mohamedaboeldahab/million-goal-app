@@ -17,6 +17,7 @@ import {
     onSnapshot,
     query,
     orderBy,
+    where,
     serverTimestamp,
     increment,
     arrayUnion,
@@ -34,9 +35,11 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-window.auth = auth;   // جعل auth متاحًا عالميًا
-window.db = db;              // تعريض Firestore لاستخدامه في الصفحات
+window.auth = auth;           // متاح عالمياً لصفحة البروفايل
+
 const db = getFirestore(app);
+window.db = db;               // متاح عالمياً لصفحة البروفايل
+
 const provider = new GoogleAuthProvider();
 
 window.engine = {
@@ -101,45 +104,45 @@ window.engine = {
         }
     },
 
-async loadPage(pageName) {
-    const content = document.getElementById('app-content');
-    if (!content) return;
+    async loadPage(pageName) {
+        const content = document.getElementById('app-content');
+        if (!content) return;
 
-    // تمييز الزر النشط في الـ Nav
-    document.querySelectorAll('.nav-link').forEach(l => {
-        l.classList.toggle('active', l.dataset.page === pageName);
-    });
-
-    content.innerHTML = '<div class="flex justify-center py-20"><div class="w-8 h-8 border-4 border-sky-500 border-t-transparent rounded-full animate-spin"></div></div>';
-
-    try {
-        const response = await fetch(`${pageName}.html`);
-        const html = await response.text();
-        content.innerHTML = html;
-
-        // ✅ تشغيل السكريبتات المضمنة في الصفحة المحملة
-        const scripts = content.querySelectorAll('script');
-        scripts.forEach(oldScript => {
-            const newScript = document.createElement('script');
-            newScript.textContent = oldScript.textContent;
-            oldScript.replaceWith(newScript);
+        // تمييز الزر النشط في الـ Nav
+        document.querySelectorAll('.nav-link').forEach(l => {
+            l.classList.toggle('active', l.dataset.page === pageName);
         });
 
-        // ميزات صفحة Home
-        if (pageName === 'home') {
-            this.listenToPosts();
-            this.activateCharCounter();
-        }
+        content.innerHTML = '<div class="flex justify-center py-20"><div class="w-8 h-8 border-4 border-sky-500 border-t-transparent rounded-full animate-spin"></div></div>';
 
-        // تحديث الروابط النشطة (من الدالة العامة في index.html)
-        if (typeof setActiveNavLink === 'function') {
-            setActiveNavLink(pageName);
-        }
+        try {
+            const response = await fetch(`${pageName}.html`);
+            const html = await response.text();
+            content.innerHTML = html;
 
-    } catch (e) {
-        content.innerHTML = `<div class="text-center py-20 text-slate-400">قريباً..</div>`;
-    }
-},
+            // ✅ تشغيل السكريبتات المضمنة في الصفحة المحملة
+            const scripts = content.querySelectorAll('script');
+            scripts.forEach(oldScript => {
+                const newScript = document.createElement('script');
+                newScript.textContent = oldScript.textContent;
+                oldScript.replaceWith(newScript);
+            });
+
+            // ميزات صفحة Home
+            if (pageName === 'home') {
+                this.listenToPosts();
+                this.activateCharCounter();
+            }
+
+            // تحديث الروابط النشطة (من الدالة العامة في index.html)
+            if (typeof setActiveNavLink === 'function') {
+                setActiveNavLink(pageName);
+            }
+
+        } catch (e) {
+            content.innerHTML = `<div class="text-center py-20 text-slate-400">قريباً..</div>`;
+        }
+    },
 
     // --- عداد الأحرف الخاص بحقل الإدخال ---
     activateCharCounter() {
@@ -152,20 +155,18 @@ async loadPage(pageName) {
         const update = () => {
             const current = input.value.length;
             countSpan.textContent = `${current}/${max} حرف`;
-            // تغيير اللون عند الاقتراب من الحد الأقصى
             countSpan.className = current >= max - 30
                 ? 'text-xs text-red-500 font-bold'
                 : 'text-xs text-gray-400 font-medium';
         };
 
         input.addEventListener('input', update);
-        update(); // عرض العدد الأولي
+        update();
 
         // تعديل دالة الإرسال لتحديث العداد بعد النشر
         const originalAddPost = this.addPost.bind(this);
         this.addPost = async function () {
             await originalAddPost();
-            // بعد إفراغ الحقل في addPost الأصلية، نُحدّث العداد
             update();
         };
     },
@@ -218,6 +219,30 @@ async loadPage(pageName) {
         });
     },
 
+    // ✅ جلب منشورات المستخدم الحالي فقط (للبروفايل)
+    listenToUserPosts(containerId) {
+        const userId = auth.currentUser?.uid;
+        if (!userId) return;
+
+        const q = query(
+            collection(db, "posts"),
+            where("authorId", "==", userId),
+            orderBy("createdAt", "desc")
+        );
+        onSnapshot(q, (snapshot) => {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            container.innerHTML = snapshot.docs.map(doc => {
+                const p = doc.data();
+                return `
+                <div class="bg-white rounded-xl p-4 mb-3 shadow-sm border border-gray-100">
+                    <p class="text-gray-800 text-sm font-bold mb-2">${p.content}</p>
+                    <span class="text-xs text-gray-400">🕒 ${new Date(p.createdAt?.toDate()).toLocaleString('ar-EG')}</span>
+                </div>`;
+            }).join('') || '<p class="text-gray-400 text-sm">لا توجد منشورات بعد</p>';
+        });
+    },
+
     async addPost() {
         const input = document.getElementById('postInput');
         if (!input?.value.trim()) return;
@@ -225,6 +250,7 @@ async loadPage(pageName) {
             content: input.value,
             authorName: auth.currentUser.displayName,
             authorPhoto: auth.currentUser.photoURL,
+            authorId: auth.currentUser.uid,   // ⬅️ حقل معرف المستخدم
             supportCount: 0,
             opposeCount: 0,
             voters: [],
