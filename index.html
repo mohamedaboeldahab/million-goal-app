@@ -3,92 +3,51 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shark Hub | مجتمع القروش</title>
+    <title>Shark Hub</title>
     <link rel="manifest" href="manifest.json">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap');
-        body { font-family: 'Tajawal', sans-serif; background-color: #f0f2f5; }
-        .page { display: none; }
-        .page.active { display: block; }
-        .shark-gradient { background: linear-gradient(135deg, #0f172a 0%, #0ea5e9 100%); }
-        .bottom-sheet { transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-        .bottom-sheet.open { transform: translateY(0); }
-        .nav-btn.active { color: #0ea5e9; transform: scale(1.1); }
+        body { font-family: 'Tajawal', sans-serif; background-color: #f0f2f5; overflow-x: hidden; }
+        
+        /* Splash Screen Style */
+        #splash {
+            position: fixed; inset: 0; background: #0f172a; 
+            z-index: 200; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; transition: 0.5s;
+        }
+        .loader { width: 48px; height: 48px; border: 5px solid #FFF; border-bottom-color: #0ea5e9; border-radius: 50%; animation: rotation 1s linear infinite; }
+        @keyframes rotation { 0% { transform: rotate(0deg) } 100% { transform: rotate(360deg) } }
     </style>
 </head>
-<body class="pb-20">
+<body>
 
-    <div id="authModal" class="fixed inset-0 bg-slate-900/90 backdrop-blur-md z-[100] flex items-center justify-center">
-        <div class="bg-white rounded-[2rem] p-8 max-w-sm w-full text-center shadow-2xl mx-4">
-            <div class="w-20 h-20 shark-gradient rounded-3xl flex items-center justify-center mx-auto mb-6 rotate-12">
-                <i class="fa-solid fa-fish-fins text-3xl text-white"></i>
-            </div>
-            <h2 class="text-3xl font-black text-slate-900 mb-2">Shark Hub</h2>
-            <p class="text-slate-500 text-sm mb-8">أهلاً بك في نادي القروش. مكانك لبناء الثروة.</p>
-            <button onclick="engine.login()" class="w-full bg-slate-900 text-white py-4 rounded-2xl flex items-center justify-center gap-3 font-bold shadow-xl active:scale-95 transition-all">
-                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20" class="bg-white rounded-full p-0.5">
-                ابدأ رحلتك بجوجل
-            </button>
+    <div id="splash">
+        <div class="w-24 h-24 bg-sky-500 rounded-3xl flex items-center justify-center mb-6 shadow-2xl shadow-sky-500/20 rotate-12">
+            <i class="fa-solid fa-fish-fins text-4xl text-white"></i>
         </div>
+        <h1 class="text-white text-3xl font-black tracking-widest">SHARK HUB</h1>
+        <div class="loader mt-8"></div>
     </div>
 
-    <header class="bg-white border-b sticky top-0 z-40 px-4 py-3 flex justify-between items-center shadow-sm">
-        <div class="flex items-center gap-2">
-            <div class="w-10 h-10 shark-gradient rounded-xl flex items-center justify-center text-white">
-                <i class="fa-solid fa-fish-fins"></i>
-            </div>
-            <h1 class="text-xl font-black text-slate-800 tracking-tighter uppercase">Shark Hub</h1>
-        </div>
-        <div id="userInfo" class="flex items-center gap-2"></div>
-    </header>
-
-    <main class="max-w-2xl mx-auto p-4">
-        <div id="page-home" class="page active">
-            <div class="bg-white rounded-xl shadow-sm p-4 mb-4">
-                <div class="flex gap-3">
-                    <img id="userAvatar" src="" class="w-10 h-10 rounded-full border bg-gray-100">
-                    <button onclick="document.getElementById('postCreator').classList.toggle('hidden')" class="flex-1 bg-gray-100 rounded-full px-5 text-right text-gray-500 text-sm">بماذا تفكر يا قرش؟</button>
+    <nav id="main-nav" class="bg-white shadow-sm sticky top-0 z-50 px-4 py-2 hidden">
+        <div class="max-w-2xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 bg-slate-900 rounded-lg flex items-center justify-center text-white text-xs">
+                    <i class="fa-solid fa-fish-fins"></i>
                 </div>
+                <span class="font-black text-slate-800">SHARK HUB</span>
             </div>
-
-            <div id="postCreator" class="bg-white rounded-xl shadow-md p-4 mb-4 hidden border-2 border-sky-400">
-                <textarea id="postInput" rows="3" class="w-full resize-none outline-none text-lg p-2" placeholder="شارك استراتيجيتك اليوم..."></textarea>
-                <div class="flex justify-end gap-2 mt-2">
-                    <button onclick="document.getElementById('postCreator').classList.add('hidden')" class="px-4 py-2 text-gray-500 font-bold">إلغاء</button>
-                    <button onclick="engine.addPost()" class="bg-[#0ea5e9] text-white px-6 py-2 rounded-lg font-bold">نشر الآن</button>
-                </div>
-            </div>
-
-            <div id="feedList" class="space-y-4"></div>
-        </div>
-
-        <div id="page-roadmap" class="page">
-            <div class="bg-white rounded-2xl p-6 shadow-sm mb-4 text-center">
-                <h3 class="text-xl font-black mb-4 flex items-center justify-center gap-2">
-                    <i class="fa-solid fa-map-marked-alt text-sky-500"></i> خريطة الثروة
-                </h3>
-                <div id="gameBoard" class="grid grid-cols-5 gap-2 bg-gray-50 p-4 rounded-2xl border"></div>
+            <div class="flex gap-4">
+                <button onclick="engine.loadPage('home')" class="p-2 text-sky-600"><i class="fa-solid fa-house"></i></button>
+                <button onclick="engine.loadPage('roadmap')" class="p-2 text-gray-400"><i class="fa-solid fa-map"></i></button>
+                <button id="userBtn" class="w-8 h-8 rounded-full border overflow-hidden bg-gray-100"></button>
             </div>
         </div>
-    </main>
-
-    <nav class="fixed bottom-0 left-0 right-0 bg-white border-t flex justify-around items-center py-3 z-50 shadow-2xl">
-        <button onclick="engine.nav('home')" class="nav-btn active" data-page="home"><i class="fa-solid fa-house-chimney text-xl"></i></button>
-        <button onclick="engine.nav('roadmap')" class="nav-btn text-gray-400" data-page="roadmap"><i class="fa-solid fa-route text-xl"></i></button>
-        <button onclick="engine.nav('assets')" class="nav-btn text-gray-400" data-page="assets"><i class="fa-solid fa-wallet text-xl"></i></button>
     </nav>
 
-    <div id="commentSheetOverlay" class="fixed inset-0 bg-black/50 z-[60] hidden" onclick="engine.closeComments()"></div>
-    <div id="commentSheet" class="fixed bottom-0 left-0 right-0 bg-white z-[70] rounded-t-[2.5rem] h-[80vh] flex flex-col bottom-sheet">
-        <div class="w-12 h-1.5 bg-gray-200 rounded-full mx-auto my-4"></div>
-        <div id="commentsContainer" class="flex-1 overflow-y-auto px-6 space-y-4"></div>
-        <div class="p-4 bg-gray-50 border-t flex gap-2">
-            <input type="text" id="commentInput" placeholder="اكتب تعليقك..." class="flex-1 border-none bg-white rounded-full px-5 py-3 shadow-sm outline-none">
-            <button id="sendCommentBtn" class="bg-sky-500 text-white w-12 h-12 rounded-full flex items-center justify-center shadow-lg"><i class="fa-solid fa-paper-plane"></i></button>
-        </div>
-    </div>
+    <main id="app-content" class="max-w-2xl mx-auto p-4 pt-6"></main>
 
     <script type="module" src="app.js"></script>
 </body>
