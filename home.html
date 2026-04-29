@@ -1,25 +1,39 @@
-<div class="bg-white rounded-[2.5rem] p-6 shadow-xl mb-8 border-2 border-sky-100">
-    <textarea id="postInput" placeholder="اشرح فكرة مشروعك هنا للتقييم..." class="w-full bg-transparent p-2 outline-none border-none text-sm font-bold resize-none" rows="3"></textarea>
-    <button onclick="engine.addPost()" class="w-full bg-slate-900 text-white font-black py-4 rounded-2xl mt-3 shadow-lg active:scale-95 transition-all">
-        إرسال للمجتمع
-    </button>
+<div class="bg-white rounded-2xl p-6 shadow-lg mb-8 border border-gray-100 transition-shadow hover:shadow-xl">
+    <!-- حقل الكتابة -->
+    <textarea 
+        id="postInput" 
+        placeholder="اشرح فكرة مشروعك هنا للتقييم..." 
+        maxlength="300"
+        oninput="updateCharCount()"
+        class="w-full bg-gray-50 p-4 outline-none border border-gray-200 rounded-xl text-base font-normal resize-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all placeholder:text-gray-400 placeholder:font-normal"
+        rows="3"
+    ></textarea>
+    
+    <!-- صف العداد والزر -->
+    <div class="flex items-center justify-between mt-3 gap-3">
+        <span id="charCount" class="text-xs text-gray-400 font-medium"></span>
+        <button 
+            onclick="engine.addPost()" 
+            class="flex-1 bg-gradient-to-r from-sky-500 to-blue-600 text-white font-bold py-4 px-6 rounded-xl shadow-md hover:shadow-lg hover:from-sky-600 hover:to-blue-700 active:scale-95 transition-all duration-200"
+        >
+            🚀 إرسال للمجتمع
+        </button>
+    </div>
 </div>
-<div id="feedList"></div>
 
+<!-- سكريبت العداد (ضعه قبل إغلاق body) -->
 <script>
-    // تعديل دالة addPost في app.js لتشمل القيم الافتراضية
-    engine.addPost = async function() {
+    function updateCharCount() {
         const input = document.getElementById('postInput');
-        if(!input.value.trim()) return;
-        await addDoc(collection(db, "posts"), {
-            content: input.value,
-            authorName: auth.currentUser.displayName,
-            authorPhoto: auth.currentUser.photoURL,
-            supportCount: 0,
-            opposeCount: 0,
-            voters: [], // قائمة المستخدمين الذين صوتوا
-            createdAt: serverTimestamp()
-        });
-        input.value = '';
-    };
+        const count = document.getElementById('charCount');
+        const max = input.getAttribute('maxlength') || 300;
+        const remaining = max - input.value.length;
+        count.textContent = `${input.value.length}/${max} حرف`;
+        // تغيير اللون عند الاقتراب من الحد الأقصى
+        count.className = remaining <= 30 
+            ? 'text-xs text-red-500 font-bold' 
+            : 'text-xs text-gray-400 font-medium';
+    }
+    // للتشغيل الأول
+    updateCharCount();
 </script>
