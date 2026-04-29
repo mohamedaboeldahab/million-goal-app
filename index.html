@@ -4,108 +4,125 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>مليونير المستقبل | FB Pro</title>
-    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="bg-gray-100 font-tajawal">
 
-    <header>
-        <h1 style="font-weight:900; font-size:18px">مليونير <span style="color:#0ea5e9">المستقبل</span></h1>
-        <div style="display:flex; gap:15px">
-            <i class="fa-solid fa-magnifying-glass" style="color:#65676b"></i>
-            <i class="fa-solid fa-circle-user" style="font-size:24px; color:#65676b"></i>
+    <!-- Header -->
+    <header class="bg-white shadow-sm sticky top-0 z-50 px-4 py-3 flex justify-between items-center border-b">
+        <h1 class="text-xl font-black">مليونير <span class="text-[#0ea5e9]">المستقبل</span></h1>
+        <div class="flex gap-4 text-gray-500">
+            <i class="fa-solid fa-magnifying-glass text-lg"></i>
+            <i class="fa-solid fa-circle-user text-2xl"></i>
         </div>
     </header>
 
-    <nav class="top-nav">
-        <button onclick="engine.nav('home')" id="tab-home" class="nav-tab active"><i class="fa-solid fa-house"></i></button>
-        <button onclick="engine.nav('assets')" id="tab-assets" class="nav-tab"><i class="fa-solid fa-briefcase"></i></button>
-        <button onclick="engine.nav('calc')" id="tab-calc" class="nav-tab"><i class="fa-solid fa-chart-line"></i></button>
-        <button onclick="engine.nav('roadmap')" id="tab-roadmap" class="nav-tab"><i class="fa-solid fa-flag-checkered"></i></button>
-        <button onclick="engine.nav('chat')" id="tab-chat" class="nav-tab"><i class="fa-solid fa-robot"></i></button>
+    <!-- Navigation -->
+    <nav class="bg-white sticky top-[52px] z-40 border-b flex justify-around">
+        <button onclick="engine.nav('home')" id="tab-home" class="nav-tab flex flex-col items-center py-2 px-3 text-[#0ea5e9]">
+            <i class="fa-solid fa-house text-xl"></i>
+            <span class="text-xs mt-1">الرئيسية</span>
+        </button>
+        <button onclick="engine.nav('assets')" id="tab-assets" class="nav-tab flex flex-col items-center py-2 px-3 text-gray-500">
+            <i class="fa-solid fa-briefcase text-xl"></i>
+            <span class="text-xs mt-1">الأصول</span>
+        </button>
+        <button onclick="engine.nav('calc')" id="tab-calc" class="nav-tab flex flex-col items-center py-2 px-3 text-gray-500">
+            <i class="fa-solid fa-chart-line text-xl"></i>
+            <span class="text-xs mt-1">الحاسبة</span>
+        </button>
+        <button onclick="engine.nav('roadmap')" id="tab-roadmap" class="nav-tab flex flex-col items-center py-2 px-3 text-gray-500">
+            <i class="fa-solid fa-flag-checkered text-xl"></i>
+            <span class="text-xs mt-1">الخريطة</span>
+        </button>
+        <button onclick="engine.nav('chat')" id="tab-chat" class="nav-tab flex flex-col items-center py-2 px-3 text-gray-500">
+            <i class="fa-solid fa-robot text-xl"></i>
+            <span class="text-xs mt-1">المستشار</span>
+        </button>
     </nav>
 
-    <main>
+    <main class="max-w-lg mx-auto p-4">
+        <!-- صفحة الرئيسية -->
         <div id="page-home" class="page">
-            <div class="card post-creator">
-                <div class="creator-top">
-                    <i class="fa-solid fa-circle-user" style="font-size:36px; color:#0ea5e9"></i>
-                    <input type="text" id="postInput" placeholder="اكتب تحديث أعمال أو فرصة جديدة..." 
-                           style="flex:1; border:none; background:#f0f2f5; border-radius:20px; padding:8px 15px;">
+            <div class="bg-white rounded-lg shadow p-4 mb-4">
+                <div class="flex items-center gap-3">
+                    <i class="fa-solid fa-circle-user text-3xl text-[#0ea5e9]"></i>
+                    <input type="text" id="postInput" placeholder="اكتب تحديث أعمال..." class="flex-1 bg-gray-100 rounded-full px-4 py-2 border-none focus:outline-none">
                 </div>
-                <button class="btn-primary" onclick="engine.addPost()" style="margin-top:10px">
-                    <i class="fa-solid fa-paper-plane"></i> نشر التحديث
+                <button onclick="engine.addPost()" class="mt-3 w-full bg-[#0ea5e9] text-white font-bold py-2 rounded-lg">
+                    <i class="fa-solid fa-paper-plane ml-2"></i> نشر
                 </button>
             </div>
             <div id="feedList"></div>
         </div>
 
+        <!-- صفحة الأصول -->
         <div id="page-assets" class="page hidden">
-            <div class="balance-box" style="margin-bottom:15px">
+            <div class="bg-[#0ea5e9] text-white rounded-xl p-6 text-center mb-4">
                 <small>إجمالي ثروتك</small>
-                <h2 id="totalValAssets" style="font-size:30px; margin:5px 0">0</h2>
+                <h2 id="totalValAssets" class="text-3xl font-bold my-1">0</h2>
                 <small>جنيه مصري</small>
             </div>
 
-            <div class="card">
-                <b>الرصيد النقدي</b>
-                <div style="display:flex; align-items:center; gap:10px; margin-top:10px">
-                    <span id="cashDisplay" style="font-size:18px; flex:1">0 ج.م</span>
+            <div class="bg-white rounded-lg shadow p-4 mb-4">
+                <div class="flex justify-between items-center">
+                    <span class="font-bold">الرصيد النقدي</span>
+                    <span id="cashDisplay" class="text-lg">0 ج.م</span>
                 </div>
-                <div style="display:flex; gap:10px; margin-top:10px">
-                    <input type="number" id="cashAdjustInput" placeholder="المبلغ" 
-                           style="flex:1; padding:8px; border:1px solid #ddd; border-radius:6px; text-align:center">
-                    <button class="btn-primary" onclick="engine.adjustCash(1)" style="width:auto; padding:8px 15px; margin-top:0; background:#22c55e">
-                        <i class="fa-solid fa-plus"></i> إضافة
-                    </button>
-                    <button class="btn-primary" onclick="engine.adjustCash(-1)" style="width:auto; padding:8px 15px; margin-top:0; background:#ef4444">
-                        <i class="fa-solid fa-minus"></i> خصم
-                    </button>
+                <div class="flex gap-2 mt-3">
+                    <input type="number" id="cashAmount" placeholder="المبلغ" class="flex-1 border rounded-lg px-3 py-2 text-center">
+                    <select id="cashType" class="border rounded-lg px-2 py-2 bg-gray-50">
+                        <option value="income">+ إضافة</option>
+                        <option value="expense">- خصم</option>
+                    </select>
                 </div>
-                <small style="color:#65676b; font-size:11px">الرصيد لا يقل عن صفر</small>
+                <input type="text" id="cashDesc" placeholder="الوصف (اختياري)" class="w-full border rounded-lg px-3 py-2 mt-2 text-sm">
+                <button onclick="engine.adjustCash()" class="mt-3 w-full bg-[#0ea5e9] text-white font-bold py-2 rounded-lg">تطبيق</button>
             </div>
 
-            <h3 style="font-weight:900; margin-bottom:15px">محفظة الأصول</h3>
+            <h3 class="font-bold mb-2">محفظة الأصول</h3>
             <div id="assetsList"></div>
-            <div class="card" style="margin-top:20px">
-                <input type="text" id="aName" placeholder="اسم الأصل" style="width:100%; margin-bottom:10px; padding:8px">
-                <input type="number" id="aVal" placeholder="القيمة" style="width:100%; margin-bottom:10px; padding:8px">
-                <input type="number" id="aRate" placeholder="نسبة العائد السنوي %" value="20" style="width:100%; margin-bottom:10px; padding:8px">
-                <button class="btn-primary" onclick="engine.addAsset()">إضافة الأصل</button>
+            <div class="bg-white rounded-lg shadow p-4 mt-4">
+                <input type="text" id="aName" placeholder="اسم الأصل" class="w-full border rounded-lg px-3 py-2 mb-2">
+                <input type="number" id="aVal" placeholder="القيمة" class="w-full border rounded-lg px-3 py-2 mb-2">
+                <input type="number" id="aRate" placeholder="العائد السنوي %" value="20" class="w-full border rounded-lg px-3 py-2 mb-2">
+                <button onclick="engine.addAsset()" class="w-full bg-[#0ea5e9] text-white font-bold py-2 rounded-lg">إضافة الأصل</button>
             </div>
         </div>
 
-        <div id="page-roadmap" class="page hidden">
-            <h3 style="text-align:center; margin:0 0 10px">لوحة التقدم نحو المليون</h3>
-            <div id="gameBoard"></div>
-        </div>
-
+        <!-- الحاسبة -->
         <div id="page-calc" class="page hidden text-center">
-            <div class="card">
-                <p>الإيداع الشهري</p>
-                <input type="number" id="calcMonthly" value="1000" oninput="engine.recalc()" 
-                       style="font-size:20px; text-align:center; width:100%">
-                <h4 id="calcRes" class="text-brand" style="margin-top:20px">--</h4>
-                <small style="color:#65676b">يتم حساب العوائد حسب أصولك الحالية</small>
+            <div class="bg-white rounded-lg shadow p-6">
+                <p class="text-gray-600 mb-2">الإيداع الشهري</p>
+                <input type="number" id="calcMonthly" value="1000" oninput="engine.recalc()" class="w-full text-center text-xl border rounded-lg px-3 py-2 mb-4">
+                <h4 id="calcRes" class="text-[#0ea5e9] font-bold text-lg"></h4>
+                <small class="text-gray-400">يُحتسب بناءً على أصولك الحالية</small>
             </div>
         </div>
 
-        <div id="page-chat" class="page hidden full-chat">
-            <div class="quick-buttons">
-                <button onclick="engine.sendPredefined('كم ثروتي الآن؟')">💰 ثروتي</button>
-                <button onclick="engine.sendPredefined('ما هي أصولي الحالية؟')">📊 أصولي</button>
-                <button onclick="engine.sendPredefined('متى سأصبح مليونيراً؟')">⏳ المدة</button>
-                <button onclick="engine.sendPredefined('أعطني نصيحة استثمارية')">💡 نصيحة</button>
-                <button onclick="engine.sendPredefined('كيف أقلل المخاطر؟')">⚠️ المخاطر</button>
+        <!-- الخريطة (لوحة لعبة) -->
+        <div id="page-roadmap" class="page hidden">
+            <h3 class="text-center font-bold mb-3">لوحة الطريق إلى المليون</h3>
+            <div id="gameBoard" class="snake-board bg-white p-4 rounded-xl shadow"></div>
+        </div>
+
+        <!-- المستشار (شاشة كاملة) -->
+        <div id="page-chat" class="page hidden flex flex-col h-[calc(100vh-120px)]">
+            <div class="flex flex-wrap gap-2 mb-3">
+                <button onclick="engine.sendPredefined('كم ثروتي الآن؟')" class="bg-white border rounded-full px-3 py-1 text-xs font-bold">💰 ثروتي</button>
+                <button onclick="engine.sendPredefined('ما هي أصولي؟')" class="bg-white border rounded-full px-3 py-1 text-xs font-bold">📊 أصولي</button>
+                <button onclick="engine.sendPredefined('متى سأصبح مليونيراً؟')" class="bg-white border rounded-full px-3 py-1 text-xs font-bold">⏳ المدة</button>
+                <button onclick="engine.sendPredefined('حلل نمط إنفاقي')" class="bg-white border rounded-full px-3 py-1 text-xs font-bold">📈 إنفاقي</button>
+                <button onclick="engine.sendPredefined('أعطني نصيحة')" class="bg-white border rounded-full px-3 py-1 text-xs font-bold">💡 نصيحة</button>
             </div>
-            <div id="chatBox" class="card" style="flex:1; overflow-y: auto; display:flex; flex-direction:column; gap:10px;">
-                <div class="msg ai">أهلاً يا هندسة! أنا مستشارك المالي الذكي. اسألني عن أي حاجة تخص أموالك وأهدافك.</div>
+            <div id="chatBox" class="flex-1 overflow-y-auto bg-white rounded-lg shadow p-4 mb-3 flex flex-col gap-3">
+                <div class="msg ai">أهلاً! أنا مستشارك الذكي. اسألني عن أي شيء يخص أموالك.</div>
             </div>
-            <div class="chat-input-area" style="display:flex; gap:10px; margin-top:10px">
-                <input type="text" id="chatInput" placeholder="اسأل عن استثماراتك..." 
-                       style="flex:1; padding:10px; border:1px solid #ddd; border-radius:20px; font-family:Tajawal;">
-                <button onclick="engine.sendMessage()" class="btn-primary" 
-                        style="width:45px; height:45px; border-radius:50%; display:flex; align-items:center; justify-content:center;">
+            <div class="flex gap-2">
+                <input type="text" id="chatInput" placeholder="اسأل عن استثماراتك..." class="flex-1 border rounded-full px-4 py-2 bg-white">
+                <button onclick="engine.sendMessage()" class="bg-[#0ea5e9] text-white w-12 h-12 rounded-full flex items-center justify-center">
                     <i class="fa-solid fa-paper-plane"></i>
                 </button>
             </div>
