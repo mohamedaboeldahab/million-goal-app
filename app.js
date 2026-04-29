@@ -36,10 +36,10 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-window.auth = auth;           // متاح عالمياً لصفحة البروفايل
+window.auth = auth;
 
 const db = getFirestore(app);
-window.db = db;               // متاح عالمياً لصفحة البروفايل
+window.db = db;
 
 const provider = new GoogleAuthProvider();
 
@@ -61,10 +61,17 @@ window.engine = {
                 if (nav) nav.classList.remove('hidden');
 
                 const userBtn = document.getElementById('userBtn');
-                if (userBtn) {
-                    // نعرض صورة المستخدم (من Google Auth مباشرة بعد الدخول)
-                    userBtn.innerHTML = `<img src="${user.photoURL}" class="w-full h-full object-cover rounded-2xl">`;
-                }
+                // ✅ تحميل الصورة من Firestore أو الاحتياط
+                this.getOrCreateUserProfile().then(profile => {
+                    const photo = profile.photoURL || user.photoURL;
+                    if (userBtn) {
+                        userBtn.innerHTML = `<img src="${photo}" class="w-full h-full object-cover rounded-2xl">`;
+                    }
+                }).catch(() => {
+                    if (userBtn) {
+                        userBtn.innerHTML = `<img src="${user.photoURL}" class="w-full h-full object-cover rounded-2xl">`;
+                    }
+                });
 
                 this.loadPage('home');
             } else {
@@ -123,7 +130,6 @@ window.engine = {
             const html = await response.text();
             content.innerHTML = html;
 
-            // تشغيل السكريبتات المضمنة في الصفحة المحملة
             const scripts = content.querySelectorAll('script');
             scripts.forEach(oldScript => {
                 const newScript = document.createElement('script');
@@ -144,7 +150,6 @@ window.engine = {
         }
     },
 
-    // --- عداد الأحرف ---
     activateCharCounter() {
         const input = document.getElementById('postInput');
         const countSpan = document.getElementById('charCount');
@@ -170,7 +175,6 @@ window.engine = {
         };
     },
 
-    // --- نظام التصويت والتعليقات ---
     async handleVote(postId, type) {
         const postRef = doc(db, "posts", postId);
         const userId = auth.currentUser.uid;
@@ -218,7 +222,6 @@ window.engine = {
         });
     },
 
-    // جلب منشورات المستخدم الحالي فقط (للبروفايل)
     listenToUserPosts(containerId) {
         const userId = auth.currentUser?.uid;
         if (!userId) return;
@@ -242,7 +245,6 @@ window.engine = {
         });
     },
 
-    // --- دوال الملف الشخصي (Firestore) ---
     async getOrCreateUserProfile() {
         const uid = auth.currentUser.uid;
         const ref = doc(db, "users", uid);
@@ -264,7 +266,7 @@ window.engine = {
         const ref = doc(db, "users", uid);
         await updateDoc(ref, updates);
 
-        // ✅ تحديث صورة المستخدم في الشريط العلوي مباشرة
+        // تحديث صورة الشريط العلوي فوراً بعد الحفظ
         if (updates.photoURL) {
             const userBtn = document.getElementById('userBtn');
             if (userBtn) {
@@ -273,7 +275,6 @@ window.engine = {
         }
     },
 
-    // --- إضافة منشور (يستخدم بيانات الملف الشخصي) ---
     async addPost() {
         const input = document.getElementById('postInput');
         if (!input?.value.trim()) return;
@@ -321,5 +322,4 @@ window.engine = {
     }
 };
 
-// تشغيل المحرك
 engine.init();
