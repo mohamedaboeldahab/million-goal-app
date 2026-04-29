@@ -14,7 +14,7 @@ import {
     addDoc,
     updateDoc,
     doc,
-    setDoc,              // ← تمت إضافتها
+    setDoc,
     onSnapshot,
     query,
     orderBy,
@@ -61,7 +61,10 @@ window.engine = {
                 if (nav) nav.classList.remove('hidden');
 
                 const userBtn = document.getElementById('userBtn');
-                if (userBtn) userBtn.innerHTML = `<img src="${user.photoURL}" class="w-full h-full object-cover rounded-2xl">`;
+                if (userBtn) {
+                    // نعرض صورة المستخدم (من Google Auth مباشرة بعد الدخول)
+                    userBtn.innerHTML = `<img src="${user.photoURL}" class="w-full h-full object-cover rounded-2xl">`;
+                }
 
                 this.loadPage('home');
             } else {
@@ -120,7 +123,7 @@ window.engine = {
             const html = await response.text();
             content.innerHTML = html;
 
-            // تشغيل السكريبتات المضمنة
+            // تشغيل السكريبتات المضمنة في الصفحة المحملة
             const scripts = content.querySelectorAll('script');
             scripts.forEach(oldScript => {
                 const newScript = document.createElement('script');
@@ -215,7 +218,7 @@ window.engine = {
         });
     },
 
-    // ✅ جلب منشورات المستخدم الحالي فقط (للبروفايل)
+    // جلب منشورات المستخدم الحالي فقط (للبروفايل)
     listenToUserPosts(containerId) {
         const userId = auth.currentUser?.uid;
         if (!userId) return;
@@ -245,7 +248,7 @@ window.engine = {
         const ref = doc(db, "users", uid);
         const snap = await getDoc(ref);
         if (snap.exists()) return snap.data();
-        // إنشاء وثيقة جديدة ببيانات افتراضية
+
         const defaultProfile = {
             displayName: auth.currentUser.displayName || '',
             photoURL: auth.currentUser.photoURL || '',
@@ -260,6 +263,14 @@ window.engine = {
         const uid = auth.currentUser.uid;
         const ref = doc(db, "users", uid);
         await updateDoc(ref, updates);
+
+        // ✅ تحديث صورة المستخدم في الشريط العلوي مباشرة
+        if (updates.photoURL) {
+            const userBtn = document.getElementById('userBtn');
+            if (userBtn) {
+                userBtn.innerHTML = `<img src="${updates.photoURL}" class="w-full h-full object-cover rounded-2xl">`;
+            }
+        }
     },
 
     // --- إضافة منشور (يستخدم بيانات الملف الشخصي) ---
@@ -267,7 +278,6 @@ window.engine = {
         const input = document.getElementById('postInput');
         if (!input?.value.trim()) return;
 
-        // جلب بيانات المستخدم من Firestore (أو Auth كاحتياط)
         const profile = await this.getOrCreateUserProfile();
         const displayName = profile.displayName || auth.currentUser.displayName;
         const photoURL = profile.photoURL || auth.currentUser.photoURL;
@@ -276,7 +286,7 @@ window.engine = {
             content: input.value,
             authorName: displayName,
             authorPhoto: photoURL,
-            authorId: auth.currentUser.uid,   // حقل معرف المستخدم
+            authorId: auth.currentUser.uid,
             supportCount: 0,
             opposeCount: 0,
             voters: [],
