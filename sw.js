@@ -1,9 +1,9 @@
-self.addEventListener('install', e => {
+// sw.js - إصدار آمن لـ Vercel
+self.addEventListener('install', event => {
   self.skipWaiting();
 });
-self.addEventListener('fetch', e => {
-  e.respondWith(caches.match(e.request) || fetch(e.request));
+
+self.addEventListener('activate', event => {
+  event.waitUntil(clients.claim());
 });
-self.addEventListener('activate', e => {
-  clients.claim();
-});
+
