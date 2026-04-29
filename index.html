@@ -9,7 +9,6 @@
 </head>
 <body>
 
-    <!-- هيدر فيسبوكي -->
     <header>
         <h1 style="font-weight:900; font-size:18px">مليونير <span style="color:#0ea5e9">المستقبل</span></h1>
         <div style="display:flex; gap:15px">
@@ -18,34 +17,17 @@
         </div>
     </header>
 
-    <!-- شريط التنقل العلوي -->
     <nav class="top-nav">
-        <button onclick="engine.nav('home')" id="tab-home" class="nav-tab active">
-            <i class="fa-solid fa-house"></i>
-        </button>
-        <button onclick="engine.nav('assets')" id="tab-assets" class="nav-tab">
-            <i class="fa-solid fa-briefcase"></i>
-        </button>
-        <button onclick="engine.nav('calc')" id="tab-calc" class="nav-tab">
-            <i class="fa-solid fa-chart-line"></i>
-        </button>
-        <button onclick="engine.nav('roadmap')" id="tab-roadmap" class="nav-tab">
-            <i class="fa-solid fa-flag-checkered"></i>
-        </button>
-        <button onclick="engine.nav('chat')" id="tab-chat" class="nav-tab">
-            <i class="fa-solid fa-robot"></i>
-        </button>
+        <button onclick="engine.nav('home')" id="tab-home" class="nav-tab active"><i class="fa-solid fa-house"></i></button>
+        <button onclick="engine.nav('assets')" id="tab-assets" class="nav-tab"><i class="fa-solid fa-briefcase"></i></button>
+        <button onclick="engine.nav('calc')" id="tab-calc" class="nav-tab"><i class="fa-solid fa-chart-line"></i></button>
+        <button onclick="engine.nav('roadmap')" id="tab-roadmap" class="nav-tab"><i class="fa-solid fa-flag-checkered"></i></button>
+        <button onclick="engine.nav('chat')" id="tab-chat" class="nav-tab"><i class="fa-solid fa-robot"></i></button>
     </nav>
 
     <main>
-        <!-- صفحة التحديثات (فيسبوك فيد) -->
+        <!-- الصفحة الرئيسية: من غير إجمالي الثروة -->
         <div id="page-home" class="page">
-            <div class="balance-box">
-                <small>إجمالي ثروتك</small>
-                <h2 id="totalVal" style="font-size:40px; margin:5px 0">0</h2>
-                <small>جنيه مصري</small>
-            </div>
-
             <div class="card post-creator">
                 <div class="creator-top">
                     <i class="fa-solid fa-circle-user" style="font-size:36px; color:#0ea5e9"></i>
@@ -56,17 +38,28 @@
                     <i class="fa-solid fa-paper-plane"></i> نشر التحديث
                 </button>
             </div>
-
             <div id="feedList"></div>
         </div>
 
-        <!-- صفحة الأصول (بها إجمالي الثروة) -->
+        <!-- صفحة الأصول: إجمالي الثروة + رصيد النقد -->
         <div id="page-assets" class="page hidden">
             <div class="balance-box" style="margin-bottom:15px">
                 <small>إجمالي ثروتك</small>
                 <h2 id="totalValAssets" style="font-size:30px; margin:5px 0">0</h2>
                 <small>جنيه مصري</small>
             </div>
+
+            <!-- بطاقة تعديل الرصيد النقدي -->
+            <div class="card">
+                <b>الرصيد النقدي</b>
+                <div style="display:flex; align-items:center; gap:10px; margin-top:10px">
+                    <span id="cashDisplay" style="font-size:18px; flex:1">0 ج.م</span>
+                    <input type="number" id="cashAdjustInput" placeholder="المبلغ (+ / -)" 
+                           style="width:100px; padding:8px; border:1px solid #ddd; border-radius:6px; text-align:center">
+                    <button class="btn-primary" onclick="engine.adjustCash()" style="width:auto; padding:8px 15px; margin-top:0">تحديث</button>
+                </div>
+            </div>
+
             <h3 style="font-weight:900; margin-bottom:15px">محفظة الأصول</h3>
             <div id="assetsList"></div>
             <div class="card" style="margin-top:20px">
@@ -76,7 +69,7 @@
             </div>
         </div>
 
-        <!-- صفحة الخريطة -->
+        <!-- الخريطة (100 مرحلة) -->
         <div id="page-roadmap" class="page hidden">
             <div id="roadmapList"></div>
         </div>
@@ -91,13 +84,13 @@
             </div>
         </div>
 
-        <!-- المستشار (مع زر كتابة) -->
+        <!-- المستشار الذكي -->
         <div id="page-chat" class="page hidden">
             <div id="chatBox" class="card">
-                <div class="msg ai">أهلاً يا هندسة! أنا مستشارك المالي. كيف نطور استثماراتك اليوم؟</div>
+                <div class="msg ai">أهلاً يا هندسة! أنا مستشارك المالي الذكي. اسألني عن أي حاجة تخص أموالك وأهدافك.</div>
             </div>
             <div class="chat-input-area" style="display:flex; gap:10px; margin-top:10px">
-                <input type="text" id="chatInput" placeholder="اكتب استفسارك..." 
+                <input type="text" id="chatInput" placeholder="اسأل عن استثماراتك..." 
                        style="flex:1; padding:10px; border:1px solid #ddd; border-radius:20px; font-family:Tajawal;">
                 <button onclick="engine.sendMessage()" class="btn-primary" 
                         style="width:45px; height:45px; border-radius:50%; display:flex; align-items:center; justify-content:center;">
