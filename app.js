@@ -14,6 +14,7 @@ import {
     addDoc,
     updateDoc,
     doc,
+    setDoc,              // ← تمت إضافتها
     onSnapshot,
     query,
     orderBy,
@@ -108,7 +109,6 @@ window.engine = {
         const content = document.getElementById('app-content');
         if (!content) return;
 
-        // تمييز الزر النشط في الـ Nav
         document.querySelectorAll('.nav-link').forEach(l => {
             l.classList.toggle('active', l.dataset.page === pageName);
         });
@@ -120,7 +120,7 @@ window.engine = {
             const html = await response.text();
             content.innerHTML = html;
 
-            // ✅ تشغيل السكريبتات المضمنة في الصفحة المحملة
+            // تشغيل السكريبتات المضمنة
             const scripts = content.querySelectorAll('script');
             scripts.forEach(oldScript => {
                 const newScript = document.createElement('script');
@@ -128,23 +128,20 @@ window.engine = {
                 oldScript.replaceWith(newScript);
             });
 
-            // ميزات صفحة Home
             if (pageName === 'home') {
                 this.listenToPosts();
                 this.activateCharCounter();
             }
 
-            // تحديث الروابط النشطة (من الدالة العامة في index.html)
             if (typeof setActiveNavLink === 'function') {
                 setActiveNavLink(pageName);
             }
-
         } catch (e) {
             content.innerHTML = `<div class="text-center py-20 text-slate-400">قريباً..</div>`;
         }
     },
 
-    // --- عداد الأحرف الخاص بحقل الإدخال ---
+    // --- عداد الأحرف ---
     activateCharCounter() {
         const input = document.getElementById('postInput');
         const countSpan = document.getElementById('charCount');
@@ -163,7 +160,6 @@ window.engine = {
         input.addEventListener('input', update);
         update();
 
-        // تعديل دالة الإرسال لتحديث العداد بعد النشر
         const originalAddPost = this.addPost.bind(this);
         this.addPost = async function () {
             await originalAddPost();
@@ -243,14 +239,44 @@ window.engine = {
         });
     },
 
+    // --- دوال الملف الشخصي (Firestore) ---
+    async getOrCreateUserProfile() {
+        const uid = auth.currentUser.uid;
+        const ref = doc(db, "users", uid);
+        const snap = await getDoc(ref);
+        if (snap.exists()) return snap.data();
+        // إنشاء وثيقة جديدة ببيانات افتراضية
+        const defaultProfile = {
+            displayName: auth.currentUser.displayName || '',
+            photoURL: auth.currentUser.photoURL || '',
+            bio: '',
+            createdAt: serverTimestamp()
+        };
+        await setDoc(ref, defaultProfile);
+        return defaultProfile;
+    },
+
+    async updateUserProfile(updates) {
+        const uid = auth.currentUser.uid;
+        const ref = doc(db, "users", uid);
+        await updateDoc(ref, updates);
+    },
+
+    // --- إضافة منشور (يستخدم بيانات الملف الشخصي) ---
     async addPost() {
         const input = document.getElementById('postInput');
         if (!input?.value.trim()) return;
+
+        // جلب بيانات المستخدم من Firestore (أو Auth كاحتياط)
+        const profile = await this.getOrCreateUserProfile();
+        const displayName = profile.displayName || auth.currentUser.displayName;
+        const photoURL = profile.photoURL || auth.currentUser.photoURL;
+
         await addDoc(collection(db, "posts"), {
             content: input.value,
-            authorName: auth.currentUser.displayName,
-            authorPhoto: auth.currentUser.photoURL,
-            authorId: auth.currentUser.uid,   // ⬅️ حقل معرف المستخدم
+            authorName: displayName,
+            authorPhoto: photoURL,
+            authorId: auth.currentUser.uid,   // حقل معرف المستخدم
             supportCount: 0,
             opposeCount: 0,
             voters: [],
