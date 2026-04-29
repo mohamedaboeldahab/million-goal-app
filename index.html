@@ -9,29 +9,61 @@
 </head>
 <body>
 
+    <!-- هيدر فيسبوكي -->
     <header>
         <h1 style="font-weight:900; font-size:18px">مليونير <span style="color:#0ea5e9">المستقبل</span></h1>
-        <i class="fa-solid fa-circle-user" style="font-size:24px; color:#65676b"></i>
+        <div style="display:flex; gap:15px">
+            <i class="fa-solid fa-magnifying-glass" style="color:#65676b"></i>
+            <i class="fa-solid fa-circle-user" style="font-size:24px; color:#65676b"></i>
+        </div>
     </header>
 
-    <nav class="top-nav">
-        <button onclick="engine.nav('home')" id="tab-home" class="nav-tab active"><i class="fa-solid fa-house"></i></button>
-        <button onclick="engine.nav('assets')" id="tab-assets" class="nav-tab"><i class="fa-solid fa-briefcase"></i></button>
-        <button onclick="engine.nav('calc')" id="tab-calc" class="nav-tab"><i class="fa-solid fa-chart-line"></i></button>
-        <button onclick="engine.nav('roadmap')" id="tab-roadmap" class="nav-tab"><i class="fa-solid fa-flag-checkered"></i></button>
-        <button onclick="engine.nav('chat')" id="tab-chat" class="nav-tab"><i class="fa-solid fa-robot"></i></button>
+    <!-- شريط التنقل السفلي (فيسبوك موبايل) -->
+    <nav class="bottom-nav">
+        <button onclick="engine.nav('home')" id="tab-home" class="nav-tab active">
+            <i class="fa-solid fa-house"></i><span>الرئيسية</span>
+        </button>
+        <button onclick="engine.nav('assets')" id="tab-assets" class="nav-tab">
+            <i class="fa-solid fa-briefcase"></i><span>الأصول</span>
+        </button>
+        <button onclick="engine.nav('calc')" id="tab-calc" class="nav-tab">
+            <i class="fa-solid fa-chart-line"></i><span>الحاسبة</span>
+        </button>
+        <button onclick="engine.nav('roadmap')" id="tab-roadmap" class="nav-tab">
+            <i class="fa-solid fa-flag-checkered"></i><span>الخريطة</span>
+        </button>
+        <button onclick="engine.nav('chat')" id="tab-chat" class="nav-tab">
+            <i class="fa-solid fa-robot"></i><span>المستشار</span>
+        </button>
     </nav>
 
     <main>
+        <!-- صفحة التحديثات (فيسبوك فيد) -->
         <div id="page-home" class="page">
+            <!-- بطاقة الملخص المالي -->
             <div class="balance-box">
-                <small>إجمالي الثروة</small>
+                <small>إجمالي ثروتك</small>
                 <h2 id="totalVal" style="font-size:40px; margin:5px 0">0</h2>
                 <small>جنيه مصري</small>
             </div>
-            <button class="btn-primary" onclick="engine.nav('assets')">تحديث الأصول</button>
+
+            <!-- صندوق كتابة منشور -->
+            <div class="card post-creator">
+                <div class="creator-top">
+                    <i class="fa-solid fa-circle-user" style="font-size:36px; color:#0ea5e9"></i>
+                    <input type="text" id="postInput" placeholder="اكتب تحديث أعمال أو فرصة جديدة..." 
+                           style="flex:1; border:none; background:#f0f2f5; border-radius:20px; padding:8px 15px;">
+                </div>
+                <button class="btn-primary" onclick="engine.addPost()" style="margin-top:10px">
+                    <i class="fa-solid fa-paper-plane"></i> نشر التحديث
+                </button>
+            </div>
+
+            <!-- قائمة المنشورات -->
+            <div id="feedList"></div>
         </div>
 
+        <!-- باقي الصفحات كما هي مع تحسينات -->
         <div id="page-assets" class="page hidden">
             <h3 style="font-weight:900; margin-bottom:15px">محفظة الأصول</h3>
             <div id="assetsList"></div>
@@ -49,7 +81,8 @@
         <div id="page-calc" class="page hidden text-center">
             <div class="card">
                 <p>الإيداع الشهري</p>
-                <input type="number" value="1000" oninput="appData.monthly = parseFloat(this.value); engine.sync()" style="font-size:20px; text-align:center; width:100%">
+                <input type="number" value="1000" oninput="appData.monthly = parseFloat(this.value); engine.sync()" 
+                       style="font-size:20px; text-align:center; width:100%">
                 <h4 id="calcRes" class="text-brand" style="margin-top:20px">--</h4>
             </div>
         </div>
