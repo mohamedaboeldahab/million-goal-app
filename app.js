@@ -1,16 +1,29 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-app.js";
-import { 
-    getAuth, 
-    GoogleAuthProvider, 
-    signInWithPopup, 
-    onAuthStateChanged, 
+import {
+    getAuth,
+    GoogleAuthProvider,
+    signInWithPopup,
+    onAuthStateChanged,
     signOut,
     setPersistence,
-    browserLocalPersistence 
+    browserLocalPersistence
 } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-auth.js";
-import { getFirestore, collection, addDoc, updateDoc, doc, onSnapshot, query, orderBy, serverTimestamp, increment, arrayUnion, getDoc } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-firestore.js";
+import {
+    getFirestore,
+    collection,
+    addDoc,
+    updateDoc,
+    doc,
+    onSnapshot,
+    query,
+    orderBy,
+    serverTimestamp,
+    increment,
+    arrayUnion,
+    getDoc
+} from "https://www.gstatic.com/firebasejs/10.12.1/firebase-firestore.js";
 
-const firebaseConfig = { 
+const firebaseConfig = {
     apiKey: "AIzaSyB_2ms4K8EPbag7uab9gbDy8eePY6xwpxc",
     authDomain: "millionaireapp-be931.firebaseapp.com",
     projectId: "millionaireapp-be931",
@@ -26,28 +39,28 @@ const provider = new GoogleAuthProvider();
 
 window.engine = {
     async init() {
-        // 1. ضبط الثبات فوراً عند التشغيل
         try {
             await setPersistence(auth, browserLocalPersistence);
-        } catch (e) { console.error("Persistence error", e); }
+        } catch (e) {
+            console.error("Persistence error", e);
+        }
 
-        // 2. مراقبة حالة المستخدم (هي دي اللي بتفتح التطبيق)
         onAuthStateChanged(auth, (user) => {
             const splash = document.getElementById('splash');
             const nav = document.getElementById('main-nav');
-            
+
             if (user) {
                 console.log("Welcome Shark:", user.displayName);
-                if(splash) splash.style.display = 'none';
-                if(nav) nav.classList.remove('hidden');
-                
+                if (splash) splash.style.display = 'none';
+                if (nav) nav.classList.remove('hidden');
+
                 const userBtn = document.getElementById('userBtn');
-                if(userBtn) userBtn.innerHTML = `<img src="${user.photoURL}" class="w-full h-full object-cover rounded-2xl">`;
-                
+                if (userBtn) userBtn.innerHTML = `<img src="${user.photoURL}" class="w-full h-full object-cover rounded-2xl">`;
+
                 this.loadPage('home');
             } else {
                 console.log("No Shark detected.");
-                if(nav) nav.classList.add('hidden');
+                if (nav) nav.classList.add('hidden');
                 this.showLoginUI();
             }
         });
@@ -55,7 +68,7 @@ window.engine = {
 
     showLoginUI() {
         const splash = document.getElementById('splash');
-        if(splash) {
+        if (splash) {
             splash.style.display = 'flex';
             splash.innerHTML = `
                 <div class="w-20 h-20 bg-sky-500 rounded-[2rem] flex items-center justify-center mb-6 rotate-12 shadow-2xl">
@@ -72,7 +85,6 @@ window.engine = {
 
     async login() {
         try {
-            // رجعنا للـ Popup بس مع الـ Persistence شغال صح
             await signInWithPopup(auth, provider);
         } catch (error) {
             console.error("Login failed:", error);
@@ -81,37 +93,66 @@ window.engine = {
     },
 
     async logout() {
-        if(confirm("هل تريد مغادرة المحيط؟")) {
+        if (confirm("هل تريد مغادرة المحيط؟")) {
             await signOut(auth);
             location.reload();
         }
     },
 
-async loadPage(pageName) {
-    const content = document.getElementById('app-content');
-    if(!content) return;
+    async loadPage(pageName) {
+        const content = document.getElementById('app-content');
+        if (!content) return;
 
-    // تمييز الزر النشط ...
-    document.querySelectorAll('.nav-link').forEach(l => {
-        l.classList.toggle('active', l.dataset.page === pageName);
-    });
+        // تمييز الزر النشط في الـ Nav
+        document.querySelectorAll('.nav-link').forEach(l => {
+            l.classList.toggle('active', l.dataset.page === pageName);
+        });
 
-    content.innerHTML = '<div class="flex justify-center py-20">...</div>';
+        content.innerHTML = '<div class="flex justify-center py-20"><div class="w-8 h-8 border-4 border-sky-500 border-t-transparent rounded-full animate-spin"></div></div>';
 
-    try {
-        const response = await fetch(`${pageName}.html`);
-        const html = await response.text();
-        content.innerHTML = html;
+        try {
+            const response = await fetch(`${pageName}.html`);
+            const html = await response.text();
+            content.innerHTML = html;
 
-        // ✅ تفعيل الميزات الخاصة بصفحة Home بعد تحميلها
-        if (pageName === 'home') {
-            this.listenToPosts();
-            this.activateCharCounter();   // ← السطر الجديد
+            // تفعيل الميزات الخاصة بصفحة Home بعد تحميلها
+            if (pageName === 'home') {
+                this.listenToPosts();
+                this.activateCharCounter(); // تشغيل عداد الأحرف
+            }
+        } catch (e) {
+            content.innerHTML = `<div class="text-center py-20 text-slate-400">قريباً..</div>`;
         }
-    } catch (e) {
-        content.innerHTML = `<div class="text-center py-20 text-slate-400">قريباً..</div>`;
-    }
-},
+    },
+
+    // --- عداد الأحرف الخاص بحقل الإدخال ---
+    activateCharCounter() {
+        const input = document.getElementById('postInput');
+        const countSpan = document.getElementById('charCount');
+        if (!input || !countSpan) return;
+
+        const max = parseInt(input.getAttribute('maxlength')) || 300;
+
+        const update = () => {
+            const current = input.value.length;
+            countSpan.textContent = `${current}/${max} حرف`;
+            // تغيير اللون عند الاقتراب من الحد الأقصى
+            countSpan.className = current >= max - 30
+                ? 'text-xs text-red-500 font-bold'
+                : 'text-xs text-gray-400 font-medium';
+        };
+
+        input.addEventListener('input', update);
+        update(); // عرض العدد الأولي
+
+        // تعديل دالة الإرسال لتحديث العداد بعد النشر
+        const originalAddPost = this.addPost.bind(this);
+        this.addPost = async function () {
+            await originalAddPost();
+            // بعد إفراغ الحقل في addPost الأصلية، نُحدّث العداد
+            update();
+        };
+    },
 
     // --- نظام التصويت والتعليقات ---
     async handleVote(postId, type) {
@@ -163,7 +204,7 @@ async loadPage(pageName) {
 
     async addPost() {
         const input = document.getElementById('postInput');
-        if(!input?.value.trim()) return;
+        if (!input?.value.trim()) return;
         await addDoc(collection(db, "posts"), {
             content: input.value,
             authorName: auth.currentUser.displayName,
