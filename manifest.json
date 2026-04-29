@@ -1,15 +1,16 @@
 {
-  "name": "Millionaire Path",
-  "short_name": "MillionPath",
-  "start_url": ".",
+  "name": "مليونير المستقبل",
+  "short_name": "Millionaire",
+  "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#f8fafc",
+  "background_color": "#ffffff",
   "theme_color": "#0ea5e9",
   "icons": [
     {
       "src": "https://cdn-icons-png.flaticon.com/512/2150/2150150.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }
