@@ -34,7 +34,47 @@ window.engine = {
     async login() {
         await signInWithPopup(auth, provider);
     },
+// --- وظيفة حفظ الأصول ---
+async saveAsset() {
+    const name = document.getElementById('assetName').value;
+    const val = parseFloat(document.getElementById('assetValue').value);
+    if(!name || !val) return;
 
+    await addDoc(collection(db, `users/${auth.currentUser.uid}/assets`), {
+        name, val, createdAt: serverTimestamp()
+    });
+    
+    document.getElementById('assetName').value = '';
+    document.getElementById('assetValue').value = '';
+    alert("تمت إضافة الأصل للمحفظة!");
+},
+
+// --- وظيفة الدردشة مع المستشار (تنبيه: تحتاج ربط API حقيقي لاحقاً) ---
+askAI() {
+    const input = document.getElementById('aiInput');
+    const chatBox = document.getElementById('chatBox');
+    if(!input.value.trim()) return;
+
+    // إضافة رسالة المستخدم
+    chatBox.innerHTML += `
+        <div class="bg-sky-500 p-4 rounded-2xl rounded-tl-none text-white shadow-sm text-sm max-w-[80%]">
+            ${input.value}
+        </div>
+    `;
+    
+    input.value = '';
+    chatBox.scrollTop = chatBox.scrollHeight;
+
+    // رد وهمي حالياً
+    setTimeout(() => {
+        chatBox.innerHTML += `
+            <div class="bg-white p-4 rounded-2xl rounded-tr-none shadow-sm text-sm text-slate-700 max-w-[80%] ml-auto border">
+                أنا هنا لتحليل طلبك.. تذكر أن القرش الذكي يضع ماله في أصول تدر دخلاً سلبياً!
+            </div>
+        `;
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }, 1000);
+}
     async loadPage(pageName) {
         // تحديث حالة الأزرار في النافبار
         document.querySelectorAll('.nav-link').forEach(link => {
