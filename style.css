@@ -13,7 +13,6 @@ body {
     color: var(--text-main);
     margin: 0;
     direction: rtl;
-    padding-bottom: 70px; /* مساحة للـ nav السفلي */
 }
 
 /* Header */
@@ -29,39 +28,42 @@ header {
     z-index: 100;
 }
 
-/* Bottom Navigation (فيسبوك موبايل) */
-.bottom-nav {
+/* شريط التنقل العلوي - فوق المحتوى */
+.top-nav {
     background: white;
     display: flex;
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    z-index: 100;
-    border-top: 1px solid #ddd;
-    padding: 5px 0;
+    position: sticky;
+    top: 52px; /* تحت الهيدر */
+    z-index: 99;
+    border-bottom: 1px solid #ddd;
+    padding: 0;
 }
 
 .nav-tab {
     flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+    padding: 12px 0;
+    text-align: center;
     color: var(--text-sub);
     border: none;
     background: none;
     cursor: pointer;
-    font-size: 12px;
-    padding: 5px 0;
-    gap: 4px;
-}
-
-.nav-tab i {
-    font-size: 22px;
+    font-size: 20px;
+    position: relative;
 }
 
 .nav-tab.active {
     color: var(--brand);
+}
+
+.nav-tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 10%;
+    right: 10%;
+    height: 3px;
+    background: var(--brand);
+    border-radius: 3px 3px 0 0;
 }
 
 /* Main Content */
