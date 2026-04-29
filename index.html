@@ -2,111 +2,110 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>مليونير المستقبل | Pro System</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مليونير المستقبل | FB Pro</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
 
-    <header class="main-header">
-        <h1>مليونير <span class="brand-text">المستقبل</span></h1>
-        <div class="user-icon"><i class="fa-solid fa-user-tie"></i></div>
+    <!-- هيدر فيسبوكي -->
+    <header>
+        <h1 style="font-weight:900; font-size:18px">مليونير <span style="color:#0ea5e9">المستقبل</span></h1>
+        <div style="display:flex; gap:15px">
+            <i class="fa-solid fa-magnifying-glass" style="color:#65676b"></i>
+            <i class="fa-solid fa-circle-user" style="font-size:24px; color:#65676b"></i>
+        </div>
     </header>
 
+    <!-- شريط التنقل العلوي -->
     <nav class="top-nav">
-        <div onclick="engine.nav('home')" id="tab-home" class="nav-tab active"><i class="fa-solid fa-house-chimney"></i></div>
-        <div onclick="engine.nav('assets')" id="tab-assets" class="nav-tab"><i class="fa-solid fa-briefcase"></i></div>
-        <div onclick="engine.nav('calc')" id="tab-calc" class="nav-tab"><i class="fa-solid fa-chart-pie"></i></div>
-        <div onclick="engine.nav('roadmap')" id="tab-roadmap" class="nav-tab"><i class="fa-solid fa-flag-checkered"></i></div>
-        <div onclick="engine.nav('chat')" id="tab-chat" class="nav-tab"><i class="fa-solid fa-robot"></i></div>
+        <button onclick="engine.nav('home')" id="tab-home" class="nav-tab active">
+            <i class="fa-solid fa-house"></i>
+        </button>
+        <button onclick="engine.nav('assets')" id="tab-assets" class="nav-tab">
+            <i class="fa-solid fa-briefcase"></i>
+        </button>
+        <button onclick="engine.nav('calc')" id="tab-calc" class="nav-tab">
+            <i class="fa-solid fa-chart-line"></i>
+        </button>
+        <button onclick="engine.nav('roadmap')" id="tab-roadmap" class="nav-tab">
+            <i class="fa-solid fa-flag-checkered"></i>
+        </button>
+        <button onclick="engine.nav('chat')" id="tab-chat" class="nav-tab">
+            <i class="fa-solid fa-robot"></i>
+        </button>
     </nav>
 
-    <main class="content-container">
-        
-        <section id="page-home" class="page">
-            <div class="balance-card">
-                <p class="label">إجمالي صافي الثروة</p>
-                <h2 id="totalWealth">0</h2>
-                <p class="currency">جنيه مصري</p>
+    <main>
+        <!-- صفحة التحديثات (فيسبوك فيد) -->
+        <div id="page-home" class="page">
+            <div class="balance-box">
+                <small>إجمالي ثروتك</small>
+                <h2 id="totalVal" style="font-size:40px; margin:5px 0">0</h2>
+                <small>جنيه مصري</small>
             </div>
 
-            <div class="action-buttons">
-                <button onclick="openModal('add')" class="btn-action add">
-                    <i class="fa-solid fa-circle-plus"></i> إضافة أرباح
-                </button>
-                <button onclick="openModal('sub')" class="btn-action sub">
-                    <i class="fa-solid fa-circle-minus"></i> سحب مصروف
-                </button>
-            </div>
-
-            <div class="card advice-card">
-                <p id="quickAdvice">المستشار يحلل بياناتك الآن...</p>
-            </div>
-        </section>
-
-        <section id="page-assets" class="page hidden">
-            <div class="section-header">
-                <h3>المحفظة الاستثمارية</h3>
-                <button onclick="toggleAssetInp()">+ أصل جديد</button>
-            </div>
-
-            <div id="assetInputArea" class="card input-card hidden">
-                <input type="text" id="aName" placeholder="اسم الأصل (ذهب، أسهم..)">
-                <div class="input-row">
-                    <input type="number" id="aVal" placeholder="القيمة الحالية">
-                    <input type="number" id="aRate" placeholder="العائد %">
+            <div class="card post-creator">
+                <div class="creator-top">
+                    <i class="fa-solid fa-circle-user" style="font-size:36px; color:#0ea5e9"></i>
+                    <input type="text" id="postInput" placeholder="اكتب تحديث أعمال أو فرصة جديدة..." 
+                           style="flex:1; border:none; background:#f0f2f5; border-radius:20px; padding:8px 15px;">
                 </div>
-                <button onclick="engine.addAsset()" class="btn-save">حفظ في المحفظة</button>
+                <button class="btn-primary" onclick="engine.addPost()" style="margin-top:10px">
+                    <i class="fa-solid fa-paper-plane"></i> نشر التحديث
+                </button>
             </div>
 
+            <div id="feedList"></div>
+        </div>
+
+        <!-- صفحة الأصول (بها إجمالي الثروة) -->
+        <div id="page-assets" class="page hidden">
+            <div class="balance-box" style="margin-bottom:15px">
+                <small>إجمالي ثروتك</small>
+                <h2 id="totalValAssets" style="font-size:30px; margin:5px 0">0</h2>
+                <small>جنيه مصري</small>
+            </div>
+            <h3 style="font-weight:900; margin-bottom:15px">محفظة الأصول</h3>
             <div id="assetsList"></div>
-        </section>
-
-        <section id="page-calc" class="page hidden">
-            <div class="card calc-card">
-                <i class="fa-solid fa-hourglass-half"></i>
-                <h3>متى تصل للمليون؟</h3>
-                <div class="input-group">
-                    <label>إيداعك الشهري المتوقع</label>
-                    <input type="number" id="monthlyInp" value="1000" oninput="engine.sync()">
-                </div>
-                <div class="result-box">
-                    <p id="calcRes">--</p>
-                </div>
-            </div>
-        </section>
-
-        <section id="page-roadmap" class="page hidden">
-            <div class="roadmap-wrapper">
-                <div class="roadmap-line"></div>
-                <div id="roadmapNodes" class="nodes-container"></div>
-            </div>
-        </section>
-
-        <section id="page-chat" class="page hidden">
-            <div id="chatBox" class="chat-display">
-                <div class="msg ai">أهلاً يا هندسة! أنا مستشارك "فهمي أفندي". كيف نطور ثروتك اليوم؟</div>
-            </div>
-            <div class="chat-input-area">
-                <input type="text" id="chatInput" placeholder="اسأل فهمي أفندي...">
-                <button onclick="engine.chat.ask()"><i class="fa-solid fa-paper-plane"></i></button>
-            </div>
-        </section>
-
-    </main>
-
-    <div id="opModal" class="modal-overlay hidden">
-        <div class="modal-box">
-            <h3 id="modalTitle">إضافة أرباح</h3>
-            <input type="number" id="modalAmount" placeholder="0.00">
-            <div class="modal-btns">
-                <button id="modalConfirm" class="confirm-btn">تأكيد</button>
-                <button onclick="closeModal()" class="cancel-btn">إلغاء</button>
+            <div class="card" style="margin-top:20px">
+                <input type="text" id="aName" placeholder="اسم الأصل" style="width:100%; margin-bottom:10px; padding:8px">
+                <input type="number" id="aVal" placeholder="القيمة" style="width:100%; margin-bottom:10px; padding:8px">
+                <button class="btn-primary" onclick="engine.addAsset(document.getElementById('aName').value, document.getElementById('aVal').value, 20)">إضافة (عائد 20%)</button>
             </div>
         </div>
-    </div>
+
+        <!-- صفحة الخريطة -->
+        <div id="page-roadmap" class="page hidden">
+            <div id="roadmapList"></div>
+        </div>
+
+        <!-- الحاسبة -->
+        <div id="page-calc" class="page hidden text-center">
+            <div class="card">
+                <p>الإيداع الشهري</p>
+                <input type="number" value="1000" oninput="appData.monthly = parseFloat(this.value); engine.sync()" 
+                       style="font-size:20px; text-align:center; width:100%">
+                <h4 id="calcRes" class="text-brand" style="margin-top:20px">--</h4>
+            </div>
+        </div>
+
+        <!-- المستشار (مع زر كتابة) -->
+        <div id="page-chat" class="page hidden">
+            <div id="chatBox" class="card">
+                <div class="msg ai">أهلاً يا هندسة! أنا مستشارك المالي. كيف نطور استثماراتك اليوم؟</div>
+            </div>
+            <div class="chat-input-area" style="display:flex; gap:10px; margin-top:10px">
+                <input type="text" id="chatInput" placeholder="اكتب استفسارك..." 
+                       style="flex:1; padding:10px; border:1px solid #ddd; border-radius:20px; font-family:Tajawal;">
+                <button onclick="engine.sendMessage()" class="btn-primary" 
+                        style="width:45px; height:45px; border-radius:50%; display:flex; align-items:center; justify-content:center;">
+                    <i class="fa-solid fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </main>
 
     <script src="script.js"></script>
 </body>
