@@ -1,18 +1,17 @@
 <!-- غلاف البروفايل -->
-<div class="relative bg-gradient-to-r from-sky-400 to-blue-500 h-40 sm:h-56 rounded-b-2xl shadow-md">
-    <!-- تغيير الغلاف لاحقاً يمكن إضافته -->
-</div>
+<div class="relative bg-gradient-to-r from-sky-400 to-blue-500 h-40 sm:h-56 rounded-b-2xl shadow-md"></div>
 
-<!-- صورة البروفايل والاسم -->
+<!-- معلومات المستخدم -->
 <div class="bg-white rounded-b-2xl shadow-sm -mt-16 sm:-mt-20 px-4 pb-6 pt-16 sm:pt-20 relative">
     <!-- الصورة الشخصية -->
     <div class="absolute -top-12 sm:-top-16 right-4 sm:right-6 w-24 h-24 sm:w-32 sm:h-32 rounded-full border-4 border-white shadow-md overflow-hidden bg-gray-200">
-        <img id="profileAvatar" class="w-full h-full object-cover" src="" alt="صورة المستخدم">
+        <img id="profileAvatar" class="w-full h-full object-cover" src="" alt="الصورة">
     </div>
 
+    <!-- الاسم والبريد -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-            <h1 id="profileName" class="text-2xl sm:text-3xl font-black text-gray-800"></h1>
+            <h1 id="profileName" class="text-2xl sm:text-3xl font-black text-gray-800">جار التحميل...</h1>
             <p id="profileEmail" class="text-sm text-gray-500"></p>
             <p class="text-sm text-gray-600 mt-1 font-bold">🦈 قرش في Shark Hub</p>
         </div>
@@ -35,7 +34,7 @@
     </div>
 </div>
 
-<!-- منشورات المستخدم (مكان مخصص) -->
+<!-- منشورات المستخدم (مكان فارغ الآن) -->
 <div class="mt-4 space-y-4">
     <div class="bg-white rounded-xl p-6 shadow-sm text-center text-gray-400">
         <i class="fa-solid fa-fish-fins text-5xl text-sky-200 mb-4"></i>
@@ -44,32 +43,41 @@
     </div>
 </div>
 
-<!-- سكريبت ملء البيانات -->
 <script>
     (function() {
-        // تبويبات شكلية (لا تؤدي وظيفة الآن)
+        // تفعيل التبويبات الشكلية
         document.querySelectorAll('.tab-btn').forEach(btn => {
             btn.addEventListener('click', function() {
-                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active', 'bg-gray-100'));
+                document.querySelectorAll('.tab-btn').forEach(b => {
+                    b.classList.remove('active', 'bg-gray-100');
+                    b.classList.add('text-gray-500');
+                });
                 this.classList.add('active', 'bg-gray-100');
+                this.classList.remove('text-gray-500');
             });
         });
 
-        // جلب بيانات المستخدم
-        const updateProfile = () => {
-            if (window.engine && window.engine.auth && window.engine.auth.currentUser) {
-                const user = window.engine.auth.currentUser;
+        // تحميل بيانات المستخدم
+        function loadProfile() {
+            const auth = window.auth; // من app.js
+            const user = auth ? auth.currentUser : null;
+            if (user) {
                 document.getElementById('profileAvatar').src = user.photoURL || '';
                 document.getElementById('profileName').textContent = user.displayName || 'مستخدم';
                 document.getElementById('profileEmail').textContent = user.email || '';
                 return true;
             }
             return false;
-        };
-        if (!updateProfile()) {
+        }
+
+        if (!loadProfile()) {
+            // قد يكون تحميل الصفحة أسرع من تسجيل الدخول، نحاول قليلاً
+            let attempts = 0;
             const interval = setInterval(() => {
-                if (updateProfile()) clearInterval(interval);
-            }, 100);
+                if (loadProfile() || ++attempts > 10) {
+                    clearInterval(interval);
+                }
+            }, 300);
         }
     })();
 </script>
