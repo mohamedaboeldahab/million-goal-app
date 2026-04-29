@@ -9,45 +9,65 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap');
-        body { font-family: 'Tajawal', sans-serif; background-color: #f0f2f5; overflow-x: hidden; }
+        body { font-family: 'Tajawal', sans-serif; background-color: #f8fafc; overflow-x: hidden; }
         
-        /* Splash Screen Style */
         #splash {
             position: fixed; inset: 0; background: #0f172a; 
             z-index: 200; display: flex; flex-direction: column;
-            align-items: center; justify-content: center; transition: 0.5s;
+            align-items: center; justify-content: center;
         }
-        .loader { width: 48px; height: 48px; border: 5px solid #FFF; border-bottom-color: #0ea5e9; border-radius: 50%; animation: rotation 1s linear infinite; }
-        @keyframes rotation { 0% { transform: rotate(0deg) } 100% { transform: rotate(360deg) } }
+
+        /* تنسيق زر المستشار العائم */
+        .ai-fab {
+            position: fixed; bottom: 20px; left: 20px;
+            width: 60px; height: 60px; background: #0ea5e9;
+            border-radius: 50%; display: flex; items-center; justify-content: center;
+            color: white; font-size: 24px; shadow: 0 10px 25px rgba(14, 165, 233, 0.4);
+            cursor: pointer; z-index: 100; transition: 0.3s;
+        }
+        .ai-fab:hover { transform: scale(1.1) rotate(-10deg); }
+
+        .nav-link { position: relative; padding: 10px 5px; color: #64748b; font-weight: bold; font-size: 14px; transition: 0.3s; }
+        .nav-link.active { color: #0ea5e9; }
+        .nav-link.active::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 3px; background: #0ea5e9; border-radius: 10px; }
     </style>
 </head>
 <body>
 
     <div id="splash">
-        <div class="w-24 h-24 bg-sky-500 rounded-3xl flex items-center justify-center mb-6 shadow-2xl shadow-sky-500/20 rotate-12">
+        <div class="w-20 h-20 bg-sky-500 rounded-3xl flex items-center justify-center mb-6 rotate-12">
             <i class="fa-solid fa-fish-fins text-4xl text-white"></i>
         </div>
-        <h1 class="text-white text-3xl font-black tracking-widest">SHARK HUB</h1>
-        <div class="loader mt-8"></div>
+        <h1 class="text-white text-2xl font-black">SHARK HUB</h1>
     </div>
 
-    <nav id="main-nav" class="bg-white shadow-sm sticky top-0 z-50 px-4 py-2 hidden">
-        <div class="max-w-2xl mx-auto flex justify-between items-center">
-            <div class="flex items-center gap-2">
-                <div class="w-8 h-8 bg-slate-900 rounded-lg flex items-center justify-center text-white text-xs">
-                    <i class="fa-solid fa-fish-fins"></i>
+    <nav id="main-nav" class="bg-white shadow-sm sticky top-0 z-50 hidden">
+        <div class="max-w-4xl mx-auto px-4">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 bg-slate-900 rounded-lg flex items-center justify-center text-white text-xs">
+                        <i class="fa-solid fa-fish-fins"></i>
+                    </div>
+                    <span class="font-black text-slate-800 text-sm uppercase hidden md:block">Shark Hub</span>
                 </div>
-                <span class="font-black text-slate-800">SHARK HUB</span>
-            </div>
-            <div class="flex gap-4">
-                <button onclick="engine.loadPage('home')" class="p-2 text-sky-600"><i class="fa-solid fa-house"></i></button>
-                <button onclick="engine.loadPage('roadmap')" class="p-2 text-gray-400"><i class="fa-solid fa-map"></i></button>
-                <button id="userBtn" class="w-8 h-8 rounded-full border overflow-hidden bg-gray-100"></button>
+
+                <div class="flex gap-4 md:gap-8 overflow-x-auto no-scrollbar">
+                    <button onclick="engine.loadPage('home')" class="nav-link active" data-page="home">المنشورات</button>
+                    <button onclick="engine.loadPage('assets')" class="nav-link" data-page="assets">أصولي</button>
+                    <button onclick="engine.loadPage('courses')" class="nav-link" data-page="courses">الكورسات</button>
+                    <button onclick="engine.loadPage('roadmap')" class="nav-link" data-page="roadmap">الخريطة</button>
+                </div>
+
+                <div id="userBtn" class="w-8 h-8 rounded-full border overflow-hidden bg-gray-100"></div>
             </div>
         </div>
     </nav>
 
-    <main id="app-content" class="max-w-2xl mx-auto p-4 pt-6"></main>
+    <main id="app-content" class="max-w-2xl mx-auto p-4"></main>
+
+    <div onclick="engine.loadPage('ai-chat')" class="ai-fab">
+        <i class="fa-solid fa-robot"></i>
+    </div>
 
     <script type="module" src="app.js"></script>
 </body>
