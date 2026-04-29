@@ -3,203 +3,163 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>مليونير المستقبل | Finance Tracker</title>
+    <title>مليونير المستقبل | Pro Assets</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap');
         :root { --brand-color: #0ea5e9; }
-        body { font-family: 'Tajawal', sans-serif; background-color: #fcfdfe; color: #1e293b; transition: all 0.3s; }
+        body { font-family: 'Tajawal', sans-serif; background-color: #f0f2f5; color: #1c1e21; }
         
+        /* Top Navigation (Facebook Style) */
+        .top-nav { background: white; border-bottom: 1px solid #ddd; position: sticky; top: 0; z-index: 100; }
+        .nav-tab { flex: 1; display: flex; justify-center; align-items: center; padding: 12px 0; color: #65676b; position: relative; transition: 0.2s; }
+        .nav-tab.active { color: var(--brand-color); }
+        .nav-tab.active::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 3px; background: var(--brand-color); border-radius: 3px 3px 0 0; }
+        .nav-tab i { font-size: 22px; }
+
+        .asset-card { background: white; border-radius: 12px; padding: 16px; margin-bottom: 12px; border: 1px solid #ddd; }
         .bg-brand { background-color: var(--brand-color); }
         .text-brand { color: var(--brand-color); }
-        .balance-card {
-            background-color: var(--brand-color);
-            box-shadow: 0 15px 35px -10px rgba(14, 165, 233, 0.4);
-        }
-
-        /* تحسين الأزرار */
-        .btn-action { @apply flex-1 py-4 rounded-2xl font-black text-xs flex items-center justify-center gap-2 transition-all active:scale-95 shadow-sm; }
         
-        /* Modal Style */
-        #moneyModal { transition: opacity 0.3s ease; }
-        .modal-content { animation: slideUp 0.3s ease-out; }
-        @keyframes slideUp { from { transform: translateY(100px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-
-        .page { animation: fadeIn 0.3s ease-in; }
+        .page { animation: fadeIn 0.3s ease; padding-top: 15px; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        #chatContainer { height: calc(100vh - 320px); }
+        .hidden { display: none; }
     </style>
 </head>
-<body class="pb-24">
+<body class="bg-[#f0f2f5]">
 
-    <header class="p-5 flex justify-between items-center bg-white border-b border-slate-50 sticky top-0 z-50">
-        <div>
-            <h1 class="text-xl font-black text-slate-800">مليونير <span class="text-brand">المستقبل</span></h1>
-            <p id="progressPercent" class="text-[9px] text-slate-400 font-bold uppercase mt-1">تحديث حي للحسابات</p>
-        </div>
-        <div class="w-10 h-10 bg-brand rounded-xl flex items-center justify-center shadow-lg shadow-sky-100">
-            <i class="fa-solid fa-user-tie text-white text-sm"></i>
-        </div>
-    </header>
+    <nav class="top-nav flex px-2">
+        <button onclick="engine.nav('home')" id="tab-home" class="nav-tab active"><i class="fa-solid fa-house"></i></button>
+        <button onclick="engine.nav('assets')" id="tab-assets" class="nav-tab text-slate-400"><i class="fa-solid fa-briefcase"></i></button>
+        <button onclick="engine.nav('chat')" id="tab-chat" class="nav-tab text-slate-400"><i class="fa-solid fa-robot"></i></button>
+        <button onclick="engine.nav('roadmap')" id="tab-roadmap" class="nav-tab text-slate-400"><i class="fa-solid fa-flag-checkered"></i></button>
+    </nav>
 
-    <main class="max-w-md mx-auto p-6">
+    <main class="max-w-md mx-auto p-4">
         
         <div id="page-home" class="page">
-            <div class="balance-card p-10 rounded-[2.5rem] text-white mb-6 relative overflow-hidden text-center">
-                <p class="text-white/70 text-[10px] font-black uppercase mb-3 tracking-widest">إجمالي الثروة الحالية</p>
-                <div class="flex items-center justify-center gap-2">
-                    <span id="displayBalance" class="text-5xl font-black tracking-tighter">0</span>
-                    <span class="text-lg font-bold opacity-70">ج.م</span>
-                </div>
+            <div class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm text-center mb-4">
+                <p class="text-[#65676b] text-xs font-bold mb-2">إجمالي ثروتك (كاش + أصول)</p>
+                <h2 id="totalWealth" class="text-4xl font-black text-slate-800 tracking-tighter">0</h2>
+                <p class="text-brand font-bold text-sm mt-1">جنيه مصري</p>
             </div>
-
-            <div class="flex gap-4 mb-8">
-                <button onclick="openModal('add')" class="btn-action bg-white text-emerald-600 border border-emerald-50">
-                    <i class="fa-solid fa-circle-plus text-lg"></i>
-                    أرباح / إضافة
-                </button>
-                <button onclick="openModal('sub')" class="btn-action bg-white text-rose-600 border border-rose-50">
-                    <i class="fa-solid fa-circle-minus text-lg"></i>
-                    مصروف / خصم
-                </button>
-            </div>
-
-            <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm mb-6">
-                <div class="flex items-center gap-3 mb-4">
-                    <i class="fa-solid fa-chart-line text-brand"></i>
-                    <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest">تنبؤات المستشار</h3>
-                </div>
-                <p id="aiAdvice" class="text-sm text-slate-700 leading-relaxed font-bold mb-4 italic">"ابدأ بإضافة أول مبلغ لبناء خريطتك المالية."</p>
-                <div class="w-full bg-slate-50 h-1.5 rounded-full overflow-hidden">
-                    <div id="challengeProgress" class="bg-brand h-full transition-all duration-700" style="width: 0%"></div>
-                </div>
+            
+            <div class="flex gap-2 mb-4">
+                <button onclick="openModal('add')" class="flex-1 bg-brand text-white py-3 rounded-lg font-bold text-sm shadow-sm active:scale-95"><i class="fa-solid fa-plus ml-1"></i> إيداع</button>
+                <button onclick="openModal('sub')" class="flex-1 bg-gray-200 text-slate-700 py-3 rounded-lg font-bold text-sm active:scale-95"><i class="fa-solid fa-minus ml-1"></i> سحب</button>
             </div>
         </div>
 
-        <div id="page-roadmap" class="page hidden"><div id="roadmapNodes" class="space-y-8 px-2 relative"><div class="absolute right-6 top-0 bottom-0 w-px bg-slate-100"></div></div></div>
-        <div id="page-chat" class="page hidden flex flex-col">
-            <div id="chatContainer" class="overflow-y-auto p-2 space-y-4 mb-4"></div>
-            <div class="flex gap-2 p-2 bg-white rounded-2xl border border-slate-100 shadow-md">
-                <input type="text" id="chatInput" placeholder="اسأل المستشار..." class="flex-1 bg-transparent p-2 outline-none text-xs font-bold">
-                <button onclick="engine.chat.ask()" class="w-11 h-11 bg-brand text-white rounded-xl flex items-center justify-center"><i class="fa-solid fa-paper-plane"></i></button>
+        <div id="page-assets" class="page hidden">
+            <div class="flex justify-between items-center mb-4 px-1">
+                <h3 class="font-black text-lg">محفظة الأصول</h3>
+                <button onclick="openAssetModal()" class="text-brand text-sm font-bold tracking-tighter"><i class="fa-solid fa-circle-plus"></i> إضافة أصل</button>
             </div>
-        </div>
-        <div id="page-calc" class="page hidden">
-            <div class="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm space-y-6">
-                <input type="number" id="monthly" value="1000" class="w-full bg-slate-50 p-4 rounded-2xl outline-none font-black" oninput="engine.calculate()">
-                <div id="calcResult" class="p-6 bg-sky-50 rounded-2xl text-brand font-black text-sm text-center">--</div>
+
+            <div class="mb-6">
+                <p class="text-[10px] font-black text-slate-400 uppercase mb-3 mr-1">اقتراحات استثمارية</p>
+                <div class="flex gap-3 overflow-x-auto pb-2 no-scrollbar">
+                    <div onclick="quickAddAsset('صندوق الأهلي تميز', 20)" class="min-w-[150px] bg-white p-3 rounded-xl border border-brand/20 shadow-sm cursor-pointer">
+                        <p class="text-[11px] font-black text-slate-700">الأهلي تميز</p>
+                        <p class="text-brand font-bold text-xs">عائد 20% سنوياً</p>
+                    </div>
+                    <div onclick="quickAddAsset('صندوق مصر النقدي', 18)" class="min-w-[150px] bg-white p-3 rounded-xl border border-brand/20 shadow-sm cursor-pointer">
+                        <p class="text-[11px] font-black text-slate-700">مصر النقدي</p>
+                        <p class="text-brand font-bold text-xs">عائد 18% سنوياً</p>
+                    </div>
+                </div>
             </div>
+
+            <div id="assetsList" class="space-y-3">
+                </div>
         </div>
+
+        <div id="page-chat" class="page hidden"> <div id="chatContainer" class="bg-white rounded-2xl h-[60vh] p-4 border border-gray-200 overflow-y-auto mb-3"></div></div>
+        <div id="page-roadmap" class="page hidden"><div id="roadmapNodes" class="space-y-4"></div></div>
+
     </main>
 
-    <div id="moneyModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] hidden flex items-end sm:items-center justify-center">
-        <div class="modal-content bg-white w-full max-w-md rounded-t-[2.5rem] sm:rounded-[2.5rem] p-8 shadow-2xl">
-            <div class="flex justify-between items-center mb-6">
-                <h3 id="modalTitle" class="text-lg font-black text-slate-800">إضافة أموال</h3>
-                <button onclick="closeModal()" class="text-slate-400 p-2"><i class="fa-solid fa-xmark text-xl"></i></button>
+    <div id="assetModal" class="fixed inset-0 bg-black/50 z-[200] hidden flex items-center justify-center p-6">
+        <div class="bg-white w-full rounded-2xl p-6 shadow-2xl">
+            <h3 class="font-black mb-4">إضافة أصل مالي</h3>
+            <input type="text" id="assetName" placeholder="اسم الأصل (مثلاً: ذهب)" class="w-full bg-gray-50 p-3 rounded-xl mb-3 outline-none border border-gray-200 focus:border-brand font-bold">
+            <input type="number" id="assetValue" placeholder="القيمة الحالية" class="w-full bg-gray-50 p-3 rounded-xl mb-3 outline-none border border-gray-200 focus:border-brand font-bold">
+            <input type="number" id="assetRate" placeholder="نسبة الربح السنوية %" class="w-full bg-gray-50 p-3 rounded-xl mb-4 outline-none border border-gray-200 focus:border-brand font-bold">
+            <div class="flex gap-2">
+                <button onclick="saveAsset()" class="flex-1 bg-brand text-white py-3 rounded-xl font-bold">حفظ</button>
+                <button onclick="closeAssetModal()" class="flex-1 bg-gray-100 text-slate-500 py-3 rounded-xl font-bold">إلغاء</button>
             </div>
-            <div class="mb-6">
-                <label class="text-[10px] font-black text-slate-400 uppercase mb-2 block">المبلغ بالجنيه</label>
-                <input type="number" id="modalAmount" placeholder="0.00" class="w-full bg-slate-50 p-5 rounded-2xl outline-none border-2 border-transparent focus:border-brand text-3xl font-black text-center">
-            </div>
-            <button id="confirmBtn" class="w-full py-5 bg-brand text-white rounded-2xl font-black shadow-lg shadow-sky-100">تأكيد العملية</button>
         </div>
     </div>
 
-    <nav class="fixed bottom-0 left-0 right-0 h-20 bg-white border-t border-slate-50 flex justify-around items-center px-4 z-50">
-        <button onclick="engine.nav('home')" id="btn-home" class="nav-btn flex flex-col items-center gap-1 text-brand">
-            <i class="fa-solid fa-wallet text-xl"></i><span class="text-[9px] font-black">الرئيسية</span>
-        </button>
-        <button onclick="engine.nav('roadmap')" id="btn-roadmap" class="nav-btn flex flex-col items-center gap-1 text-slate-300">
-            <i class="fa-solid fa-map-location-dot text-xl"></i><span class="text-[9px] font-black">الخريطة</span>
-        </button>
-        <button onclick="engine.nav('chat')" id="btn-chat" class="nav-btn flex flex-col items-center gap-1 text-slate-300">
-            <i class="fa-solid fa-user-tie text-xl"></i><span class="text-[9px] font-black">المستشار</span>
-        </button>
-        <button onclick="engine.nav('calc')" id="btn-calc" class="nav-btn flex flex-col items-center gap-1 text-slate-300">
-            <i class="fa-solid fa-chart-line text-xl"></i><span class="text-[9px] font-black">الحاسبة</span>
-        </button>
-    </nav>
-
     <script>
-        let currentBalance = 7613;
-        let activeAction = 'add';
+        let wallet = { cash: 7613, assets: [] };
 
         const engine = {
             sync() {
-                localStorage.setItem('future_millionaire_data', currentBalance);
-                document.getElementById('displayBalance').innerText = Math.floor(currentBalance).toLocaleString();
+                localStorage.setItem('millionaire_pro_data', JSON.stringify(wallet));
+                let assetsTotal = wallet.assets.reduce((sum, a) => sum + a.val, 0);
+                let total = wallet.cash + assetsTotal;
                 
-                const progress = Math.min((currentBalance / 1000000) * 100, 100);
-                document.getElementById('challengeProgress').style.width = progress + "%";
-                document.getElementById('progressPercent').innerText = `إنجاز ${progress.toFixed(2)}% من المليون`;
-                
-                const levels = this.generateLevels();
-                const nextLvl = levels.find(l => currentBalance < l.t) || levels[99];
-                document.getElementById('aiAdvice').innerText = currentBalance >= 1000000 ? "مبروك! لقد حققت هدف المليون!" : `أنت تقترب من ${nextLvl.n}. استمر في إدارة مصروفاتك بحكمة.`;
-
-                this.renderRoadmap();
-                this.calculate();
+                document.getElementById('totalWealth').innerText = Math.floor(total).toLocaleString();
+                this.renderAssets();
             },
 
-            generateLevels() {
-                return Array.from({length: 100}, (_, i) => ({ t: (1000000 / 100) * (i + 1), n: `المحطة ${i + 1}` }));
-            },
-
-            renderRoadmap() {
-                const levels = this.generateLevels();
-                const idx = levels.findIndex(l => currentBalance < l.t);
-                const visible = levels.slice(Math.max(0, idx - 1), idx + 8);
-                document.getElementById('roadmapNodes').innerHTML = visible.map(l => `
-                    <div class="flex items-center gap-6 ${currentBalance >= l.t ? 'text-brand' : 'text-slate-300'}">
-                        <div class="w-3 h-3 rounded-full bg-current z-10 shadow-sm"></div>
-                        <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex-1">
-                            <h4 class="text-[11px] font-black text-slate-800">${l.n}</h4>
-                            <p class="text-[10px] font-bold">${l.t.toLocaleString()} ج.م</p>
+            renderAssets() {
+                const list = document.getElementById('assetsList');
+                list.innerHTML = wallet.assets.map((a, i) => `
+                    <div class="asset-card flex justify-between items-center shadow-sm">
+                        <div>
+                            <h4 class="font-black text-slate-700 text-sm">${a.name}</h4>
+                            <p class="text-[10px] text-slate-400 font-bold">عائد سنوي: ${a.rate}%</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-brand font-black">${a.val.toLocaleString()} ج.م</p>
+                            <button onclick="removeAsset(${i})" class="text-[9px] text-rose-400 font-bold">حذف</button>
                         </div>
                     </div>
                 `).join('');
             },
 
-            calculate() {
-                const monthly = parseFloat(document.getElementById('monthly').value) || 0;
-                if (monthly <= 0) return;
-                let temp = currentBalance; let m = 0;
-                while (temp < 1000000 && m < 600) { temp = (temp + monthly) * (1 + 0.015); m++; }
-                document.getElementById('calcResult').innerHTML = `ستصل للمليون خلال:<br><span class="text-xl font-black">${Math.floor(m/12)} سنة و ${m%12} شهر</span>`;
-            },
-
             nav(id) {
                 document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
                 document.getElementById('page-' + id).classList.remove('hidden');
-                document.querySelectorAll('.nav-btn').forEach(b => b.classList.replace('text-brand', 'text-slate-300'));
-                document.getElementById('btn-' + id).classList.replace('text-slate-300', 'text-brand');
+                document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+                document.getElementById('tab-' + id).classList.add('active');
             }
         };
 
-        function openModal(action) {
-            activeAction = action;
-            document.getElementById('modalTitle').innerText = action === 'add' ? 'إضافة أرباح' : 'خصم مصروفات';
-            document.getElementById('confirmBtn').style.backgroundColor = action === 'add' ? '#10b981' : '#f43f5e';
-            document.getElementById('moneyModal').classList.remove('hidden');
+        function openAssetModal() { document.getElementById('assetModal').classList.remove('hidden'); }
+        function closeAssetModal() { document.getElementById('assetModal').classList.add('hidden'); }
+
+        function saveAsset() {
+            const name = document.getElementById('assetName').value;
+            const val = parseFloat(document.getElementById('assetValue').value);
+            const rate = parseFloat(document.getElementById('assetRate').value);
+            if(name && val) {
+                wallet.assets.push({name, val, rate});
+                engine.sync();
+                closeAssetModal();
+            }
         }
 
-        function closeModal() { document.getElementById('moneyModal').classList.add('hidden'); }
-
-        document.getElementById('confirmBtn').onclick = () => {
-            const amt = parseFloat(document.getElementById('modalAmount').value) || 0;
-            if (amt > 0) {
-                currentBalance = activeAction === 'add' ? currentBalance + amt : currentBalance - amt;
+        function quickAddAsset(name, rate) {
+            const val = prompt(`دخل المبلغ اللي حابب تستثمره في ${name}:`, "1000");
+            if(val) {
+                wallet.assets.push({name, val: parseFloat(val), rate});
                 engine.sync();
-                document.getElementById('modalAmount').value = '';
-                closeModal();
             }
-        };
+        }
+
+        function removeAsset(i) {
+            wallet.assets.splice(i, 1);
+            engine.sync();
+        }
 
         window.onload = () => {
-            const saved = localStorage.getItem('future_millionaire_data');
-            if (saved) currentBalance = parseFloat(saved);
+            const saved = localStorage.getItem('millionaire_pro_data');
+            if(saved) wallet = JSON.parse(saved);
             engine.sync();
         };
     </script>
