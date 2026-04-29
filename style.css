@@ -146,34 +146,101 @@ main {
     padding: 5px 15px;
     border-radius: 4px;
 }
+.action-btn:hover { background: #f0f2f5; }
 
-.action-btn:hover {
-    background: #f0f2f5;
-}
-
-.step-item {
+/* الخريطة – شكل لعبة */
+#gameBoard {
     display: flex;
-    gap: 15px;
-    margin-bottom: 15px;
+    flex-direction: column;
+    gap: 5px;
+    background: white;
+    padding: 15px;
+    border-radius: 12px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    max-width: 100%;
+    overflow-x: auto;
+}
+
+.board-row {
+    display: flex;
+    gap: 5px;
+}
+
+.board-cell {
+    width: 40px;
+    height: 50px;
+    background: #e4e6eb;
+    border-radius: 6px;
+    display: flex;
+    flex-direction: column;
     align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    font-weight: bold;
+    color: #65676b;
+    position: relative;
+    transition: 0.2s;
 }
 
-.step-circle {
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    background: #ccc;
-    flex-shrink: 0;
-}
-
-.step-item.completed .step-circle {
+.board-cell.completed {
     background: var(--brand);
-    box-shadow: 0 0 8px var(--brand);
+    color: white;
+    box-shadow: 0 0 10px var(--brand);
+}
+
+.stage-num {
+    font-size: 11px;
+    line-height: 1;
+}
+
+.stage-amount {
+    font-size: 7px;
+    white-space: nowrap;
+}
+
+/* صفحة المستشار – شاشة كاملة */
+#page-chat.full-chat {
+    position: fixed;
+    top: 104px; /* ارتفاع الهيدر + الناف */
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    flex-direction: column;
+    background: var(--fb-bg);
+    padding: 0 10px 10px;
+    overflow: hidden;
+}
+
+#page-chat .quick-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-bottom: 8px;
+}
+
+#page-chat .quick-buttons button {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 20px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: bold;
+    color: var(--text-main);
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+#page-chat .quick-buttons button:hover {
+    background: var(--brand);
+    color: white;
 }
 
 #chatBox {
-    height: 350px;
+    flex: 1;
     overflow-y: auto;
+    background: white;
+    border-radius: 8px;
     padding: 10px;
     display: flex;
     flex-direction: column;
