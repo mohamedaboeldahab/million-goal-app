@@ -2,166 +2,65 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>مليونير المستقبل | Pro Assets</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مليونير المستقبل | FB Pro</title>
+    <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap');
-        :root { --brand-color: #0ea5e9; }
-        body { font-family: 'Tajawal', sans-serif; background-color: #f0f2f5; color: #1c1e21; }
-        
-        /* Top Navigation (Facebook Style) */
-        .top-nav { background: white; border-bottom: 1px solid #ddd; position: sticky; top: 0; z-index: 100; }
-        .nav-tab { flex: 1; display: flex; justify-center; align-items: center; padding: 12px 0; color: #65676b; position: relative; transition: 0.2s; }
-        .nav-tab.active { color: var(--brand-color); }
-        .nav-tab.active::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 3px; background: var(--brand-color); border-radius: 3px 3px 0 0; }
-        .nav-tab i { font-size: 22px; }
-
-        .asset-card { background: white; border-radius: 12px; padding: 16px; margin-bottom: 12px; border: 1px solid #ddd; }
-        .bg-brand { background-color: var(--brand-color); }
-        .text-brand { color: var(--brand-color); }
-        
-        .page { animation: fadeIn 0.3s ease; padding-top: 15px; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        .hidden { display: none; }
-    </style>
 </head>
-<body class="bg-[#f0f2f5]">
+<body>
 
-    <nav class="top-nav flex px-2">
+    <header>
+        <h1 style="font-weight:900; font-size:18px">مليونير <span style="color:#0ea5e9">المستقبل</span></h1>
+        <i class="fa-solid fa-circle-user" style="font-size:24px; color:#65676b"></i>
+    </header>
+
+    <nav class="top-nav">
         <button onclick="engine.nav('home')" id="tab-home" class="nav-tab active"><i class="fa-solid fa-house"></i></button>
-        <button onclick="engine.nav('assets')" id="tab-assets" class="nav-tab text-slate-400"><i class="fa-solid fa-briefcase"></i></button>
-        <button onclick="engine.nav('chat')" id="tab-chat" class="nav-tab text-slate-400"><i class="fa-solid fa-robot"></i></button>
-        <button onclick="engine.nav('roadmap')" id="tab-roadmap" class="nav-tab text-slate-400"><i class="fa-solid fa-flag-checkered"></i></button>
+        <button onclick="engine.nav('assets')" id="tab-assets" class="nav-tab"><i class="fa-solid fa-briefcase"></i></button>
+        <button onclick="engine.nav('calc')" id="tab-calc" class="nav-tab"><i class="fa-solid fa-chart-line"></i></button>
+        <button onclick="engine.nav('roadmap')" id="tab-roadmap" class="nav-tab"><i class="fa-solid fa-flag-checkered"></i></button>
+        <button onclick="engine.nav('chat')" id="tab-chat" class="nav-tab"><i class="fa-solid fa-robot"></i></button>
     </nav>
 
-    <main class="max-w-md mx-auto p-4">
-        
+    <main>
         <div id="page-home" class="page">
-            <div class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm text-center mb-4">
-                <p class="text-[#65676b] text-xs font-bold mb-2">إجمالي ثروتك (كاش + أصول)</p>
-                <h2 id="totalWealth" class="text-4xl font-black text-slate-800 tracking-tighter">0</h2>
-                <p class="text-brand font-bold text-sm mt-1">جنيه مصري</p>
+            <div class="balance-box">
+                <small>إجمالي الثروة</small>
+                <h2 id="totalVal" style="font-size:40px; margin:5px 0">0</h2>
+                <small>جنيه مصري</small>
             </div>
-            
-            <div class="flex gap-2 mb-4">
-                <button onclick="openModal('add')" class="flex-1 bg-brand text-white py-3 rounded-lg font-bold text-sm shadow-sm active:scale-95"><i class="fa-solid fa-plus ml-1"></i> إيداع</button>
-                <button onclick="openModal('sub')" class="flex-1 bg-gray-200 text-slate-700 py-3 rounded-lg font-bold text-sm active:scale-95"><i class="fa-solid fa-minus ml-1"></i> سحب</button>
-            </div>
+            <button class="btn-primary" onclick="engine.nav('assets')">تحديث الأصول</button>
         </div>
 
         <div id="page-assets" class="page hidden">
-            <div class="flex justify-between items-center mb-4 px-1">
-                <h3 class="font-black text-lg">محفظة الأصول</h3>
-                <button onclick="openAssetModal()" class="text-brand text-sm font-bold tracking-tighter"><i class="fa-solid fa-circle-plus"></i> إضافة أصل</button>
+            <h3 style="font-weight:900; margin-bottom:15px">محفظة الأصول</h3>
+            <div id="assetsList"></div>
+            <div class="card" style="margin-top:20px">
+                <input type="text" id="aName" placeholder="اسم الأصل" style="width:100%; margin-bottom:10px; padding:8px">
+                <input type="number" id="aVal" placeholder="القيمة" style="width:100%; margin-bottom:10px; padding:8px">
+                <button class="btn-primary" onclick="engine.addAsset(document.getElementById('aName').value, document.getElementById('aVal').value, 20)">إضافة (عائد 20%)</button>
             </div>
-
-            <div class="mb-6">
-                <p class="text-[10px] font-black text-slate-400 uppercase mb-3 mr-1">اقتراحات استثمارية</p>
-                <div class="flex gap-3 overflow-x-auto pb-2 no-scrollbar">
-                    <div onclick="quickAddAsset('صندوق الأهلي تميز', 20)" class="min-w-[150px] bg-white p-3 rounded-xl border border-brand/20 shadow-sm cursor-pointer">
-                        <p class="text-[11px] font-black text-slate-700">الأهلي تميز</p>
-                        <p class="text-brand font-bold text-xs">عائد 20% سنوياً</p>
-                    </div>
-                    <div onclick="quickAddAsset('صندوق مصر النقدي', 18)" class="min-w-[150px] bg-white p-3 rounded-xl border border-brand/20 shadow-sm cursor-pointer">
-                        <p class="text-[11px] font-black text-slate-700">مصر النقدي</p>
-                        <p class="text-brand font-bold text-xs">عائد 18% سنوياً</p>
-                    </div>
-                </div>
-            </div>
-
-            <div id="assetsList" class="space-y-3">
-                </div>
         </div>
 
-        <div id="page-chat" class="page hidden"> <div id="chatContainer" class="bg-white rounded-2xl h-[60vh] p-4 border border-gray-200 overflow-y-auto mb-3"></div></div>
-        <div id="page-roadmap" class="page hidden"><div id="roadmapNodes" class="space-y-4"></div></div>
+        <div id="page-roadmap" class="page hidden">
+            <div id="roadmapList"></div>
+        </div>
 
+        <div id="page-calc" class="page hidden text-center">
+            <div class="card">
+                <p>الإيداع الشهري</p>
+                <input type="number" value="1000" oninput="appData.monthly = parseFloat(this.value); engine.sync()" style="font-size:20px; text-align:center; width:100%">
+                <h4 id="calcRes" class="text-brand" style="margin-top:20px">--</h4>
+            </div>
+        </div>
+
+        <div id="page-chat" class="page hidden">
+            <div id="chatBox" class="card">
+                <div class="msg ai">أهلاً يا هندسة! أنا مستشارك المالي. كيف نطور استثماراتك اليوم؟</div>
+            </div>
+        </div>
     </main>
 
-    <div id="assetModal" class="fixed inset-0 bg-black/50 z-[200] hidden flex items-center justify-center p-6">
-        <div class="bg-white w-full rounded-2xl p-6 shadow-2xl">
-            <h3 class="font-black mb-4">إضافة أصل مالي</h3>
-            <input type="text" id="assetName" placeholder="اسم الأصل (مثلاً: ذهب)" class="w-full bg-gray-50 p-3 rounded-xl mb-3 outline-none border border-gray-200 focus:border-brand font-bold">
-            <input type="number" id="assetValue" placeholder="القيمة الحالية" class="w-full bg-gray-50 p-3 rounded-xl mb-3 outline-none border border-gray-200 focus:border-brand font-bold">
-            <input type="number" id="assetRate" placeholder="نسبة الربح السنوية %" class="w-full bg-gray-50 p-3 rounded-xl mb-4 outline-none border border-gray-200 focus:border-brand font-bold">
-            <div class="flex gap-2">
-                <button onclick="saveAsset()" class="flex-1 bg-brand text-white py-3 rounded-xl font-bold">حفظ</button>
-                <button onclick="closeAssetModal()" class="flex-1 bg-gray-100 text-slate-500 py-3 rounded-xl font-bold">إلغاء</button>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        let wallet = { cash: 7613, assets: [] };
-
-        const engine = {
-            sync() {
-                localStorage.setItem('millionaire_pro_data', JSON.stringify(wallet));
-                let assetsTotal = wallet.assets.reduce((sum, a) => sum + a.val, 0);
-                let total = wallet.cash + assetsTotal;
-                
-                document.getElementById('totalWealth').innerText = Math.floor(total).toLocaleString();
-                this.renderAssets();
-            },
-
-            renderAssets() {
-                const list = document.getElementById('assetsList');
-                list.innerHTML = wallet.assets.map((a, i) => `
-                    <div class="asset-card flex justify-between items-center shadow-sm">
-                        <div>
-                            <h4 class="font-black text-slate-700 text-sm">${a.name}</h4>
-                            <p class="text-[10px] text-slate-400 font-bold">عائد سنوي: ${a.rate}%</p>
-                        </div>
-                        <div class="text-right">
-                            <p class="text-brand font-black">${a.val.toLocaleString()} ج.م</p>
-                            <button onclick="removeAsset(${i})" class="text-[9px] text-rose-400 font-bold">حذف</button>
-                        </div>
-                    </div>
-                `).join('');
-            },
-
-            nav(id) {
-                document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
-                document.getElementById('page-' + id).classList.remove('hidden');
-                document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-                document.getElementById('tab-' + id).classList.add('active');
-            }
-        };
-
-        function openAssetModal() { document.getElementById('assetModal').classList.remove('hidden'); }
-        function closeAssetModal() { document.getElementById('assetModal').classList.add('hidden'); }
-
-        function saveAsset() {
-            const name = document.getElementById('assetName').value;
-            const val = parseFloat(document.getElementById('assetValue').value);
-            const rate = parseFloat(document.getElementById('assetRate').value);
-            if(name && val) {
-                wallet.assets.push({name, val, rate});
-                engine.sync();
-                closeAssetModal();
-            }
-        }
-
-        function quickAddAsset(name, rate) {
-            const val = prompt(`دخل المبلغ اللي حابب تستثمره في ${name}:`, "1000");
-            if(val) {
-                wallet.assets.push({name, val: parseFloat(val), rate});
-                engine.sync();
-            }
-        }
-
-        function removeAsset(i) {
-            wallet.assets.splice(i, 1);
-            engine.sync();
-        }
-
-        window.onload = () => {
-            const saved = localStorage.getItem('millionaire_pro_data');
-            if(saved) wallet = JSON.parse(saved);
-            engine.sync();
-        };
-    </script>
+    <script src="script.js"></script>
 </body>
 </html>
