@@ -100,31 +100,45 @@ window.engine = {
         }
     },
 
-    async loadPage(pageName) {
-        const content = document.getElementById('app-content');
-        if (!content) return;
+async loadPage(pageName) {
+    const content = document.getElementById('app-content');
+    if (!content) return;
 
-        // تمييز الزر النشط في الـ Nav
-        document.querySelectorAll('.nav-link').forEach(l => {
-            l.classList.toggle('active', l.dataset.page === pageName);
+    // تمييز الزر النشط في الـ Nav
+    document.querySelectorAll('.nav-link').forEach(l => {
+        l.classList.toggle('active', l.dataset.page === pageName);
+    });
+
+    content.innerHTML = '<div class="flex justify-center py-20"><div class="w-8 h-8 border-4 border-sky-500 border-t-transparent rounded-full animate-spin"></div></div>';
+
+    try {
+        const response = await fetch(`${pageName}.html`);
+        const html = await response.text();
+        content.innerHTML = html;
+
+        // ✅ تشغيل السكريبتات المضمنة في الصفحة المحملة
+        const scripts = content.querySelectorAll('script');
+        scripts.forEach(oldScript => {
+            const newScript = document.createElement('script');
+            newScript.textContent = oldScript.textContent;
+            oldScript.replaceWith(newScript);
         });
 
-        content.innerHTML = '<div class="flex justify-center py-20"><div class="w-8 h-8 border-4 border-sky-500 border-t-transparent rounded-full animate-spin"></div></div>';
-
-        try {
-            const response = await fetch(`${pageName}.html`);
-            const html = await response.text();
-            content.innerHTML = html;
-
-            // تفعيل الميزات الخاصة بصفحة Home بعد تحميلها
-            if (pageName === 'home') {
-                this.listenToPosts();
-                this.activateCharCounter(); // تشغيل عداد الأحرف
-            }
-        } catch (e) {
-            content.innerHTML = `<div class="text-center py-20 text-slate-400">قريباً..</div>`;
+        // ميزات صفحة Home
+        if (pageName === 'home') {
+            this.listenToPosts();
+            this.activateCharCounter();
         }
-    },
+
+        // تحديث الروابط النشطة (من الدالة العامة في index.html)
+        if (typeof setActiveNavLink === 'function') {
+            setActiveNavLink(pageName);
+        }
+
+    } catch (e) {
+        content.innerHTML = `<div class="text-center py-20 text-slate-400">قريباً..</div>`;
+    }
+},
 
     // --- عداد الأحرف الخاص بحقل الإدخال ---
     activateCharCounter() {
