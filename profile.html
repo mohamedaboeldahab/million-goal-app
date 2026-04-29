@@ -137,7 +137,7 @@
     const confirmCrop = document.getElementById('confirmCrop');
     let cropper = null;
 
-    // ---------- تحميل البيانات (Firestore أولاً ثم احتياطي محلي) ----------
+    // ---------- تحميل البيانات ----------
     async function loadProfile() {
         let profile = null;
         try {
@@ -155,7 +155,6 @@
         const localBio = localStorage.getItem('sharkhub_bio');
         const localPhoto = localStorage.getItem('sharkhub_photo');
 
-        // الأولوية: Firestore > localStorage > Google
         const finalPhoto = profile?.photoURL || localPhoto || defaultPhoto;
         const finalName = profile?.displayName || localName || defaultName;
         const finalBio = profile?.bio || localBio || '🦈 مؤسس في Shark Hub';
@@ -166,7 +165,6 @@
         aboutEl.textContent = finalBio;
         emailEl.textContent = defaultEmail;
 
-        // مزامنة localStorage
         localStorage.setItem('sharkhub_name', finalName);
         localStorage.setItem('sharkhub_bio', finalBio);
         localStorage.setItem('sharkhub_photo', finalPhoto);
@@ -180,6 +178,42 @@
         document.getElementById('userPostsContainer').innerHTML = '<p class="text-red-500 text-sm">تعذر تحميل المنشورات</p>';
     }
 
+    // ---------- دالة آمنة لتهيئة Cropper ----------
+    function initCropper(imageElement) {
+        if (cropper) cropper.destroy();
+        // نتأكد من تحميل Cropper.js
+        if (typeof Cropper === 'undefined') {
+            // ربما لم يحمل بعد، ننتظر قليلاً ثم نحاول مجدداً
+            setTimeout(() => {
+                if (typeof Cropper !== 'undefined') {
+                    cropper = new Cropper(imageElement, {
+                        aspectRatio: 1,
+                        viewMode: 1,
+                        autoCropArea: 0.8,
+                        movable: true,
+                        zoomable: true,
+                    });
+                } else {
+                    showToast('تعذر تحميل أداة القص. حاول مجدداً أو استخدم الصورة مباشرة.');
+                    // خيار احتياطي: حفظ الصورة الأصلية بدون قص
+                    const dataUrl = imageElement.src;
+                    avatarImg.src = dataUrl;
+                    localStorage.setItem('sharkhub_photo', dataUrl);
+                    cropModal.classList.add('hidden');
+                    cropModal.classList.remove('flex');
+                }
+            }, 500);
+            return;
+        }
+        cropper = new Cropper(imageElement, {
+            aspectRatio: 1,
+            viewMode: 1,
+            autoCropArea: 0.8,
+            movable: true,
+            zoomable: true,
+        });
+    }
+
     // ---------- فتح أداة القص ----------
     avatarOverlay.addEventListener('click', () => avatarInput.click());
 
@@ -189,16 +223,16 @@
         const reader = new FileReader();
         reader.onload = () => {
             cropImage.src = reader.result;
-            if (cropper) cropper.destroy();
-            cropper = new Cropper(cropImage, {
-                aspectRatio: 1,
-                viewMode: 1,
-                autoCropArea: 0.8,
-                movable: true,
-                zoomable: true,
-            });
             cropModal.classList.remove('hidden');
             cropModal.classList.add('flex');
+            // تهيئة Cropper بعد أن تصبح الصورة جاهزة
+            // نتأكد أن الصورة ظهرت أولاً ثم ننشئ cropper
+            cropImage.onload = () => {
+                initCropper(cropImage);
+            };
+            if (cropImage.complete) {
+                initCropper(cropImage);
+            }
         };
         reader.readAsDataURL(file);
     });
@@ -212,7 +246,19 @@
     });
 
     confirmCrop.addEventListener('click', async () => {
-        if (!cropper) return;
+        if (!cropper) {
+            // إذا لم يكن هناك cropper (فشل التحميل) نأخذ الصورة الأصلية
+            const dataUrl = cropImage.src;
+            avatarImg.src = dataUrl;
+            try {
+                await window.engine.updateUserProfile({ photoURL: dataUrl });
+            } catch(e) {}
+            localStorage.setItem('sharkhub_photo', dataUrl);
+            cropModal.classList.add('hidden');
+            cropModal.classList.remove('flex');
+            showToast('تم حفظ الصورة (بدون قص) ⚠️');
+            return;
+        }
         const canvas = cropper.getCroppedCanvas({ width: 400, height: 400 });
         const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
         avatarImg.src = dataUrl;
@@ -225,7 +271,6 @@
             console.error("فشل حفظ الصورة في Firestore:", e);
         }
 
-        // حفظ احتياطي محلي دائماً
         localStorage.setItem('sharkhub_photo', dataUrl);
 
         cropModal.classList.add('hidden');
@@ -266,7 +311,6 @@
             console.error("تعذر حفظ البيانات:", e);
         }
 
-        // احتياط محلي
         localStorage.setItem('sharkhub_name', newName);
         localStorage.setItem('sharkhub_bio', newBio);
         aboutEl.textContent = newBio;
