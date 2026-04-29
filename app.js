@@ -1,16 +1,8 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-auth.js";
-import { getFirestore, collection, addDoc, updateDoc, doc, onSnapshot, query, orderBy, serverTimestamp, increment, arrayUnion } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-firestore.js";
+import { getFirestore, collection, addDoc, updateDoc, doc, onSnapshot, query, orderBy, serverTimestamp, increment, arrayUnion, getDoc } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-firestore.js";
 
-const firebaseConfig = { 
-    apiKey: "AIzaSyB_2ms4K8EPbag7uab9gbDy8eePY6xwpxc",
-    authDomain: "millionaireapp-be931.firebaseapp.com",
-    projectId: "millionaireapp-be931",
-    storageBucket: "millionaireapp-be931.firebasestorage.app",
-    messagingSenderId: "325577904362",
-    appId: "1:325577904362:web:8d85d4547bf22b1d8f4793"
-};
-
+const firebaseConfig = { /* بياناتك هنا */ };
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
@@ -20,50 +12,54 @@ window.engine = {
     init() {
         onAuthStateChanged(auth, (user) => {
             const splash = document.getElementById('splash');
-            const authActions = document.getElementById('authActions');
             if (user) {
                 if(splash) splash.style.display = 'none';
                 document.getElementById('main-nav').classList.remove('hidden');
                 document.getElementById('userBtn').innerHTML = `<img src="${user.photoURL}" class="w-full h-full object-cover">`;
-                document.getElementById('userEmail').innerText = user.email;
                 this.loadPage('home');
-            } else {
-                if(authActions) {
-                    authActions.innerHTML = `
-                        <button onclick="engine.login()" class="bg-white text-slate-900 px-10 py-4 rounded-2xl font-black shadow-2xl flex items-center gap-3 hover:scale-105 transition-all">
-                            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20">
-                            دخول القروش
-                        </button>
-                    `;
-                }
-            }
+            } else { this.login(); }
         });
     },
 
     async login() { await signInWithPopup(auth, provider); },
-    async logout() { if(confirm("هل ستغادر المحيط؟")) { await signOut(auth); location.reload(); } },
+    async logout() { await signOut(auth); location.reload(); },
 
     async loadPage(pageName) {
-        document.querySelectorAll('.nav-link').forEach(link => {
-            link.classList.toggle('active', link.dataset.page === pageName);
-        });
-
         const content = document.getElementById('app-content');
-        content.innerHTML = '<div class="text-center py-20"><div class="w-10 h-10 border-4 border-sky-500 border-t-transparent rounded-full animate-spin mx-auto"></div></div>';
-
         try {
             const response = await fetch(`${pageName}.html`);
-            const html = await response.text();
-            content.innerHTML = html;
-            
+            content.innerHTML = await response.text();
             if (pageName === 'home') this.listenToPosts();
-            if (pageName === 'roadmap') this.renderRoadmap();
-        } catch (e) {
-            content.innerHTML = `<div class="text-center py-20 text-slate-400 font-bold">الصفحة قيد التطوير في Shark Labs</div>`;
+        } catch (e) { content.innerHTML = "قريباً..."; }
+    },
+
+    // --- نظام التصويت المطور ---
+    async handleVote(postId, type) {
+        const postRef = doc(db, "posts", postId);
+        const userId = auth.currentUser.uid;
+        const postSnap = await getDoc(postRef);
+        const data = postSnap.data();
+
+        // التأكد أن المستخدم لم يصوت من قبل
+        if (data.voters && data.voters.includes(userId)) {
+            alert("لقد قمت بالتصويت مسبقاً على هذا المشروع");
+            return;
+        }
+
+        if (type === 'support') {
+            await updateDoc(postRef, { 
+                supportCount: increment(1), 
+                voters: arrayUnion(userId) 
+            });
+        } else {
+            await updateDoc(postRef, { 
+                opposeCount: increment(1), 
+                voters: arrayUnion(userId) 
+            });
         }
     },
 
-    // --- المنشورات والتصويت ---
+    // --- عرض المنشورات وتصميم أزرار التقييم ---
     listenToPosts() {
         const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
         onSnapshot(q, (snapshot) => {
@@ -72,67 +68,62 @@ window.engine = {
             feed.innerHTML = snapshot.docs.map(doc => {
                 const p = doc.data();
                 return `
-                <div class="bg-white rounded-[2rem] p-6 mb-6 shadow-sm border border-gray-50 flex gap-4 animate-fade-in">
-                    <div class="flex flex-col items-center gap-2 bg-slate-50 rounded-2xl p-2 h-fit min-w-[45px]">
-                        <button onclick="engine.handleVote('${doc.id}', 1)" class="text-slate-300 hover:text-sky-500 transition-colors"><i class="fa-solid fa-circle-chevron-up text-xl"></i></button>
-                        <span class="font-black text-slate-700 text-sm">${p.points || 0}</span>
-                        <button onclick="engine.handleVote('${doc.id}', -1)" class="text-slate-300 hover:text-red-400 transition-colors"><i class="fa-solid fa-circle-chevron-down text-xl"></i></button>
+                <div class="bg-white rounded-[2rem] p-6 mb-6 shadow-sm border border-slate-50 animate-fade-in">
+                    <div class="flex items-center gap-2 mb-4">
+                        <img src="${p.authorPhoto}" class="w-8 h-8 rounded-full border">
+                        <span class="text-xs font-black text-slate-500">${p.authorName}</span>
                     </div>
-                    <div class="flex-1">
-                        <div class="flex items-center gap-2 mb-3">
-                            <img src="${p.authorPhoto}" class="w-6 h-6 rounded-lg border">
-                            <span class="font-bold text-[11px] text-slate-400 underline">${p.authorName}</span>
-                        </div>
-                        <p class="text-slate-800 text-sm font-medium leading-relaxed mb-4">${p.content}</p>
-                        <button onclick="engine.openComments('${doc.id}')" class="text-sky-600 text-[11px] font-black bg-sky-50 px-4 py-2 rounded-full hover:bg-sky-100 transition-all">
-                            <i class="fa-solid fa-comments ml-1"></i> ${p.commentsCount || 0} تعليق
+                    <p class="text-slate-800 text-sm font-bold leading-relaxed mb-6">${p.content}</p>
+                    
+                    <div class="flex gap-2 border-t pt-4">
+                        <button onclick="engine.handleVote('${doc.id}', 'support')" class="flex-1 bg-emerald-50 text-emerald-600 py-3 rounded-xl font-black text-xs flex items-center justify-center gap-2 hover:bg-emerald-100 transition-all">
+                            <i class="fa-solid fa-thumbs-up"></i> أؤيد (${p.supportCount || 0})
                         </button>
+                        <button onclick="engine.handleVote('${doc.id}', 'oppose')" class="flex-1 bg-rose-50 text-rose-600 py-3 rounded-xl font-black text-xs flex items-center justify-center gap-2 hover:bg-rose-100 transition-all">
+                            <i class="fa-solid fa-thumbs-down"></i> لا أؤيد (${p.opposeCount || 0})
+                        </button>
+                    </div>
+
+                    <div class="mt-4 pt-4 border-t border-dashed">
+                        <div class="flex gap-2">
+                            <input type="text" id="comm_${doc.id}" placeholder="اكتب تعليقك هنا..." class="flex-1 bg-slate-50 border-none rounded-lg p-2 text-xs outline-none">
+                            <button onclick="engine.addComment('${doc.id}')" class="bg-slate-900 text-white px-4 py-2 rounded-lg text-xs font-bold">رد</button>
+                        </div>
+                        <div id="list_${doc.id}" class="mt-3 space-y-2 max-h-32 overflow-y-auto">
+                            </div>
                     </div>
                 </div>`;
             }).join('');
+            
+            // جلب التعليقات لكل بوست
+            snapshot.docs.forEach(d => this.listenToComments(d.id));
         });
     },
 
-    async addPost() {
-        const input = document.getElementById('postInput');
-        if(!input.value.trim()) return;
-        await addDoc(collection(db, "posts"), {
-            content: input.value,
-            authorName: auth.currentUser.displayName,
-            authorPhoto: auth.currentUser.photoURL,
-            points: 0,
-            commentsCount: 0,
+    async addComment(postId) {
+        const input = document.getElementById(`comm_${postId}`);
+        if (!input.value.trim()) return;
+        await addDoc(collection(db, `posts/${postId}/comments`), {
+            text: input.value,
+            userName: auth.currentUser.displayName,
             createdAt: serverTimestamp()
         });
         input.value = '';
     },
 
-    async handleVote(postId, val) {
-        const postRef = doc(db, "posts", postId);
-        await updateDoc(postRef, { points: increment(val) });
-    },
-
-    // --- الخريطة ---
-    renderRoadmap() {
-        const container = document.getElementById('roadmapSteps');
-        if(!container) return;
-        const steps = [
-            {t: "تحديد الفكرة", p: 0},
-            {t: "بناء النموذج الأولي", p: 100},
-            {t: "جذب أول مستثمر", p: 1000},
-            {t: "التوسع الإقليمي", p: 10000}
-        ];
-        container.innerHTML = steps.map(s => `
-            <div class="flex items-center gap-6 mb-10 group">
-                <div class="w-12 h-12 rounded-2xl bg-white shadow-lg flex items-center justify-center text-slate-300 group-hover:text-sky-500 transition-all border-2 border-transparent group-hover:border-sky-500">
-                    <i class="fa-solid fa-trophy"></i>
-                </div>
-                <div>
-                    <h4 class="font-black text-slate-800 text-sm">${s.t}</h4>
-                    <p class="text-[10px] text-slate-400">تحتاج ${s.p} نقطة دعم</p>
-                </div>
-            </div>
-        `).join('');
+    listenToComments(postId) {
+        const q = query(collection(db, `posts/${postId}/comments`), orderBy("createdAt", "asc"));
+        onSnapshot(q, (snap) => {
+            const list = document.getElementById(`list_${postId}`);
+            if (list) {
+                list.innerHTML = snap.docs.map(d => `
+                    <div class="text-[10px] bg-slate-50 p-2 rounded-lg border border-slate-100">
+                        <span class="font-black text-sky-600 ml-1">${d.data().userName}:</span>
+                        <span class="text-slate-600">${d.data().text}</span>
+                    </div>
+                `).join('');
+            }
+        });
     }
 };
 
