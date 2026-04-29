@@ -78,12 +78,11 @@
             <span class="text-white font-black text-base sm:text-lg tracking-tight">SHARK HUB</span>
         </div>
 
-        <!-- 🌟 مربع البحث (يظهر على جميع الشاشات الآن) -->
-        <button onclick="engine.loadPage('search')" 
-             class="flex items-center gap-2 bg-white/20 rounded-full px-3 sm:px-4 py-2 text-sm text-white/80 hover:bg-white/30 transition flex-1 max-w-[200px] sm:max-w-xs mx-2">
-            <i class="fa-solid fa-magnifying-glass text-xs sm:text-sm"></i>
-            <span class="truncate text-xs sm:text-sm">ابحث في Shark Hub</span>
-        </button>
+        <button onclick="openSearchOverlay()" 
+     class="flex items-center gap-2 bg-white/20 rounded-full px-3 sm:px-4 py-2 text-sm text-white/80 hover:bg-white/30 transition flex-1 max-w-[200px] sm:max-w-xs mx-2">
+    <i class="fa-solid fa-magnifying-glass text-xs sm:text-sm"></i>
+    <span class="truncate text-xs sm:text-sm">ابحث في Shark Hub</span>
+</button>
 
         <!-- صورة المستخدم + القائمة المنسدلة -->
         <div class="relative flex-shrink-0">
@@ -136,6 +135,27 @@
             });
         }
     </script>
+    async function openSearchOverlay() {
+    const overlay = document.getElementById('searchOverlay');
+    const contentDiv = document.getElementById('searchOverlayContent');
+    if (!overlay || !contentDiv) return;
+    // تحميل صفحة search.html
+    try {
+        const response = await fetch('search.html');
+        const html = await response.text();
+        contentDiv.innerHTML = html;
+    } catch (e) {
+        contentDiv.innerHTML = '<p class="text-gray-500">تعذر تحميل البحث</p>';
+    }
+    overlay.classList.remove('hidden');
+    overlay.classList.add('flex');
+}
+
+function closeSearchOverlay() {
+    const overlay = document.getElementById('searchOverlay');
+    overlay.classList.add('hidden');
+    overlay.classList.remove('flex');
+}
     <script type="module" src="app.js"></script>
     <!-- طبقة البحث الكاملة -->
 <div id="searchOverlay" class="fixed inset-0 z-[100] bg-white hidden flex-col">
