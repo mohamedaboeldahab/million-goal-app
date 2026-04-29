@@ -1,36 +1,32 @@
-<!-- غلاف متحرك (أمواج + قرش) -->
-<div class="relative h-48 sm:h-64 bg-gradient-to-b from-[#0ea5e9] to-[#0284c7] overflow-hidden">
-    <!-- أمواج CSS -->
-    <div class="wave wave1"></div>
-    <div class="wave wave2"></div>
-    <div class="wave wave3"></div>
-    <!-- قرش متحرك -->
-    <div class="absolute bottom-4 left-0 w-full flex justify-between px-4">
-        <div class="shark text-4xl sm:text-5xl">🦈</div>
-        <div class="small-fish text-lg opacity-80">🐟🐟🐟</div>
+<!-- غلاف القرش (معدل للجوال) -->
+<div class="relative h-56 sm:h-64 bg-gradient-to-b from-[#0ea5e9] to-[#0284c7] overflow-hidden">
+    <!-- موجات متحركة واضحة -->
+    <div class="absolute bottom-0 left-0 w-full h-16">
+        <svg class="wave-anim" viewBox="0 0 1440 120" preserveAspectRatio="none">
+            <path fill="rgba(255,255,255,0.25)" d="M0,60 C240,120 480,0 720,60 C960,120 1200,0 1440,60 L1440,120 L0,120 Z"></path>
+        </svg>
+        <svg class="wave-anim2" viewBox="0 0 1440 120" preserveAspectRatio="none">
+            <path fill="rgba(255,255,255,0.15)" d="M0,80 C240,40 480,120 720,80 C960,40 1200,120 1440,80 L1440,120 L0,120 Z"></path>
+        </svg>
+    </div>
+    <!-- قرش + سمكات صغيرة -->
+    <div class="absolute bottom-6 left-0 w-full flex justify-between px-4">
+        <span class="text-4xl sm:text-5xl filter drop-shadow-lg" style="animation: swimShark 6s ease-in-out infinite alternate;">🦈</span>
+        <span class="text-lg opacity-80" style="animation: swimFish 4s linear infinite alternate;">🐟🐟🐟</span>
     </div>
     <style>
-        .wave {
+        .wave-anim, .wave-anim2 {
             position: absolute; bottom: 0; left: 0; width: 200%; height: 60px;
-            background: rgba(255,255,255,0.2);
-            border-radius: 1000% 1000% 0 0;
             animation: waveMove 8s linear infinite;
         }
-        .wave2 { bottom: 10px; opacity: 0.5; animation-duration: 12s; animation-delay: -2s; }
-        .wave3 { bottom: 20px; opacity: 0.3; animation-duration: 10s; animation-delay: -5s; }
+        .wave-anim2 { bottom: 10px; opacity: 0.6; animation-duration: 12s; animation-delay: -2s; }
         @keyframes waveMove {
             0% { transform: translateX(0); }
             100% { transform: translateX(-50%); }
         }
-        .shark {
-            animation: swimShark 6s ease-in-out infinite alternate;
-        }
         @keyframes swimShark {
             0% { transform: translateX(0); }
             100% { transform: translateX(30px); }
-        }
-        .small-fish {
-            animation: swimFish 4s linear infinite alternate;
         }
         @keyframes swimFish {
             0% { transform: translateX(0); }
@@ -41,15 +37,18 @@
 
 <!-- معلومات البروفايل -->
 <div class="bg-white rounded-b-2xl shadow-md -mt-12 sm:-mt-16 px-4 pb-6 pt-14 sm:pt-20 relative">
-    <!-- صورة الملف -->
-    <div class="absolute -top-10 sm:-top-14 right-4 sm:right-6 w-20 h-20 sm:w-28 sm:h-28 rounded-full border-4 border-white shadow-lg overflow-hidden bg-white">
-        <img id="profileAvatar" class="w-full h-full object-cover" src="" alt="صورة المستخدم">
+    <!-- صورة البروفايل قابلة للتغيير -->
+    <div class="absolute -top-10 sm:-top-14 right-4 sm:right-6 w-20 h-20 sm:w-28 sm:h-28 rounded-full border-4 border-white shadow-lg overflow-hidden bg-white group">
+        <img id="profileAvatar" class="w-full h-full object-cover" src="" alt="صورتي">
+        <div id="avatarOverlay" class="absolute inset-0 bg-black/40 hidden group-hover:flex items-center justify-center text-white cursor-pointer text-sm">
+            <i class="fa-solid fa-camera"></i>
+        </div>
     </div>
 
-    <!-- الاسم والبريد (قابل للتعديل) -->
+    <!-- الاسم والبريد (قابلان للتعديل والحفظ) -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-            <h1 id="profileName" class="text-xl sm:text-2xl font-black text-gray-800" contenteditable="false">اسم المستخدم</h1>
+            <h1 id="profileName" class="text-xl sm:text-2xl font-black text-gray-800" contenteditable="false">جار التحميل...</h1>
             <p id="profileEmail" class="text-sm text-gray-500"></p>
             <p id="profileBio" class="text-sm text-gray-600 mt-1" contenteditable="false">🦈 مؤسس في Shark Hub</p>
         </div>
@@ -76,7 +75,6 @@
 
     <!-- محتوى التبويبات -->
     <div class="mt-4">
-        <!-- تبويب المنشورات -->
         <div id="tab-posts" class="tab-content">
             <div id="userPostsContainer" class="space-y-3">
                 <div class="text-center py-10 text-gray-400">
@@ -85,14 +83,12 @@
                 </div>
             </div>
         </div>
-        <!-- تبويب عني -->
         <div id="tab-about" class="tab-content hidden">
             <div class="bg-gray-50 rounded-xl p-4">
                 <p class="font-bold mb-2">نبذة عني</p>
-                <p id="aboutBio" class="text-sm text-gray-600">مستخدم Shark Hub شغوف بالبحر وريادة الأعمال 🦈</p>
+                <p id="aboutBio" class="text-sm text-gray-600"></p>
             </div>
         </div>
-        <!-- باقي التبويبات مخفية -->
         <div id="tab-friends" class="tab-content hidden"><p class="text-gray-400 text-sm">لا يوجد أصدقاء بعد</p></div>
         <div id="tab-photos" class="tab-content hidden"><p class="text-gray-400 text-sm">لا توجد صور</p></div>
     </div>
@@ -114,16 +110,38 @@
             });
         });
 
-        // === تحميل بيانات المستخدم ===
+        // === جلب البيانات من localStorage (مخصص) أو من Google ===
+        function getCustomData() {
+            return {
+                name: localStorage.getItem('sharkhub_name'),
+                bio: localStorage.getItem('sharkhub_bio'),
+                photo: localStorage.getItem('sharkhub_photo')
+            };
+        }
+
         function loadUserData() {
             const user = window.auth?.currentUser;
             if (!user) return false;
-            document.getElementById('profileAvatar').src = user.photoURL || '';
-            document.getElementById('profileName').textContent = user.displayName || 'مستخدم';
+            const custom = getCustomData();
+            
+            // الصورة: custom > Google > افتراضية
+            const avatar = document.getElementById('profileAvatar');
+            const photoSrc = custom.photo || user.photoURL;
+            avatar.src = photoSrc || '';
+            
+            // الاسم: custom > Google
+            const nameEl = document.getElementById('profileName');
+            nameEl.textContent = custom.name || user.displayName || 'مستخدم';
+            
+            // البريد
             document.getElementById('profileEmail').textContent = user.email || '';
-            // يمكن تحميل البايو من localStorage مثلاً
-            const savedBio = localStorage.getItem('sharkhub_bio');
-            if (savedBio) document.getElementById('profileBio').textContent = savedBio;
+            
+            // البايو
+            const bioEl = document.getElementById('profileBio');
+            const aboutEl = document.getElementById('aboutBio');
+            bioEl.textContent = custom.bio || '🦈 مؤسس في Shark Hub';
+            aboutEl.textContent = bioEl.textContent;
+            
             return true;
         }
 
@@ -141,7 +159,19 @@
             document.getElementById('userPostsContainer').innerHTML = '<p class="text-red-500 text-sm">خاصية المنشورات غير متاحة حالياً</p>';
         }
 
-        // === تعديل البروفايل ===
+        // === تحرير الصورة الشخصية (عبر رابط URL) ===
+        const avatarImg = document.getElementById('profileAvatar');
+        const avatarOverlay = document.getElementById('avatarOverlay');
+        avatarOverlay.addEventListener('click', () => {
+            const newUrl = prompt('أدخل رابط صورة البروفايل الجديدة:', avatarImg.src);
+            if (newUrl && newUrl.trim()) {
+                avatarImg.src = newUrl;
+                localStorage.setItem('sharkhub_photo', newUrl);
+                showToast('تم تحديث الصورة ✅');
+            }
+        });
+
+        // === تحرير الاسم والبايو ===
         const editBtn = document.getElementById('editProfileBtn');
         const saveBtn = document.getElementById('saveProfileBtn');
         const nameEl = document.getElementById('profileName');
@@ -164,15 +194,20 @@
             bioEl.classList.remove('bg-yellow-50','px-2','rounded');
             saveBtn.classList.add('hidden');
             editBtn.classList.remove('hidden');
-            // حفظ البايو في localStorage
-            localStorage.setItem('sharkhub_bio', bioEl.textContent);
+            
+            // حفظ في localStorage
+            localStorage.setItem('sharkhub_name', nameEl.textContent.trim());
+            localStorage.setItem('sharkhub_bio', bioEl.textContent.trim());
             aboutBioEl.textContent = bioEl.textContent;
-            // تنبيه بسيط
+            showToast('تم حفظ التغييرات ✅');
+        });
+
+        function showToast(msg) {
             const toast = document.createElement('div');
-            toast.className = 'fixed bottom-4 left-4 bg-gray-800 text-white px-4 py-2 rounded-lg text-sm animate-pulse';
-            toast.textContent = 'تم حفظ التغييرات ✅';
+            toast.className = 'fixed bottom-4 left-4 bg-gray-800 text-white px-4 py-2 rounded-lg text-sm z-50 animate-pulse';
+            toast.textContent = msg;
             document.body.appendChild(toast);
             setTimeout(() => toast.remove(), 2000);
-        });
+        }
     })();
 </script>
