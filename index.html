@@ -3,253 +3,98 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Future Millionaire PRO | مليونير المستقبل</title>
+    <title>مليونير المستقبل | Light Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap');
-        
-        :root {
-            --primary: #22c55e;
-            --bg: #050505;
-        }
-
-        body {
-            font-family: 'Tajawal', sans-serif;
-            background-color: var(--bg);
-            color: white;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        .glass {
-            background: rgba(255, 255, 255, 0.03);
-            backdrop-filter: blur(15px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-        }
-
-        .neo-card {
-            background: #0a0a0a;
-            border: 1px solid #1a1a1a;
-            transition: all 0.3s ease;
-        }
-
-        .active-tab {
-            color: var(--primary);
-            border-bottom: 3px solid var(--primary);
-        }
-
-        @keyframes pulse-green {
-            0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); }
-            70% { box-shadow: 0 0 0 15px rgba(34, 197, 94, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
-        }
-
-        .roadmap-node::before {
-            content: '';
-            position: absolute;
-            right: 23px;
-            top: 50px;
-            width: 2px;
-            height: 50px;
-            background: #1a1a1a;
-            z-index: 0;
-        }
-        .roadmap-node:last-child::before { display: none; }
-
-        input::-webkit-outer-spin-button, input::-webkit-inner-spin-button {
-            -webkit-appearance: none;
-            margin: 0;
-        }
+        body { font-family: 'Tajawal', sans-serif; background-color: #f8fafc; color: #1e293b; }
+        .gradient-card { background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%); }
+        .glass-nav { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px); border-top: 1px solid #e2e8f0; }
+        .roadmap-step.active .icon-box { background: #0ea5e9; color: white; transform: scale(1.1); box-shadow: 0 10px 15px -3px rgba(14, 165, 233, 0.4); }
+        .page { transition: all 0.4s ease; }
+        input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; }
     </style>
 </head>
-<body class="pb-28">
+<body class="pb-24">
 
-    <div id="splash" class="fixed inset-0 z-[100] bg-black flex flex-col items-center justify-center transition-all duration-700">
-        <div class="w-20 h-20 bg-green-500 rounded-3xl flex items-center justify-center animate-bounce shadow-2xl shadow-green-500/50">
-            <span class="text-black text-4xl font-black italic">M</span>
+    <header class="p-6 flex justify-between items-center bg-white border-b border-slate-100">
+        <div>
+            <h1 class="text-xl font-black text-slate-800">مليونير <span class="text-sky-500">المستقبل</span></h1>
+            <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Wealth Path v3.0</p>
         </div>
-        <h1 class="mt-8 text-2xl font-black tracking-[0.4em] uppercase">Future Millionaire</h1>
-        <div class="mt-4 w-48 h-1 bg-white/10 rounded-full overflow-hidden">
-            <div class="h-full bg-green-500 w-1/3 animate-[progress_2s_ease-in-out_infinite]"></div>
+        <div class="w-10 h-10 bg-slate-50 rounded-full flex items-center justify-center border border-slate-200">
+            <i class="fa-solid fa-robot text-sky-500"></i>
         </div>
-    </div>
+    </header>
 
-    <main id="app" class="max-w-md mx-auto px-6 pt-10 hidden">
+    <main id="main-content" class="max-w-md mx-auto p-6">
         
-        <header class="flex justify-between items-center mb-10">
-            <div>
-                <h2 class="text-2xl font-black italic uppercase tracking-tighter">Millionaire <span class="text-green-500 italic">Future</span></h2>
-                <p id="currentDate" class="text-[10px] text-gray-500 font-bold uppercase mt-1"></p>
-            </div>
-            <div class="relative">
-                <div class="w-12 h-12 glass rounded-2xl flex items-center justify-center border border-green-500/20 shadow-lg">
-                    <span class="text-xl">🤖</span>
-                </div>
-                <span class="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-black"></span>
-            </div>
-        </header>
-
-        <div id="page-dashboard" class="page-content">
-            <section class="glass p-8 rounded-[2.5rem] mb-6 relative overflow-hidden border-b-4 border-green-500/50 shadow-2xl">
-                <div class="absolute -top-20 -right-20 w-64 h-64 bg-green-500/5 rounded-full blur-[80px]"></div>
-                <span class="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-4 block">إجمالي رأس المال النشط</span>
+        <div id="page-home" class="page">
+            <div class="gradient-card p-8 rounded-[2.5rem] text-white shadow-xl shadow-blue-200 mb-8 relative overflow-hidden">
+                <div class="absolute -right-10 -top-10 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
+                <p class="text-white/70 text-xs font-bold mb-2">رصيدك المتاح للنمو</p>
                 <div class="flex items-baseline gap-2">
-                    <input type="number" id="balance" value="7613" oninput="app.sync()" class="bg-transparent text-6xl font-black w-full outline-none caret-green-500">
-                    <span class="text-xl font-bold text-gray-700 italic">EGP</span>
+                    <input type="number" id="balance" value="7613" oninput="engine.sync()" class="bg-transparent text-5xl font-black w-full outline-none caret-white">
+                    <span class="text-lg font-bold">ج.م</span>
                 </div>
-            </section>
+            </div>
 
-            <section class="neo-card p-6 rounded-3xl mb-6 border-l-4 border-green-500">
-                <div class="flex items-center gap-3 mb-3">
-                    <div class="p-2 bg-green-500/10 rounded-lg text-green-500 text-xs font-bold uppercase tracking-widest">AI Coach</div>
+            <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm mb-6">
+                <div class="flex items-center gap-3 mb-3 text-sky-600">
+                    <i class="fa-solid fa-bolt-lightning animate-bounce"></i>
+                    <h3 class="text-xs font-black uppercase">تحدي الذكاء الاصطناعي</h3>
                 </div>
-                <p id="aiAdvice" class="text-xs text-gray-300 leading-relaxed font-medium italic italic">تحليل المسار الحالي: رصيدك ينمو بنسبة جيدة، لكن تحدي هذا الشهر سيسرع وصولك للمليون بـ 4 أشهر إضافية.</p>
-            </section>
-
-            <section class="neo-card p-6 rounded-3xl mb-10">
-                <div class="flex justify-between items-center mb-4">
-                    <h4 class="text-xs font-black uppercase tracking-widest text-orange-500">تحدي المرحلة الحالية 🔥</h4>
-                    <span id="challengeAmount" class="text-[10px] font-mono text-gray-500">2,000 EGP</span>
-                </div>
-                <div class="w-full bg-white/5 h-3 rounded-full overflow-hidden">
-                    <div id="challengeProgress" class="bg-orange-500 h-full transition-all duration-1000" style="width: 45%"></div>
-                </div>
-                <p id="challengeText" class="text-[10px] text-gray-500 mt-3 font-bold"></p>
-            </section>
-        </div>
-
-        <div id="page-roadmap" class="page-content hidden">
-            <h3 class="text-center font-black text-xl mb-10 text-green-500">خارطة الثراء <br><span class="text-[10px] text-gray-500 uppercase tracking-widest">Growth Nodes</span></h3>
-            <div id="roadmapItems" class="space-y-12 pb-10">
-                </div>
-        </div>
-
-        <div id="page-sim" class="page-content hidden text-center">
-            <div class="glass p-8 rounded-[3rem] mb-6">
-                <h3 class="text-sm font-black mb-8 uppercase tracking-widest">Investment Simulator</h3>
-                <div class="space-y-6">
-                    <div class="text-right">
-                        <label class="text-[10px] text-gray-500 mr-4 font-bold uppercase tracking-widest">إيداع شهري</label>
-                        <input type="number" id="monthly" value="1000" class="w-full bg-white/5 border border-white/5 p-5 rounded-2xl mt-1 outline-none focus:border-green-500 font-black text-xl" oninput="app.calculate()">
-                    </div>
-                    <div class="text-right">
-                        <label class="text-[10px] text-gray-500 mr-4 font-bold uppercase tracking-widest">نسبة العائد (%)</label>
-                        <input type="number" id="rate" value="18" class="w-full bg-white/5 border border-white/5 p-5 rounded-2xl mt-1 outline-none focus:border-green-500 font-black text-xl" oninput="app.calculate()">
-                    </div>
-                    <div class="p-8 bg-green-500/10 rounded-[2.5rem] border border-green-500/20">
-                        <p id="simResult" class="text-green-500 font-black text-lg leading-tight tracking-tighter">--</p>
-                        <span class="text-[10px] text-gray-500 mt-2 block uppercase tracking-widest font-bold italic">تاريخ الحرية المالية</span>
-                    </div>
+                <p id="aiAdvice" class="text-sm text-slate-600 leading-relaxed mb-4">نصيحة ذكية تظهر هنا...</p>
+                <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                    <div id="challengeProgress" class="bg-sky-500 h-full transition-all duration-1000" style="width: 0%"></div>
                 </div>
             </div>
         </div>
 
-        <nav class="fixed bottom-8 left-6 right-6 h-20 glass rounded-[2.5rem] flex items-center justify-around px-2 z-50 border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
-            <button onclick="app.nav('dashboard')" id="nav-dashboard" class="flex flex-col items-center justify-center p-4 active-tab transition-all">
-                <span class="text-2xl">🏠</span>
-            </button>
-            <button onclick="app.nav('roadmap')" id="nav-roadmap" class="flex flex-col items-center justify-center p-4 text-gray-600 transition-all">
-                <span class="text-2xl">🗺️</span>
-            </button>
-            <button onclick="app.nav('sim')" id="nav-sim" class="flex flex-col items-center justify-center p-4 text-gray-600 transition-all">
-                <span class="text-2xl">📊</span>
-            </button>
-            <button class="flex flex-col items-center justify-center p-4 text-gray-600">
-                <span class="text-2xl">⚙️</span>
-            </button>
-        </nav>
+        <div id="page-roadmap" class="page hidden">
+            <h2 class="text-lg font-black text-slate-800 mb-8 text-center italic">خارطة الوصول للمليون</h2>
+            <div id="roadmapNodes" class="space-y-8 relative">
+                </div>
+        </div>
 
+        <div id="page-calc" class="page hidden">
+            <div class="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
+                <h3 class="font-black text-slate-800 mb-6 flex items-center gap-2 italic">
+                    <i class="fa-solid fa-chart-line text-green-500"></i> محاكي الأرباح
+                </h3>
+                <div class="space-y-6">
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-400 uppercase mr-2">الإيداع الشهري</label>
+                        <input type="number" id="monthly" value="1000" class="w-full bg-slate-50 p-4 rounded-2xl outline-none border border-slate-100 focus:border-sky-500 font-bold" oninput="engine.calculate()">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-400 uppercase mr-2">العائد السنوي (%)</label>
+                        <input type="number" id="rate" value="18" class="w-full bg-slate-50 p-4 rounded-2xl outline-none border border-slate-100 focus:border-sky-500 font-bold" oninput="engine.calculate()">
+                    </div>
+                    <div class="p-6 bg-sky-50 rounded-2xl border border-sky-100 text-center">
+                        <p id="calcResult" class="text-sky-700 font-black text-lg">--</p>
+                    </div>
+                </div>
+            </div>
+        </div>
     </main>
 
-    <script>
-        const app = {
-            levels: [
-                { t: 10000, n: "قاعدة الإطلاق", i: "🚀", tip: "أنت في مرحلة بناء العادات. تخلص من نفقاتك التافهة الآن." },
-                { t: 100000, n: "منطقة الأمان", i: "🛡️", tip: "أصبح لديك 'مصدة مالية'. استمر في الاستثمار الجريء." },
-                { t: 500000, n: "مرحلة التسارع", i: "⚔️", tip: "نصف مليون! قوتك المالية تضاعفت. فكر في تنويع الأصول." },
-                { t: 1000000, n: "نادي المليون", i: "👑", tip: "مبروك! المليون الأول هو أصعب مليون. القادم سيكون أسهل." }
-            ],
+    <nav class="fixed bottom-0 left-0 right-0 h-20 glass-nav flex justify-around items-center px-6 z-50">
+        <button onclick="engine.nav('home')" id="btn-home" class="flex flex-col items-center gap-1 text-sky-500 font-black">
+            <i class="fa-solid fa-house-chimney text-xl"></i>
+            <span class="text-[9px]">الرئيسية</span>
+        </button>
+        <button onclick="engine.nav('roadmap')" id="btn-roadmap" class="flex flex-col items-center gap-1 text-slate-400 font-black">
+            <i class="fa-solid fa-map-location-dot text-xl"></i>
+            <span class="text-[9px]">الخريطة</span>
+        </button>
+        <button onclick="engine.nav('calc')" id="btn-calc" class="flex flex-col items-center gap-1 text-slate-400 font-black">
+            <i class="fa-solid fa-calculator text-xl"></i>
+            <span class="text-[9px]">الحاسبة</span>
+        </button>
+    </nav>
 
-            init() {
-                setTimeout(() => {
-                    document.getElementById('splash').style.opacity = '0';
-                    document.getElementById('app').classList.remove('hidden');
-                    setTimeout(() => document.getElementById('splash').remove(), 700);
-                }, 2000);
-
-                const saved = localStorage.getItem('mf_balance') || "7613";
-                document.getElementById('balance').value = saved;
-                document.getElementById('currentDate').innerText = new Date().toLocaleDateString('ar-EG', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-                
-                this.sync();
-                this.calculate();
-            },
-
-            sync() {
-                const val = parseFloat(document.getElementById('balance').value) || 0;
-                localStorage.setItem('mf_balance', val);
-                this.updateAI(val);
-                this.renderRoadmap(val);
-            },
-
-            updateAI(val) {
-                const level = this.levels.find(l => val < l.t) || this.levels[this.levels.length-1];
-                document.getElementById('aiAdvice').innerText = level.tip;
-
-                // Challenge Engine
-                const challengeVal = level.t / 5; // تحدي الشهر هو 20% من تارجت الليفل
-                document.getElementById('challengeAmount').innerText = `${challengeVal.toLocaleString()} EGP`;
-                const prog = Math.min((val % challengeVal) / challengeVal * 100, 100);
-                document.getElementById('challengeProgress').style.width = (prog || 10) + "%";
-                document.getElementById('challengeText').innerText = prog >= 100 ? "اكتمل التحدي! أنت بطل مالي." : `متبقي ${Math.floor(100 - prog)}% لتجاوز تحدي هذا الشهر.`;
-            },
-
-            renderRoadmap(val) {
-                const container = document.getElementById('roadmapItems');
-                container.innerHTML = this.levels.map(l => {
-                    const active = val >= l.t;
-                    return `
-                        <div class="roadmap-node flex items-center gap-6 relative transition-all ${active ? 'opacity-100 scale-100' : 'opacity-20 scale-95'}">
-                            <div class="w-12 h-12 rounded-2xl glass flex items-center justify-center text-xl z-10 border ${active ? 'border-green-500 bg-green-500/10 shadow-[0_0_20px_rgba(34,197,94,0.3)]' : 'border-white/5'}">
-                                ${active ? '✅' : l.i}
-                            </div>
-                            <div>
-                                <p class="text-[10px] font-black text-gray-500 tracking-widest uppercase">${l.t.toLocaleString()} EGP</p>
-                                <h4 class="text-sm font-black italic uppercase">${l.n}</h4>
-                            </div>
-                        </div>
-                    `;
-                }).join('');
-            },
-
-            calculate() {
-                const current = parseFloat(document.getElementById('balance').value) || 0;
-                const monthly = parseFloat(document.getElementById('monthly').value) || 0;
-                const rate = (parseFloat(document.getElementById('rate').value) / 100) / 12;
-                
-                if (monthly <= 0) return;
-
-                let temp = current;
-                let months = 0;
-                while (temp < 1000000 && months < 600) {
-                    temp = (temp + monthly) * (1 + rate);
-                    months++;
-                }
-
-                const y = Math.floor(months/12);
-                const m = months % 12;
-                document.getElementById('simResult').innerText = `بعد ${y} سنة و ${m} شهر`;
-            },
-
-            nav(id) {
-                document.querySelectorAll('.page-content').forEach(p => p.classList.add('hidden'));
-                document.querySelectorAll('nav button').forEach(b => b.classList.remove('active-tab', 'text-gray-600'));
-                
-                document.getElementById('page-' + id).classList.remove('hidden');
-                document.getElementById('nav-' + id).classList.add('active-tab');
-            }
-        };
-
-        window.onload = () => app.init();
-    </script>
+    <script src="app.js"></script>
 </body>
 </html>
