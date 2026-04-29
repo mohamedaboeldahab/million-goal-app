@@ -99,15 +99,24 @@
             </div>
         </div>
     </div>
-
-    <!-- الصف الثاني: روابط التنقل -->
     <div class="nav-links-container flex gap-1 px-4 pb-3 pt-1">
-        <!-- كما هي بدون تغيير -->
         <button onclick="engine.loadPage('home')" class="nav-link active" data-page="home">
             <i class="fa-solid fa-house"></i> الرئيسية
         </button>
-        <!-- ... باقي الأزرار ... -->
+        <button onclick="engine.loadPage('assets')" class="nav-link" data-page="assets">
+            <i class="fa-solid fa-wallet"></i> المحفظة
+        </button>
+        <button onclick="engine.loadPage('roadmap')" class="nav-link" data-page="roadmap">
+            <i class="fa-solid fa-map"></i> الخريطة
+        </button>
+        <button onclick="engine.loadPage('courses')" class="nav-link" data-page="courses">
+            <i class="fa-solid fa-graduation-cap"></i> الأكاديمية
+        </button>
+        <button onclick="engine.loadPage('ai-chat')" class="nav-link" data-page="ai-chat">
+            <i class="fa-solid fa-robot"></i> المساعد
+        </button>
     </div>
+
 </nav>
     <!-- منطقة المحتوى الرئيسية -->
     <main id="app-content" class="max-w-2xl mx-auto px-4 pt-28 pb-10">
