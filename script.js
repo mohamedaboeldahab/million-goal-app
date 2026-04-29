@@ -1,5 +1,5 @@
 let appData = {
-    cash: 7613,
+    cash: 0,            // بدأنا من صفر
     assets: [],
     monthly: 1000,
     rate: 18,
@@ -24,18 +24,16 @@ const engine = {
         const assetsTotal = appData.assets.reduce((s, a) => s + a.val, 0);
         const total = appData.cash + assetsTotal;
 
-        // تحديث إجمالي الثروة في جميع الأماكن
-        const totalElements = [
-            document.getElementById('totalVal'),
-            document.getElementById('totalValAssets')
-        ];
-        totalElements.forEach(el => {
-            if (el) el.innerText = Math.floor(total).toLocaleString();
-        });
+        // تحديث واجهة الثروة في صفحة الأصول
+        const totalEl = document.getElementById('totalValAssets');
+        if (totalEl) totalEl.innerText = Math.floor(total).toLocaleString();
 
-        // كشف المراحل 10% .. 100%
+        const cashEl = document.getElementById('cashDisplay');
+        if (cashEl) cashEl.innerText = Math.floor(appData.cash).toLocaleString() + ' ج.م';
+
+        // كشف المراحل (نسب الإنجاز التقليدية)
         for (let pct = 10; pct <= 100; pct += 10) {
-            const target = 10000 * pct;
+            const target = 10000 * pct; // 10% = 100,000
             if (total >= target && !appData.milestonesReached.includes(pct)) {
                 appData.milestonesReached.push(pct);
                 this.addPost(`🎉 وصلت إلى ${pct}% من حلم المليون! استمر يا بطل.`);
@@ -56,6 +54,21 @@ const engine = {
 
         document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
         document.getElementById('tab-' + pageId).classList.add('active');
+    },
+
+    // ----- تعديل الرصيد النقدي -----
+    adjustCash() {
+        const input = document.getElementById('cashAdjustInput');
+        const amount = parseFloat(input.value);
+        if (isNaN(amount)) return;
+        const newCash = appData.cash + amount;
+        if (newCash < 0) {
+            alert('الرصيد لا يمكن أن يكون سالباً');
+            return;
+        }
+        appData.cash = newCash;
+        input.value = '';
+        this.sync();
     },
 
     // ----- المنشورات -----
@@ -79,10 +92,7 @@ const engine = {
         if (!container) return;
 
         if (appData.posts.length === 0) {
-            container.innerHTML = `
-                <div class="card" style="text-align:center; color:#65676b">
-                    لا توجد تحديثات بعد. ابدأ بنشر أول فرصة!
-                </div>`;
+            container.innerHTML = `<div class="card" style="text-align:center; color:#65676b">لا توجد تحديثات بعد. ابدأ بنشر أول فرصة!</div>`;
             return;
         }
 
@@ -105,7 +115,7 @@ const engine = {
         `).join('');
     },
 
-    // ----- الأصول -----
+    // ----- إدارة الأصول -----
     addAsset(name, val, rate) {
         if (!name || !val) return;
         appData.assets.push({ name, val: parseFloat(val), rate: parseFloat(rate) });
@@ -132,23 +142,27 @@ const engine = {
         this.sync();
     },
 
-    // ----- الخريطة -----
+    // ----- الخريطة: 100 مرحلة من 500 إلى 1,000,000 -----
     renderRoadmap(total) {
         const container = document.getElementById('roadmapList');
         if (!container) return;
+
+        const stages = 100;
+        const start = 500;
+        const end = 1000000;
+        const step = (end - start) / (stages - 1);
+
         let html = '';
-        const step = 100000;
-        for (let target = step; target <= 1000000; target += step) {
-            const pct = Math.round((target / 1000000) * 100);
-            if (total >= target - 50000) {
-                html += `
+        for (let i = 0; i < stages; i++) {
+            const target = Math.round(start + i * step);
+            const pct = ((i + 1) / stages * 100).toFixed(0);
+            html += `
                 <div class="step-item ${total >= target ? 'completed' : ''}">
                     <div class="step-circle"></div>
-                    <div class="card" style="flex:1; margin-bottom:0; padding:10px">
-                        <b>${pct}%</b> - ${target.toLocaleString()} ج.م
+                    <div class="card" style="flex:1; margin-bottom:0; padding:8px">
+                        <b>مرحلة ${i + 1} (${pct}%)</b> - ${target.toLocaleString()} ج.م
                     </div>
                 </div>`;
-            }
         }
         container.innerHTML = html;
     },
@@ -167,28 +181,76 @@ const engine = {
         if (res) res.innerText = `تحقيق المليون خلال: ${Math.floor(months/12)} سنة و ${months%12} شهر`;
     },
 
-    // ----- المستشار التفاعلي -----
+    // ----- المستشار الذكي -----
     sendMessage() {
         const input = document.getElementById('chatInput');
         const msg = input.value.trim();
         if (!msg) return;
 
-        // إضافة رسالة المستخدم
         this.addChatMessage(msg, 'user');
         input.value = '';
 
-        // رد آلي بسيط (محاكاة)
+        // رد ذكي بعد تفكير
         setTimeout(() => {
-            const replies = [
-                "سأقوم بتحليل هذا الاستفسار وأعود إليك بتوصياتي.",
-                "فكرة ممتازة! دعنا نناقشها أكثر.",
-                "حاليًا السوق يظهر فرصاً في الأصول ذات العائد المرتفع، ما رأيك؟",
-                "أقترح تنويع المحفظة لتقليل المخاطر.",
-                "حسب خطتك الحالية، أنت تسير بخطى ثابتة نحو هدفك."
-            ];
-            const randomReply = replies[Math.floor(Math.random() * replies.length)];
-            this.addChatMessage(randomReply, 'ai');
-        }, 1000);
+            const reply = this.generateReply(msg);
+            this.addChatMessage(reply, 'ai');
+        }, 800);
+    },
+
+    generateReply(userMsg) {
+        const msg = userMsg.toLowerCase();
+        const assetsTotal = appData.assets.reduce((s, a) => s + a.val, 0);
+        const total = appData.cash + assetsTotal;
+
+        // تفاصيل الأصول
+        const assetList = appData.assets.map(a => `${a.name} (${a.val.toLocaleString()} ج.م)`).join('، ') || 'لا توجد أصول';
+
+        // حساب المدة للمليون
+        let temp = total;
+        let months = 0;
+        const monthlyRate = (appData.rate / 100) / 12;
+        while (temp < 1000000 && months < 600) {
+            temp = (temp + appData.monthly) * (1 + monthlyRate);
+            months++;
+        }
+        const years = Math.floor(months / 12);
+        const remainMonths = months % 12;
+
+        // الردود الذكية
+        if (msg.includes('كم') && (msg.includes('ثروت') || msg.includes('فلوس') || msg.includes('رصيد'))) {
+            return `إجمالي ثروتك حالياً ${Math.floor(total).toLocaleString()} ج.م، منها نقد ${Math.floor(appData.cash).toLocaleString()} وأصول ${Math.floor(assetsTotal).toLocaleString()}.`;
+        }
+        if (msg.includes('أصول') || msg.includes('محفظة')) {
+            if (appData.assets.length === 0) return 'ليس لديك أي أصول حالياً. أضف بعض الأصول من صفحة الأصول.';
+            return `أصولك الحالية: ${assetList}.`;
+        }
+        if (msg.includes('متى') || msg.includes('متي') || msg.includes('زمن') || msg.includes('مليون')) {
+            if (total >= 1000000) return 'أنت فعلاً مليونير! استثمر ثروتك بحكمة.';
+            return `بمعدل ادخار ${appData.monthly} ج.م شهرياً وعائد سنوي ${appData.rate}%، ستحتاج حوالي ${years} سنة و ${remainMonths} شهر للوصول للمليون.`;
+        }
+        if (msg.includes('نصيحة') || msg.includes('أفضل') || msg.includes('استثمار')) {
+            return 'نصيحتي: نوع استثماراتك بين أسهم وعقارات وذهب. لا تضع كل البيض في سلة واحدة. وراقب السوق باستمرار.';
+        }
+        if (msg.includes('مخاطر') || msg.includes('خسارة')) {
+            return 'لتقليل المخاطر، اجعل جزءاً كبيراً في أصول آمنة مثل الودائع البنكية، والباقي موزع على استثمارات مختلفة.';
+        }
+        if (msg.includes('شكراً') || msg.includes('شكرا') || msg.includes('thanks')) {
+            return 'العفو يا غالي، أنا دايمًا في خدمتك. اسألني في أي وقت.';
+        }
+        if (msg.includes('سلام') || msg.includes('باي') || msg.includes('مع السلامة')) {
+            return 'مع السلامة! حافظ على خطتك واستثمر بحكمة.';
+        }
+
+        // رد عام
+        const generic = [
+            'فكرة جيدة! دعنا نتعمق في التفاصيل.',
+            'حالياً السوق يظهر فرصاً، خاصة في الأصول ذات العائد المرتفع.',
+            'أرى أنك تسير على الطريق الصحيح. استمر!',
+            'أقترح أن تزيد ادخارك الشهري لو أمكن.',
+            'هل تريد أن نخطط لتنويع محفظتك؟',
+            `لديك حالياً ${Math.floor(total).toLocaleString()} ج.م، ومتوقع أن تصبح مليونيراً في ${years} سنوات لو حافظت على نفس الوتيرة.`,
+        ];
+        return generic[Math.floor(Math.random() * generic.length)];
     },
 
     addChatMessage(text, sender) {
