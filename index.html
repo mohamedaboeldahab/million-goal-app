@@ -3,73 +3,77 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shark Hub</title>
+    <title>Shark Hub | مجتمع القروش</title>
     <link rel="manifest" href="manifest.json">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap');
-        body { font-family: 'Tajawal', sans-serif; background-color: #f1f5f9; }
+        body { font-family: 'Tajawal', sans-serif; background-color: #f1f5f9; scroll-behavior: smooth; }
         
+        /* Splash Screen */
         #splash {
-            position: fixed; inset: 0; background: #0f172a; 
-            z-index: 200; display: flex; flex-direction: column;
-            align-items: center; justify-content: center;
+            position: fixed; inset: 0; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); 
+            z-index: 200; display: flex; flex-direction: column; align-items: center; justify-content: center;
         }
 
-        .nav-link { position: relative; padding: 12px 10px; color: #64748b; font-weight: 800; font-size: 13px; transition: 0.3s; white-space: nowrap; }
+        /* Navigation Styles */
+        .nav-link { position: relative; padding: 12px 5px; color: #64748b; font-weight: 800; font-size: 13px; transition: 0.3s; }
         .nav-link.active { color: #0ea5e9; }
         .nav-link.active::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 3px; background: #0ea5e9; border-radius: 10px; }
 
+        /* Floating AI Button */
         .ai-fab {
             position: fixed; bottom: 25px; left: 25px;
-            width: 55px; height: 55px; background: linear-gradient(135deg, #0ea5e9, #2563eb);
-            border-radius: 20px; display: flex; items-center; justify-content: center;
-            color: white; font-size: 22px; shadow: 0 10px 20px rgba(37, 99, 235, 0.3);
-            cursor: pointer; z-index: 100; transition: 0.4s; rotate: -5deg;
+            width: 60px; height: 60px; background: linear-gradient(135deg, #0ea5e9, #2563eb);
+            border-radius: 18px; display: flex; items-center; justify-content: center;
+            color: white; font-size: 24px; box-shadow: 0 10px 20px rgba(14, 165, 233, 0.4);
+            cursor: pointer; z-index: 100; transition: 0.4s; transform: rotate(-5deg);
         }
         .ai-fab:hover { transform: scale(1.1) rotate(5deg); }
-        
-        /* Profile Dropdown Animation */
-        #profileMenu { display: none; transform-origin: top left; transition: 0.2s; }
-        #profileMenu.show { display: block; animation: popIn 0.2s ease-out; }
-        @keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        #profileMenu { display: none; }
+        #profileMenu.show { display: block; animation: slideIn 0.2s ease-out; }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
-<body class="pb-10">
+<body class="pb-20">
 
     <div id="splash">
-        <div class="w-20 h-20 bg-sky-500 rounded-3xl flex items-center justify-center mb-6 rotate-12 animate-bounce">
-            <i class="fa-solid fa-fish-fins text-4xl text-white"></i>
+        <div class="w-24 h-24 bg-sky-500 rounded-[2rem] flex items-center justify-center mb-6 rotate-12 shadow-2xl animate-pulse">
+            <i class="fa-solid fa-fish-fins text-5xl text-white"></i>
         </div>
-        <h1 class="text-white text-2xl font-black tracking-widest">SHARK HUB</h1>
+        <h1 class="text-white text-3xl font-black tracking-widest mb-10">SHARK HUB</h1>
+        <div id="authActions">
+            <div class="w-8 h-8 border-4 border-sky-500 border-t-transparent rounded-full animate-spin"></div>
+        </div>
     </div>
 
-    <nav id="main-nav" class="bg-white shadow-md sticky top-0 z-50 hidden border-b border-gray-100">
+    <nav id="main-nav" class="bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-50 hidden border-b border-gray-100">
         <div class="max-w-5xl mx-auto px-4">
             <div class="flex justify-between items-center h-16">
                 <div class="relative">
-                    <button onclick="document.getElementById('profileMenu').classList.toggle('show')" id="userBtn" class="w-10 h-10 rounded-xl border-2 border-sky-100 overflow-hidden bg-gray-50 flex items-center justify-center">
-                        <i class="fa-solid fa-user text-sky-300"></i>
+                    <button onclick="document.getElementById('profileMenu').classList.toggle('show')" id="userBtn" class="w-10 h-10 rounded-2xl border-2 border-sky-50 overflow-hidden bg-slate-100 flex items-center justify-center">
+                        <i class="fa-solid fa-user text-sky-200"></i>
                     </button>
-                    <div id="profileMenu" class="absolute top-12 right-0 w-48 bg-white rounded-2xl shadow-xl border border-gray-100 py-2 z-[60]">
+                    <div id="profileMenu" class="absolute top-14 right-0 w-56 bg-white rounded-2xl shadow-2xl border border-gray-100 py-2 z-[60]">
                         <div id="userEmail" class="px-4 py-2 text-[10px] text-gray-400 border-b mb-1 truncate"></div>
-                        <button onclick="engine.logout()" class="w-full text-right px-4 py-3 text-red-500 font-bold text-sm hover:bg-red-50 flex items-center gap-2">
+                        <button onclick="engine.logout()" class="w-full text-right px-4 py-3 text-red-500 font-bold text-sm hover:bg-red-50 flex items-center gap-2 transition-colors">
                             <i class="fa-solid fa-right-from-bracket"></i> تسجيل الخروج
                         </button>
                     </div>
                 </div>
 
-                <div class="flex gap-2 md:gap-6 overflow-x-auto no-scrollbar mx-2">
-                    <button onclick="engine.loadPage('home')" class="nav-link active" data-page="home">الرئيسية</button>
+                <div class="flex gap-4 md:gap-8 overflow-x-auto no-scrollbar mx-2">
+                    <button onclick="engine.loadPage('home')" class="nav-link active" data-page="home">المجتمع</button>
                     <button onclick="engine.loadPage('assets')" class="nav-link" data-page="assets">المحفظة</button>
-                    <button onclick="engine.loadPage('courses')" class="nav-link" data-page="courses">الكورسات</button>
                     <button onclick="engine.loadPage('roadmap')" class="nav-link" data-page="roadmap">الخريطة</button>
+                    <button onclick="engine.loadPage('courses')" class="nav-link" data-page="courses">الأكاديمية</button>
                 </div>
 
                 <div class="flex items-center gap-2">
-                    <span class="font-black text-slate-800 text-xs hidden sm:block uppercase italic">Shark Hub</span>
-                    <div class="w-8 h-8 bg-sky-500 rounded-lg flex items-center justify-center text-white text-[10px]">
+                    <span class="font-black text-slate-800 text-xs hidden sm:block italic">SHARK HUB</span>
+                    <div class="w-8 h-8 bg-slate-900 rounded-lg flex items-center justify-center text-white text-[10px]">
                         <i class="fa-solid fa-fish-fins"></i>
                     </div>
                 </div>
@@ -77,9 +81,9 @@
         </div>
     </nav>
 
-    <main id="app-content" class="max-w-2xl mx-auto p-4 pt-6"></main>
+    <main id="app-content" class="max-w-2xl mx-auto p-4 pt-6 min-h-screen"></main>
 
-    <div onclick="engine.loadPage('ai-chat')" class="ai-fab shadow-lg">
+    <div onclick="engine.loadPage('ai-chat')" class="ai-fab">
         <i class="fa-solid fa-robot"></i>
     </div>
 
