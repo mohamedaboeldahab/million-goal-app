@@ -26,7 +26,7 @@
     </nav>
 
     <main>
-        <!-- الصفحة الرئيسية: من غير إجمالي الثروة -->
+        <!-- الصفحة الرئيسية (من غير إجمالي الثروة) -->
         <div id="page-home" class="page">
             <div class="card post-creator">
                 <div class="creator-top">
@@ -41,7 +41,7 @@
             <div id="feedList"></div>
         </div>
 
-        <!-- صفحة الأصول: إجمالي الثروة + رصيد النقد -->
+        <!-- صفحة الأصول -->
         <div id="page-assets" class="page hidden">
             <div class="balance-box" style="margin-bottom:15px">
                 <small>إجمالي ثروتك</small>
@@ -49,15 +49,23 @@
                 <small>جنيه مصري</small>
             </div>
 
-            <!-- بطاقة تعديل الرصيد النقدي -->
+            <!-- بطاقة الرصيد النقدي مع أزرار منفصلة -->
             <div class="card">
                 <b>الرصيد النقدي</b>
                 <div style="display:flex; align-items:center; gap:10px; margin-top:10px">
                     <span id="cashDisplay" style="font-size:18px; flex:1">0 ج.م</span>
-                    <input type="number" id="cashAdjustInput" placeholder="المبلغ (+ / -)" 
-                           style="width:100px; padding:8px; border:1px solid #ddd; border-radius:6px; text-align:center">
-                    <button class="btn-primary" onclick="engine.adjustCash()" style="width:auto; padding:8px 15px; margin-top:0">تحديث</button>
                 </div>
+                <div style="display:flex; gap:10px; margin-top:10px">
+                    <input type="number" id="cashAdjustInput" placeholder="المبلغ" 
+                           style="flex:1; padding:8px; border:1px solid #ddd; border-radius:6px; text-align:center">
+                    <button class="btn-primary" onclick="engine.adjustCash(1)" style="width:auto; padding:8px 15px; margin-top:0; background:#22c55e">
+                        <i class="fa-solid fa-plus"></i> إضافة
+                    </button>
+                    <button class="btn-primary" onclick="engine.adjustCash(-1)" style="width:auto; padding:8px 15px; margin-top:0; background:#ef4444">
+                        <i class="fa-solid fa-minus"></i> خصم
+                    </button>
+                </div>
+                <small style="color:#65676b; font-size:11px">الرصيد لا يقل عن صفر</small>
             </div>
 
             <h3 style="font-weight:900; margin-bottom:15px">محفظة الأصول</h3>
@@ -65,28 +73,38 @@
             <div class="card" style="margin-top:20px">
                 <input type="text" id="aName" placeholder="اسم الأصل" style="width:100%; margin-bottom:10px; padding:8px">
                 <input type="number" id="aVal" placeholder="القيمة" style="width:100%; margin-bottom:10px; padding:8px">
-                <button class="btn-primary" onclick="engine.addAsset(document.getElementById('aName').value, document.getElementById('aVal').value, 20)">إضافة (عائد 20%)</button>
+                <input type="number" id="aRate" placeholder="نسبة العائد السنوي %" value="20" style="width:100%; margin-bottom:10px; padding:8px">
+                <button class="btn-primary" onclick="engine.addAsset()">إضافة الأصل</button>
             </div>
         </div>
 
-        <!-- الخريطة (100 مرحلة) -->
+        <!-- صفحة الخريطة (شكل لعبة) -->
         <div id="page-roadmap" class="page hidden">
-            <div id="roadmapList"></div>
+            <h3 style="text-align:center; margin:0 0 10px">لوحة التقدم نحو المليون</h3>
+            <div id="gameBoard"></div>
         </div>
 
-        <!-- الحاسبة -->
+        <!-- صفحة الحاسبة (معتمدة على الأصول الفعلية) -->
         <div id="page-calc" class="page hidden text-center">
             <div class="card">
                 <p>الإيداع الشهري</p>
-                <input type="number" value="1000" oninput="appData.monthly = parseFloat(this.value); engine.sync()" 
+                <input type="number" id="calcMonthly" value="1000" oninput="engine.recalc()" 
                        style="font-size:20px; text-align:center; width:100%">
                 <h4 id="calcRes" class="text-brand" style="margin-top:20px">--</h4>
+                <small style="color:#65676b">يتم حساب العوائد حسب أصولك الحالية</small>
             </div>
         </div>
 
-        <!-- المستشار الذكي -->
-        <div id="page-chat" class="page hidden">
-            <div id="chatBox" class="card">
+        <!-- صفحة المستشار (شاشة كاملة مع أزرار سريعة) -->
+        <div id="page-chat" class="page hidden full-chat">
+            <div class="quick-buttons">
+                <button onclick="engine.sendPredefined('كم ثروتي الآن؟')">💰 ثروتي</button>
+                <button onclick="engine.sendPredefined('ما هي أصولي الحالية؟')">📊 أصولي</button>
+                <button onclick="engine.sendPredefined('متى سأصبح مليونيراً؟')">⏳ المدة</button>
+                <button onclick="engine.sendPredefined('أعطني نصيحة استثمارية')">💡 نصيحة</button>
+                <button onclick="engine.sendPredefined('كيف أقلل المخاطر؟')">⚠️ المخاطر</button>
+            </div>
+            <div id="chatBox" class="card" style="flex:1; overflow-y: auto; display:flex; flex-direction:column; gap:10px;">
                 <div class="msg ai">أهلاً يا هندسة! أنا مستشارك المالي الذكي. اسألني عن أي حاجة تخص أموالك وأهدافك.</div>
             </div>
             <div class="chat-input-area" style="display:flex; gap:10px; margin-top:10px">
