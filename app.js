@@ -1,99 +1,145 @@
-const engine = {
-    // 1. نظام الـ 100 مرحلة التلقائي
-    generateLevels(target = 1000000) {
-        const steps = [];
-        for (let i = 1; i <= 100; i++) {
-            const amount = (target / 100) * i;
-            steps.push({
-                t: amount,
-                n: `المرحلة ${i}`,
-                tip: this.getSmartTip(i)
-            });
-        }
-        return steps;
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-app.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-auth.js";
+import { getFirestore, collection, addDoc, updateDoc, doc, onSnapshot, query, orderBy, limit, serverTimestamp, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-firestore.js";
+
+const firebaseConfig = {
+    // ضع بياناتك هنا
+    apiKey: "AIzaSyB_2ms4K8EPbag7uab9gbDy8eePY6xwpxc",
+    authDomain: "millionaireapp-be931.firebaseapp.com",
+    projectId: "millionaireapp-be931",
+    storageBucket: "millionaireapp-be931.firebasestorage.app",
+    messagingSenderId: "325577904362",
+    appId: "1:325577904362:web:8d85d4547bf22b1d8f4793"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const provider = new GoogleAuthProvider();
+
+window.engine = {
+    init() {
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                document.getElementById('authModal').classList.add('hidden');
+                document.getElementById('userAvatar').src = user.photoURL;
+                document.getElementById('userInfo').innerHTML = `<img src="${user.photoURL}" class="w-8 h-8 rounded-full">`;
+                this.listenToPosts();
+                this.loadUserData();
+            } else {
+                document.getElementById('authModal').classList.remove('hidden');
+            }
+        });
     },
 
-    getSmartTip(step) {
-        if (step < 20) return "مرحلة بناء العادات الصارمة.";
-        if (step < 50) return "بدأت كرة الثلج في الدوران، لا تتوقف.";
-        if (step < 80) return "أنت الآن ضمن فئة المستثمرين الأذكياء.";
-        return "اقتربت من الحرية المالية المطلقة!";
-    },
-
-    // 2. محرك الشات (AI Chatbot Logic)
-    chat: {
-        messages: [],
-        ask(text) {
-            const userMsg = { role: 'user', text };
-            this.messages.push(userMsg);
-            this.render();
-
-            // محاكاة استجابة الذكاء الاصطناعي بناءً على بيانات المستخدم
-            setTimeout(() => {
-                const balance = document.getElementById('balance').value;
-                const aiMsg = { 
-                    role: 'ai', 
-                    text: `بناءً على رصيدك الحالي (${balance} ج.م)، أنصحك بزيادة الادخار بنسبة 5% هذا الشهر لتقليص مدة الوصول لهدفك بمقدار شهرين.` 
-                };
-                this.messages.push(aiMsg);
-                this.render();
-            }, 800);
-        },
-        render() {
-            const container = document.getElementById('chatContainer');
-            container.innerHTML = this.messages.map(m => `
-                <div class="mb-4 ${m.role === 'user' ? 'text-left' : 'text-right'}">
-                    <div class="inline-block p-3 rounded-2xl ${m.role === 'user' ? 'bg-sky-500 text-white' : 'bg-slate-100 text-slate-700'} text-sm font-bold">
-                        ${m.text}
-                    </div>
-                </div>
-            `).join('');
-            container.scrollTop = container.scrollHeight;
-        }
-    },
-
-    sync() {
-        const val = parseFloat(document.getElementById('balance').value) || 0;
-        localStorage.setItem('future_millionaire_data', val);
-        this.updateAI(val);
-        this.renderRoadmap(val);
-    },
-
-    updateAI(val) {
-        const levels = this.generateLevels();
-        const currentLvl = levels.find(l => val < l.t) || levels[99];
-        const progress = Math.min((val / 1000000) * 100, 100);
-        
-        document.getElementById('aiAdvice').innerText = currentLvl.tip;
-        document.getElementById('challengeProgress').style.width = progress + "%";
-        document.getElementById('progressPercent').innerText = `أتممت ${Math.floor(progress)}% من طريق المليون`;
-    },
-
-    renderRoadmap(val) {
-        const levels = this.generateLevels();
-        const container = document.getElementById('roadmapNodes');
-        // عرض المراحل القريبة فقط (الحالية + 5 قادمين) لعدم إثقال الشاشة
-        const currentIdx = levels.findIndex(l => val < l.t);
-        const displayLevels = levels.slice(Math.max(0, currentIdx - 2), currentIdx + 8);
-
-        container.innerHTML = displayLevels.map(l => {
-            const active = val >= l.t;
-            return `
-                <div class="flex items-center gap-4 p-4 rounded-2xl ${active ? 'bg-sky-50 border-sky-100' : 'opacity-50'} border">
-                    <div class="w-8 h-8 rounded-full ${active ? 'bg-sky-500' : 'bg-slate-200'} flex items-center justify-center text-white text-[10px]">
-                        ${active ? '✓' : ''}
-                    </div>
-                    <div>
-                        <h4 class="text-xs font-black">${l.n}</h4>
-                        <p class="text-[10px] text-slate-400">${l.t.toLocaleString()} ج.م</p>
-                    </div>
-                </div>
-            `;
-        }).join('');
+    async login() {
+        await signInWithPopup(auth, provider);
     },
 
     nav(pageId) {
-        document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
-        document.getElementById('page-' + pageId).classList.remove('hidden');
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.getElementById('page-' + pageId).classList.add('active');
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.classList.replace('text-[#0ea5e9]', 'text-gray-400');
+            if(btn.dataset.page === pageId) btn.classList.replace('text-gray-400', 'text-[#0ea5e9]');
+        });
+    },
+
+    // --- المجتمع ---
+    listenToPosts() {
+        const q = query(collection(db, "posts"), orderBy("createdAt", "desc"), limit(50));
+        onSnapshot(q, (snapshot) => {
+            const list = document.getElementById('feedList');
+            list.innerHTML = snapshot.docs.map(doc => this.renderPost(doc.id, doc.data())).join('');
+        });
+    },
+
+    renderPost(id, post) {
+        const isLiked = post.likes?.includes(auth.currentUser.uid);
+        return `
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+                <div class="flex items-center gap-3 mb-3">
+                    <img src="${post.authorPhoto}" class="w-10 h-10 rounded-full">
+                    <div>
+                        <h4 class="font-bold text-sm">${post.authorName}</h4>
+                        <p class="text-[10px] text-gray-400">${post.createdAt?.toDate().toLocaleDateString('ar-EG')}</p>
+                    </div>
+                </div>
+                <p class="text-gray-700 mb-4">${post.content}</p>
+                <div class="flex gap-4 border-t pt-3">
+                    <button onclick="engine.toggleLike('${id}', ${isLiked})" class="flex items-center gap-2 ${isLiked ? 'text-red-500' : 'text-gray-400'}">
+                        <i class="fa-${isLiked ? 'solid' : 'regular'} fa-heart"></i>
+                        <span class="text-xs font-bold">${post.likes?.length || 0}</span>
+                    </button>
+                    <button onclick="engine.openComments('${id}')" class="flex items-center gap-2 text-gray-400">
+                        <i class="fa-regular fa-comment"></i>
+                        <span class="text-xs font-bold">${post.commentsCount || 0}</span>
+                    </button>
+                </div>
+            </div>
+        `;
+    },
+
+    async addPost() {
+        const content = document.getElementById('postInput').value;
+        if (!content.trim()) return;
+        await addDoc(collection(db, "posts"), {
+            content,
+            authorName: auth.currentUser.displayName,
+            authorPhoto: auth.currentUser.photoURL,
+            authorId: auth.currentUser.uid,
+            createdAt: serverTimestamp(),
+            likes: [],
+            commentsCount: 0
+        });
+        document.getElementById('postInput').value = '';
+    },
+
+    async toggleLike(postId, isLiked) {
+        const ref = doc(db, "posts", postId);
+        await updateDoc(ref, {
+            likes: isLiked ? arrayRemove(auth.currentUser.uid) : arrayUnion(auth.currentUser.uid)
+        });
+    },
+
+    // --- التعليقات ---
+    openComments(postId) {
+        document.getElementById('commentSheet').classList.add('open');
+        document.getElementById('commentSheetOverlay').classList.remove('hidden');
+        this.currentPostId = postId;
+        
+        const q = query(collection(db, `posts/${postId}/comments`), orderBy("createdAt", "asc"));
+        onSnapshot(q, (snapshot) => {
+            document.getElementById('commentsContainer').innerHTML = snapshot.docs.map(d => `
+                <div class="flex gap-3 mb-4">
+                    <img src="${d.data().userPhoto}" class="w-8 h-8 rounded-full">
+                    <div class="bg-gray-50 p-3 rounded-2xl flex-1">
+                        <b class="text-xs block mb-1">${d.data().userName}</b>
+                        <p class="text-sm text-gray-600">${d.data().text}</p>
+                    </div>
+                </div>
+            `).join('');
+        });
+
+        document.getElementById('sendCommentBtn').onclick = () => this.addComment(postId);
+    },
+
+    async addComment(postId) {
+        const text = document.getElementById('commentInput').value;
+        if(!text.trim()) return;
+        await addDoc(collection(db, `posts/${postId}/comments`), {
+            text,
+            userName: auth.currentUser.displayName,
+            userPhoto: auth.currentUser.photoURL,
+            createdAt: serverTimestamp()
+        });
+        document.getElementById('commentInput').value = '';
+    },
+
+    closeComments() {
+        document.getElementById('commentSheet').classList.remove('open');
+        document.getElementById('commentSheetOverlay').classList.add('hidden');
     }
 };
+
+window.onload = () => engine.init();
