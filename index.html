@@ -23,7 +23,6 @@
             transition: background 0.2s;
         }
         .post-action-btn:hover { background-color: #f0f2f5; }
-
         .nav-link {
             display: flex; align-items: center; gap: 6px;
             white-space: nowrap;
@@ -66,110 +65,107 @@
             <div class="w-8 h-8 border-4 border-sky-500 border-t-transparent rounded-full animate-spin"></div>
         </div>
     </div>
-<!-- شريط التنقل العلوي (أزرق فاتح) -->
-<nav class="bg-sky-500 shadow-md fixed top-0 left-0 right-0 z-50">
-    <!-- الصف الأول: الشعار + البحث + الأفاتار -->
-    <div class="flex items-center justify-between px-3 sm:px-4 h-14 gap-2">
-        <!-- الشعار مع النص -->
-        <div class="flex items-center gap-2 flex-shrink-0">
-            <div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
-                <i class="fa-solid fa-fish-fins text-xl text-white"></i>
+
+    <!-- شريط التنقل العلوي -->
+    <nav class="bg-sky-500 shadow-md fixed top-0 left-0 right-0 z-50">
+        <div class="flex items-center justify-between px-3 sm:px-4 h-14 gap-2">
+            <div class="flex items-center gap-2 flex-shrink-0">
+                <div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+                    <i class="fa-solid fa-fish-fins text-xl text-white"></i>
+                </div>
+                <span class="text-white font-black text-base sm:text-lg tracking-tight">SHARK HUB</span>
             </div>
-            <span class="text-white font-black text-base sm:text-lg tracking-tight">SHARK HUB</span>
-        </div>
 
-        <button onclick="openSearchOverlay()" 
-     class="flex items-center gap-2 bg-white/20 rounded-full px-3 sm:px-4 py-2 text-sm text-white/80 hover:bg-white/30 transition flex-1 max-w-[200px] sm:max-w-xs mx-2">
-    <i class="fa-solid fa-magnifying-glass text-xs sm:text-sm"></i>
-    <span class="truncate text-xs sm:text-sm">ابحث في Shark Hub</span>
-</button>
-
-        <!-- صورة المستخدم + القائمة المنسدلة -->
-        <div class="relative flex-shrink-0">
-            <button onclick="document.getElementById('profileMenu').classList.toggle('show')" id="userBtn"
-                class="w-9 h-9 rounded-full bg-white/20 overflow-hidden border-2 border-white flex items-center justify-center">
-                <i class="fa-solid fa-user text-white"></i>
+            <!-- زر البحث الجديد -->
+            <button onclick="openSearchOverlay()" 
+                 class="flex items-center gap-2 bg-white/20 rounded-full px-3 sm:px-4 py-2 text-sm text-white/80 hover:bg-white/30 transition flex-1 max-w-[200px] sm:max-w-xs mx-2">
+                <i class="fa-solid fa-magnifying-glass text-xs sm:text-sm"></i>
+                <span class="truncate text-xs sm:text-sm">ابحث في Shark Hub</span>
             </button>
-            <div id="profileMenu" class="absolute top-12 left-0 w-56 bg-white rounded-xl shadow-2xl border border-gray-100 py-2 z-[60] hidden text-gray-800">
-                <div id="userEmail" class="px-4 py-2 text-xs text-gray-500 border-b mb-1 truncate"></div>
-                <button onclick="engine.logout()" class="w-full text-right px-4 py-3 text-red-500 font-bold text-sm hover:bg-red-50 flex items-center gap-2 transition-colors">
-                    <i class="fa-solid fa-right-from-bracket"></i> تسجيل الخروج
+
+            <div class="relative flex-shrink-0">
+                <button onclick="document.getElementById('profileMenu').classList.toggle('show')" id="userBtn"
+                    class="w-9 h-9 rounded-full bg-white/20 overflow-hidden border-2 border-white flex items-center justify-center">
+                    <i class="fa-solid fa-user text-white"></i>
                 </button>
+                <div id="profileMenu" class="absolute top-12 left-0 w-56 bg-white rounded-xl shadow-2xl border border-gray-100 py-2 z-[60] hidden text-gray-800">
+                    <div id="userEmail" class="px-4 py-2 text-xs text-gray-500 border-b mb-1 truncate"></div>
+                    <button onclick="engine.logout()" class="w-full text-right px-4 py-3 text-red-500 font-bold text-sm hover:bg-red-50 flex items-center gap-2 transition-colors">
+                        <i class="fa-solid fa-right-from-bracket"></i> تسجيل الخروج
+                    </button>
+                </div>
             </div>
         </div>
-    </div>
-    <div class="nav-links-container flex gap-1 px-4 pb-3 pt-1">
-        <button onclick="engine.loadPage('home')" class="nav-link active" data-page="home">
-            <i class="fa-solid fa-house"></i> الرئيسية
-        </button>
-        <button onclick="engine.loadPage('assets')" class="nav-link" data-page="assets">
-            <i class="fa-solid fa-wallet"></i> المحفظة
-        </button>
-        <button onclick="engine.loadPage('roadmap')" class="nav-link" data-page="roadmap">
-            <i class="fa-solid fa-map"></i> الخريطة
-        </button>
-        <button onclick="engine.loadPage('courses')" class="nav-link" data-page="courses">
-            <i class="fa-solid fa-graduation-cap"></i> الأكاديمية
-        </button>
-        <button onclick="engine.loadPage('ai-chat')" class="nav-link" data-page="ai-chat">
-            <i class="fa-solid fa-robot"></i> المساعد
-        </button>
-    </div>
+        <div class="nav-links-container flex gap-1 px-4 pb-3 pt-1">
+            <button onclick="engine.loadPage('home')" class="nav-link active" data-page="home">
+                <i class="fa-solid fa-house"></i> الرئيسية
+            </button>
+            <button onclick="engine.loadPage('assets')" class="nav-link" data-page="assets">
+                <i class="fa-solid fa-wallet"></i> المحفظة
+            </button>
+            <button onclick="engine.loadPage('roadmap')" class="nav-link" data-page="roadmap">
+                <i class="fa-solid fa-map"></i> الخريطة
+            </button>
+            <button onclick="engine.loadPage('courses')" class="nav-link" data-page="courses">
+                <i class="fa-solid fa-graduation-cap"></i> الأكاديمية
+            </button>
+            <button onclick="engine.loadPage('ai-chat')" class="nav-link" data-page="ai-chat">
+                <i class="fa-solid fa-robot"></i> المساعد
+            </button>
+        </div>
+    </nav>
 
-</nav>
     <!-- منطقة المحتوى الرئيسية -->
-    <main id="app-content" class="max-w-2xl mx-auto px-4 pt-28 pb-10">
-        <!-- يتم حقن الصفحات هنا -->
-    </main>
+    <main id="app-content" class="max-w-2xl mx-auto px-4 pt-28 pb-10"></main>
 
     <!-- زر المساعد الذكي العائم -->
     <div onclick="engine.loadPage('ai-chat')" class="fixed bottom-6 left-6 w-14 h-14 bg-sky-500 rounded-2xl flex items-center justify-center text-white text-2xl shadow-lg cursor-pointer z-40 hover:scale-110 transition-transform">
         <i class="fa-solid fa-robot"></i>
     </div>
 
+    <!-- طبقة البحث الكاملة -->
+    <div id="searchOverlay" class="fixed inset-0 z-[100] bg-white hidden flex-col">
+        <div class="flex items-center gap-3 px-4 h-14 bg-sky-500 text-white">
+            <button onclick="closeSearchOverlay()" class="text-white text-xl">
+                <i class="fa-solid fa-arrow-right"></i>
+            </button>
+            <h2 class="font-bold text-lg">بحث</h2>
+        </div>
+        <div id="searchOverlayContent" class="flex-1 overflow-y-auto p-4"></div>
+    </div>
+
+    <!-- السكريبتات -->
     <script>
-        // تحديث الروابط النشطة بعد تحميل الصفحة
+        // تحديث الروابط النشطة
         function setActiveNavLink(pageName) {
             document.querySelectorAll('.nav-link').forEach(link => {
                 link.classList.toggle('active', link.dataset.page === pageName);
             });
         }
-    </script>
-    async function openSearchOverlay() {
-    const overlay = document.getElementById('searchOverlay');
-    const contentDiv = document.getElementById('searchOverlayContent');
-    if (!overlay || !contentDiv) return;
-    // تحميل صفحة search.html
-    try {
-        const response = await fetch('search.html');
-        const html = await response.text();
-        contentDiv.innerHTML = html;
-    } catch (e) {
-        contentDiv.innerHTML = '<p class="text-gray-500">تعذر تحميل البحث</p>';
-    }
-    overlay.classList.remove('hidden');
-    overlay.classList.add('flex');
-}
 
-function closeSearchOverlay() {
-    const overlay = document.getElementById('searchOverlay');
-    overlay.classList.add('hidden');
-    overlay.classList.remove('flex');
-}
+        // فتح صفحة البحث كـ overlay
+        async function openSearchOverlay() {
+            const overlay = document.getElementById('searchOverlay');
+            const contentDiv = document.getElementById('searchOverlayContent');
+            if (!overlay || !contentDiv) return;
+            try {
+                const response = await fetch('search.html');
+                const html = await response.text();
+                contentDiv.innerHTML = html;
+            } catch (e) {
+                contentDiv.innerHTML = '<p class="text-gray-500 p-4">تعذر تحميل البحث</p>';
+            }
+            overlay.classList.remove('hidden');
+            overlay.classList.add('flex');
+        }
+
+        // إغلاق طبقة البحث
+        function closeSearchOverlay() {
+            const overlay = document.getElementById('searchOverlay');
+            overlay.classList.add('hidden');
+            overlay.classList.remove('flex');
+        }
+    </script>
     <script type="module" src="app.js"></script>
-    <!-- طبقة البحث الكاملة -->
-<div id="searchOverlay" class="fixed inset-0 z-[100] bg-white hidden flex-col">
-    <!-- رأس الـ overlay -->
-    <div class="flex items-center gap-3 px-4 h-14 bg-sky-500 text-white">
-        <button onclick="closeSearchOverlay()" class="text-white text-xl">
-            <i class="fa-solid fa-arrow-right"></i>
-        </button>
-        <h2 class="font-bold text-lg">بحث</h2>
-    </div>
-    <!-- محتوى البحث (يتم حقنه هنا) -->
-    <div id="searchOverlayContent" class="flex-1 overflow-y-auto p-4">
-        <!-- سيتم تحميل search.html هنا -->
-    </div>
-</div>
 </body>
 </html>
