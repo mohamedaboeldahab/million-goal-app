@@ -1,15 +1,15 @@
 {
-  "short_name": "Millionaire",
-  "name": "Millionaire Future Community",
+  "short_name": "Shark Hub",
+  "name": "Shark Hub Community",
   "icons": [
     {
-      "src": "icon.png",
+      "src": "https://cdn-icons-png.flaticon.com/512/3135/3135706.png",
       "type": "image/png",
       "sizes": "512x512"
     }
   ],
   "start_url": ".",
   "display": "standalone",
-  "theme_color": "#0ea5e9",
-  "background_color": "#ffffff"
+  "theme_color": "#0f172a",
+  "background_color": "#f0f2f5"
 }
