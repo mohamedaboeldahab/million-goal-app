@@ -383,14 +383,21 @@
             if (pageId === 'achievements') logic.updateBadges(parseFloat(document.getElementById('balance').value)||0);
             if (pageId === 'calculator') document.getElementById('current-balance-calc').value = document.getElementById('balance').value;
         }
+window.onload = () => {
+    const saved = localStorage.getItem('million_val');
+    if (saved) document.getElementById('balance').value = saved;
 
-        window.onload = () => {
-            const saved = localStorage.getItem('million_val');
-            if (saved) document.getElementById('balance').value = saved;
-            if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.register('sw.js');
-            }
-        };
+    // إلغاء الـ SW القديم ثم تسجيل الجديد
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(registrations => {
+            registrations.forEach(reg => reg.unregister());
+        }).then(() => {
+            navigator.serviceWorker.register('sw.js')
+                .catch(() => console.log('SW registered'));
+        });
+    }
+};
+    
     </script>
 </body>
 </html>
