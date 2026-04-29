@@ -24,7 +24,6 @@
         }
         .post-action-btn:hover { background-color: #f0f2f5; }
 
-        /* الروابط في شريط التنقل */
         .nav-link {
             display: flex; align-items: center; gap: 6px;
             white-space: nowrap;
@@ -68,24 +67,20 @@
         </div>
     </div>
 
-    <!-- ========== شريط التنقل العلوي (أزرق فاتح) ========== -->
+    <!-- شريط التنقل العلوي (أزرق فاتح) -->
     <nav class="bg-sky-500 shadow-md fixed top-0 left-0 right-0 z-50">
         <!-- الصف الأول: الشعار + البحث + الأفاتار -->
         <div class="flex items-center justify-between px-4 h-14">
-            <!-- الشعار مع النص -->
+            <!-- الشعار مع النص (ظاهر دائماً) -->
             <div class="flex items-center gap-2">
                 <div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
                     <i class="fa-solid fa-fish-fins text-xl text-white"></i>
                 </div>
-                <span class="text-white font-black text-lg tracking-tight hidden sm:block">SHARK HUB</span>
+                <span class="text-white font-black text-lg tracking-tight">SHARK HUB</span>
             </div>
 
-            <!-- حقل البحث (أبيض نصف شفاف) -->
-            <div id="searchContainer" class="hidden sm:flex items-center bg-white/20 rounded-full px-4 py-2 gap-2 text-white">
-                <i class="fa-solid fa-magnifying-glass text-sm"></i>
-                <input type="text" placeholder="ابحث في Shark Hub" class="bg-transparent outline-none text-sm w-40 placeholder-white/70">
-            </div>
-            <button onclick="toggleSearch()" class="sm:hidden text-white text-xl">
+            <!-- أيقونة البحث (تفتح صفحة search.html) -->
+            <button onclick="engine.loadPage('search')" class="text-white text-xl">
                 <i class="fa-solid fa-magnifying-glass"></i>
             </button>
 
@@ -104,7 +99,7 @@
             </div>
         </div>
 
-        <!-- الصف الثاني: روابط التنقل (أيقونات + نص) -->
+        <!-- الصف الثاني: روابط التنقل -->
         <div class="nav-links-container flex gap-1 px-4 pb-3 pt-1">
             <button onclick="engine.loadPage('home')" class="nav-link active" data-page="home">
                 <i class="fa-solid fa-house"></i> الرئيسية
@@ -135,12 +130,6 @@
     </div>
 
     <script>
-        function toggleSearch() {
-            const container = document.getElementById('searchContainer');
-            container.classList.toggle('hidden');
-            container.classList.toggle('flex');
-        }
-
         // تحديث الروابط النشطة بعد تحميل الصفحة
         function setActiveNavLink(pageName) {
             document.querySelectorAll('.nav-link').forEach(link => {
