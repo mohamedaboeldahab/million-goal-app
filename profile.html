@@ -1,40 +1,74 @@
-<div class="bg-white rounded-xl p-6 shadow-sm text-center">
-    <!-- صورة المستخدم -->
-    <img id="profileAvatar" class="w-24 h-24 rounded-full mx-auto border-4 border-sky-500 object-cover" 
-         src="" alt="صورة المستخدم">
-    <!-- اسم المستخدم -->
-    <h2 id="profileName" class="text-xl font-bold mt-4 text-gray-800"></h2>
-    <!-- البريد الإلكتروني -->
-    <p id="profileEmail" class="text-sm text-gray-500 mt-1"></p>
+<!-- غلاف البروفايل -->
+<div class="relative bg-gradient-to-r from-sky-400 to-blue-500 h-40 sm:h-56 rounded-b-2xl shadow-md">
+    <!-- تغيير الغلاف لاحقاً يمكن إضافته -->
+</div>
 
-    <!-- أزرار التحكم -->
-    <div class="mt-6 space-y-3">
-        <button onclick="engine.logout()" 
-                class="w-full bg-red-50 text-red-600 font-bold py-3 rounded-xl hover:bg-red-100 transition flex items-center justify-center gap-2">
-            <i class="fa-solid fa-right-from-bracket"></i> تسجيل الخروج
-        </button>
+<!-- صورة البروفايل والاسم -->
+<div class="bg-white rounded-b-2xl shadow-sm -mt-16 sm:-mt-20 px-4 pb-6 pt-16 sm:pt-20 relative">
+    <!-- الصورة الشخصية -->
+    <div class="absolute -top-12 sm:-top-16 right-4 sm:right-6 w-24 h-24 sm:w-32 sm:h-32 rounded-full border-4 border-white shadow-md overflow-hidden bg-gray-200">
+        <img id="profileAvatar" class="w-full h-full object-cover" src="" alt="صورة المستخدم">
+    </div>
+
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+            <h1 id="profileName" class="text-2xl sm:text-3xl font-black text-gray-800"></h1>
+            <p id="profileEmail" class="text-sm text-gray-500"></p>
+            <p class="text-sm text-gray-600 mt-1 font-bold">🦈 قرش في Shark Hub</p>
+        </div>
+        <div class="flex gap-2">
+            <button class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2.5 px-5 rounded-lg text-sm transition flex items-center gap-2">
+                <i class="fa-solid fa-pen"></i> تعديل البروفايل
+            </button>
+            <button onclick="engine.logout()" class="bg-red-50 hover:bg-red-100 text-red-600 font-bold py-2.5 px-5 rounded-lg text-sm transition flex items-center gap-2">
+                <i class="fa-solid fa-right-from-bracket"></i> تسجيل الخروج
+            </button>
+        </div>
+    </div>
+
+    <!-- تبويبات (شكلية) -->
+    <div class="flex gap-1 mt-6 border-b pb-2 overflow-x-auto">
+        <button class="tab-btn active font-bold text-sm px-4 py-2 bg-gray-100 rounded-lg">المنشورات</button>
+        <button class="tab-btn font-bold text-sm px-4 py-2 text-gray-500 hover:bg-gray-100 rounded-lg">معلومات</button>
+        <button class="tab-btn font-bold text-sm px-4 py-2 text-gray-500 hover:bg-gray-100 rounded-lg">الأصدقاء</button>
+        <button class="tab-btn font-bold text-sm px-4 py-2 text-gray-500 hover:bg-gray-100 rounded-lg">صور</button>
     </div>
 </div>
 
-<!-- سكريبت ملء بيانات المستخدم بعد تحميل الصفحة -->
+<!-- منشورات المستخدم (مكان مخصص) -->
+<div class="mt-4 space-y-4">
+    <div class="bg-white rounded-xl p-6 shadow-sm text-center text-gray-400">
+        <i class="fa-solid fa-fish-fins text-5xl text-sky-200 mb-4"></i>
+        <p class="font-bold">لا توجد منشورات منك حتى الآن</p>
+        <p class="text-xs mt-1">ابدأ بمشاركة فكرتك الأولى في المجتمع</p>
+    </div>
+</div>
+
+<!-- سكريبت ملء البيانات -->
 <script>
     (function() {
-        // الحصول على بيانات المستخدم الحالي من كائن auth الموجود في engine
-        if (window.engine && window.engine.auth && window.engine.auth.currentUser) {
-            const user = window.engine.auth.currentUser;
-            document.getElementById('profileAvatar').src = user.photoURL || '';
-            document.getElementById('profileName').textContent = user.displayName || 'مستخدم';
-            document.getElementById('profileEmail').textContent = user.email || '';
-        } else {
-            // محاولة الانتظار حتى يصبح المستخدم متاحًا
-            const checkUser = setInterval(() => {
-                if (window.engine && window.engine.auth && window.engine.auth.currentUser) {
-                    const user = window.engine.auth.currentUser;
-                    document.getElementById('profileAvatar').src = user.photoURL || '';
-                    document.getElementById('profileName').textContent = user.displayName || 'مستخدم';
-                    document.getElementById('profileEmail').textContent = user.email || '';
-                    clearInterval(checkUser);
-                }
+        // تبويبات شكلية (لا تؤدي وظيفة الآن)
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active', 'bg-gray-100'));
+                this.classList.add('active', 'bg-gray-100');
+            });
+        });
+
+        // جلب بيانات المستخدم
+        const updateProfile = () => {
+            if (window.engine && window.engine.auth && window.engine.auth.currentUser) {
+                const user = window.engine.auth.currentUser;
+                document.getElementById('profileAvatar').src = user.photoURL || '';
+                document.getElementById('profileName').textContent = user.displayName || 'مستخدم';
+                document.getElementById('profileEmail').textContent = user.email || '';
+                return true;
+            }
+            return false;
+        };
+        if (!updateProfile()) {
+            const interval = setInterval(() => {
+                if (updateProfile()) clearInterval(interval);
             }, 100);
         }
     })();
