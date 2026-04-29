@@ -1,0 +1,41 @@
+<div class="bg-white rounded-xl p-6 shadow-sm text-center">
+    <!-- صورة المستخدم -->
+    <img id="profileAvatar" class="w-24 h-24 rounded-full mx-auto border-4 border-sky-500 object-cover" 
+         src="" alt="صورة المستخدم">
+    <!-- اسم المستخدم -->
+    <h2 id="profileName" class="text-xl font-bold mt-4 text-gray-800"></h2>
+    <!-- البريد الإلكتروني -->
+    <p id="profileEmail" class="text-sm text-gray-500 mt-1"></p>
+
+    <!-- أزرار التحكم -->
+    <div class="mt-6 space-y-3">
+        <button onclick="engine.logout()" 
+                class="w-full bg-red-50 text-red-600 font-bold py-3 rounded-xl hover:bg-red-100 transition flex items-center justify-center gap-2">
+            <i class="fa-solid fa-right-from-bracket"></i> تسجيل الخروج
+        </button>
+    </div>
+</div>
+
+<!-- سكريبت ملء بيانات المستخدم بعد تحميل الصفحة -->
+<script>
+    (function() {
+        // الحصول على بيانات المستخدم الحالي من كائن auth الموجود في engine
+        if (window.engine && window.engine.auth && window.engine.auth.currentUser) {
+            const user = window.engine.auth.currentUser;
+            document.getElementById('profileAvatar').src = user.photoURL || '';
+            document.getElementById('profileName').textContent = user.displayName || 'مستخدم';
+            document.getElementById('profileEmail').textContent = user.email || '';
+        } else {
+            // محاولة الانتظار حتى يصبح المستخدم متاحًا
+            const checkUser = setInterval(() => {
+                if (window.engine && window.engine.auth && window.engine.auth.currentUser) {
+                    const user = window.engine.auth.currentUser;
+                    document.getElementById('profileAvatar').src = user.photoURL || '';
+                    document.getElementById('profileName').textContent = user.displayName || 'مستخدم';
+                    document.getElementById('profileEmail').textContent = user.email || '';
+                    clearInterval(checkUser);
+                }
+            }, 100);
+        }
+    })();
+</script>
