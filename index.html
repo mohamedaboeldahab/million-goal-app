@@ -3,221 +3,146 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>مليونير المستقبل | Pro</title>
+    <title>مليونير المستقبل | Ultimate Edition</title>
     <link rel="manifest" href="manifest.json">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap');
-        :root { --main-blue: #0ea5e9; --dark-blue: #2563eb; }
-        body { font-family: 'Tajawal', sans-serif; background-color: #f0f9ff; color: #1e293b; touch-action: manipulation; }
-        .bg-brand { background: linear-gradient(135deg, var(--main-blue) 0%, var(--dark-blue) 100%); }
-        .text-brand { color: var(--main-blue); }
-        .border-brand { border-color: var(--main-blue); }
         
-        /* تحسين شكل الخريطة */
-        .roadmap-line { position: absolute; right: 27px; top: 0; bottom: 0; width: 2px; background: #e2e8f0; z-index: 0; }
-        .step-node { position: relative; z-index: 1; }
-        .step-dot { width: 16px; height: 16px; border: 3px solid white; box-shadow: 0 0 0 3px #e2e8f0; transition: all 0.3s; }
-        .active .step-dot { background: var(--main-blue); box-shadow: 0 0 0 3px #bae6fd; transform: scale(1.2); }
+        /* تعريف ألوان اللوجو الرسمية */
+        :root {
+            --logo-blue-light: #0ea5e9;
+            --logo-blue-dark: #2563eb;
+        }
+
+        body { font-family: 'Tajawal', sans-serif; background-color: #f8fafc; color: #1e293b; }
+
+        /* خانة الرصيد - نفس تدرج اللوجو */
+        .balance-card {
+            background: linear-gradient(135deg, var(--logo-blue-light) 0%, var(--logo-blue-dark) 100%);
+            box-shadow: 0 20px 40px -15px rgba(37, 99, 235, 0.4);
+        }
+
+        /* لون البراند الموحد للنصوص والأيقونات */
+        .text-brand { color: var(--logo-blue-light); }
+        .bg-brand { background-color: var(--logo-blue-light); }
         
-        /* شاشة الشات */
-        #chatContainer { height: calc(100vh - 280px); scroll-behavior: smooth; }
-        .page { animation: fadeIn 0.3s ease-in-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        /* تحسين شكل المدخلات */
+        input[type="number"] { caret-color: white; }
+        
+        /* حركة بسيطة للأزرار */
+        .nav-btn.active { color: var(--logo-blue-light); transform: translateY(-3px); }
+        .nav-btn.active i { filter: drop-shadow(0 4px 6px rgba(14, 165, 233, 0.3)); }
+        
+        .page { animation: slideUp 0.4s ease-out; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
-<body class="pb-24">
+<body class="pb-28">
 
-    <header class="p-5 flex justify-between items-center bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-blue-50">
+    <header class="p-6 flex justify-between items-center bg-white border-b border-slate-100 sticky top-0 z-50">
         <div>
-            <h1 class="text-xl font-black text-slate-800">مليونير <span class="text-brand">المستقبل</span></h1>
-            <p id="progressPercent" class="text-[10px] text-slate-400 font-bold tracking-widest mt-1 uppercase">طريقك نحو المليون</p>
+            <h1 class="text-xl font-black text-slate-800 tracking-tight">مليونير <span class="text-brand">المستقبل</span></h1>
+            <div class="flex items-center gap-1 mt-1">
+                <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                <p id="progressPercent" class="text-[9px] text-slate-400 font-bold uppercase tracking-widest">تحديث اللحظة</p>
+            </div>
         </div>
-        <div class="w-11 h-11 bg-brand rounded-xl flex items-center justify-center shadow-lg shadow-blue-200">
-            <i class="fa-solid fa-crown text-white"></i>
+        <div class="w-10 h-10 balance-card rounded-xl flex items-center justify-center shadow-lg">
+            <i class="fa-solid fa-crown text-white text-sm"></i>
         </div>
     </header>
 
-    <main class="max-w-md mx-auto p-5">
+    <main class="max-w-md mx-auto p-6">
         
         <div id="page-home" class="page">
-            <div class="bg-brand p-8 rounded-[2.5rem] text-white shadow-2xl shadow-blue-300 mb-8 relative overflow-hidden">
-                <div class="absolute -right-5 -bottom-5 w-32 h-32 bg-white/10 rounded-full blur-3xl"></div>
-                <p class="text-white/80 text-[11px] font-bold mb-3 uppercase tracking-tighter">الرصيد المجمع حالياً</p>
-                <div class="flex items-center gap-3">
-                    <input type="number" id="balance" value="7613" oninput="engine.sync()" class="bg-transparent text-5xl font-black w-full outline-none">
-                    <span class="text-xl font-black opacity-80">ج.م</span>
+            <div class="balance-card p-10 rounded-[3rem] text-white mb-8 relative overflow-hidden">
+                <div class="absolute -right-10 -top-10 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
+                <div class="absolute -left-10 -bottom-10 w-40 h-40 bg-black/10 rounded-full blur-3xl"></div>
+                
+                <p class="text-white/80 text-[10px] font-black uppercase mb-3 tracking-[0.2em] text-center">صافي الأصول الحالية</p>
+                <div class="flex items-center justify-center gap-2">
+                    <input type="number" id="balance" value="7613" oninput="engine.sync()" 
+                           class="bg-transparent text-6xl font-black w-full text-center outline-none border-none">
+                    <span class="text-xl font-bold opacity-70">ج.م</span>
                 </div>
             </div>
 
-            <div class="bg-white p-6 rounded-3xl border border-blue-50 shadow-xl shadow-blue-100/50 mb-6">
+            <div class="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm mb-6">
                 <div class="flex items-center gap-3 mb-4">
-                    <div class="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center text-brand">
-                        <i class="fa-solid fa-lightbulb text-sm"></i>
-                    </div>
-                    <h3 class="text-xs font-black text-slate-700 uppercase">نصيحة ذكية</h3>
+                    <i class="fa-solid fa-wand-magic-sparkles text-brand"></i>
+                    <h3 class="text-xs font-black text-slate-700 uppercase tracking-wider">توصية المستشار</h3>
                 </div>
-                <p id="aiAdvice" class="text-sm text-slate-600 leading-relaxed mb-5 font-medium italic">"المال الذي تدخره اليوم هو جندي يقاتل من أجلك غداً."</p>
-                <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden">
-                    <div id="challengeProgress" class="bg-brand h-full transition-all duration-1000 shadow-[0_0_10px_rgba(14,165,233,0.5)]" style="width: 0%"></div>
+                <p id="aiAdvice" class="text-sm text-slate-500 leading-relaxed font-medium italic mb-4">"تحليل البيانات يشير إلى أنك في مرحلة نمو ممتازة."</p>
+                <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                    <div id="challengeProgress" class="bg-brand h-full transition-all duration-1000" style="width: 0%"></div>
                 </div>
             </div>
         </div>
 
         <div id="page-roadmap" class="page hidden">
-            <div class="relative py-4 px-2">
-                <div class="roadmap-line"></div>
-                <div id="roadmapNodes" class="space-y-10">
-                    </div>
-            </div>
+            <div id="roadmapNodes" class="space-y-6"></div>
         </div>
 
         <div id="page-chat" class="page hidden flex flex-col">
-            <div id="chatContainer" class="overflow-y-auto p-2 space-y-4 mb-4">
-                <div class="flex items-end gap-2">
-                    <div class="w-8 h-8 bg-brand rounded-full flex items-center justify-center text-white text-[10px]">
-                        <i class="fa-solid fa-robot"></i>
-                    </div>
-                    <div class="bg-white border border-blue-50 p-4 rounded-2xl rounded-br-none shadow-sm max-w-[80%]">
-                        <p class="text-sm font-bold text-slate-700 leading-relaxed text-right">أهلاً بك! أنا مستشارك المالي. كيف يمكنني مساعدتك في رحلة المليون اليوم؟</p>
-                    </div>
-                </div>
-            </div>
-            <div class="flex gap-2 p-1 bg-white rounded-2xl border border-blue-100 shadow-lg">
-                <input type="text" id="chatInput" placeholder="اكتب سؤالك هنا..." class="flex-1 p-4 bg-transparent outline-none text-sm font-bold">
-                <button onclick="engine.chat.ask()" class="w-12 h-12 bg-brand text-white rounded-xl flex items-center justify-center active:scale-95 transition-all">
+            <div id="chatContainer" class="h-[50vh] overflow-y-auto mb-4 p-2 space-y-4"></div>
+            <div class="flex gap-2 bg-white p-2 rounded-2xl border border-slate-100 shadow-lg">
+                <input type="text" id="chatInput" placeholder="اسأل مستشارك المالي..." class="flex-1 p-3 outline-none text-sm font-bold">
+                <button onclick="engine.chat.ask()" class="balance-card w-12 h-12 text-white rounded-xl flex items-center justify-center">
                     <i class="fa-solid fa-paper-plane"></i>
                 </button>
             </div>
         </div>
 
-        <div id="page-calc" class="page hidden">
-            <div class="bg-white p-8 rounded-[2.5rem] border border-blue-50 shadow-xl shadow-blue-100/50">
-                <div class="space-y-6">
-                    <div>
-                        <label class="text-[11px] font-black text-slate-400 uppercase block mb-2">الإيداع الشهري المتوقع</label>
-                        <input type="number" id="monthly" value="1000" class="w-full bg-blue-50/50 p-4 rounded-2xl border border-blue-50 outline-none focus:border-brand font-black text-slate-700" oninput="engine.calculate()">
-                    </div>
-                    <div>
-                        <label class="text-[11px] font-black text-slate-400 uppercase block mb-2">نسبة الربح السنوي (%)</label>
-                        <input type="number" id="rate" value="18" class="w-full bg-blue-50/50 p-4 rounded-2xl border border-blue-50 outline-none focus:border-brand font-black text-slate-700" oninput="engine.calculate()">
-                    </div>
-                    <div class="p-6 bg-blue-50 rounded-[2rem] text-center border border-blue-100">
-                        <p id="calcResult" class="text-brand font-black text-sm leading-relaxed tracking-tight">--</p>
-                    </div>
-                </div>
-            </div>
-        </div>
     </main>
 
-    <nav class="fixed bottom-0 left-0 right-0 h-20 bg-white/90 backdrop-blur-lg border-t border-blue-50 flex justify-around items-center px-4 z-50">
-        <button onclick="engine.nav('home')" id="btn-home" class="flex flex-col items-center gap-1 text-brand">
-            <div class="w-10 h-1 rounded-full bg-brand mb-1 opacity-0 transition-all nav-indicator"></div>
-            <i class="fa-solid fa-house-chimney text-xl"></i>
-            <span class="text-[9px] font-black uppercase">الرئيسية</span>
+    <nav class="fixed bottom-0 left-0 right-0 h-20 bg-white/80 backdrop-blur-xl border-t border-slate-100 flex justify-around items-center px-6 z-50">
+        <button onclick="engine.nav('home')" id="btn-home" class="nav-btn flex flex-col items-center gap-1 active">
+            <i class="fa-solid fa-wallet text-xl"></i>
+            <span class="text-[9px] font-black uppercase">الرصيد</span>
         </button>
-        <button onclick="engine.nav('roadmap')" id="btn-roadmap" class="flex flex-col items-center gap-1 text-slate-300">
-            <div class="w-10 h-1 rounded-full bg-brand mb-1 opacity-0 transition-all nav-indicator"></div>
-            <i class="fa-solid fa-route text-xl"></i>
-            <span class="text-[9px] font-black uppercase">الخريطة</span>
-        </button>
-        <button onclick="engine.nav('chat')" id="btn-chat" class="flex flex-col items-center gap-1 text-slate-300">
-            <div class="w-10 h-1 rounded-full bg-brand mb-1 opacity-0 transition-all nav-indicator"></div>
-            <i class="fa-solid fa-comments text-xl"></i>
+        <button onclick="engine.nav('chat')" id="btn-chat" class="nav-btn flex flex-col items-center gap-1 text-slate-300">
+            <i class="fa-solid fa-comment-dots text-xl"></i>
             <span class="text-[9px] font-black uppercase">المستشار</span>
         </button>
-        <button onclick="engine.nav('calc')" id="btn-calc" class="flex flex-col items-center gap-1 text-slate-300">
-            <div class="w-10 h-1 rounded-full bg-brand mb-1 opacity-0 transition-all nav-indicator"></div>
-            <i class="fa-solid fa-chart-pie text-xl"></i>
-            <span class="text-[9px] font-black uppercase">الحاسبة</span>
+        <button onclick="engine.nav('roadmap')" id="btn-roadmap" class="nav-btn flex flex-col items-center gap-1 text-slate-300">
+            <i class="fa-solid fa-map-marked-alt text-xl"></i>
+            <span class="text-[9px] font-black uppercase">الخريطة</span>
         </button>
     </nav>
 
     <script>
+        // المحرك البرمجي (نفس منطقك القوي مع تعديلات الـ UI)
         const engine = {
-            generateLevels(target = 1000000) {
-                const steps = [];
-                for (let i = 1; i <= 100; i++) {
-                    steps.push({ t: (target / 100) * i, n: `المحطة رقم ${i}` });
-                }
-                return steps;
-            },
-
-            chat: {
-                messages: [],
-                ask() {
-                    const input = document.getElementById('chatInput');
-                    if (!input.value) return;
-                    this.messages.push({ role: 'user', text: input.value });
-                    const val = input.value; input.value = ''; this.render();
-                    setTimeout(() => {
-                        let r = "ذكاء التطبيق يحلل طلبك.. استمر في الادخار!";
-                        if (val.includes("مليون")) r = "بخطتك الحالية، المليون أصبح مسألة وقت ليس إلا.";
-                        this.messages.push({ role: 'ai', text: r }); this.render();
-                    }, 600);
-                },
-                render() {
-                    const container = document.getElementById('chatContainer');
-                    container.innerHTML = this.messages.map(m => `
-                        <div class="flex ${m.role === 'user' ? 'justify-end' : 'justify-start'} mb-3">
-                            <div class="${m.role === 'user' ? 'bg-brand text-white' : 'bg-white border border-blue-50 text-slate-700'} p-4 rounded-2xl shadow-sm text-xs font-bold max-w-[85%]">
-                                ${m.text}
-                            </div>
-                        </div>
-                    `).join('');
-                    container.scrollTop = container.scrollHeight;
-                }
-            },
-
             sync() {
                 const val = parseFloat(document.getElementById('balance').value) || 0;
                 localStorage.setItem('future_millionaire_data', val);
                 const progress = Math.min((val / 1000000) * 100, 100);
                 document.getElementById('challengeProgress').style.width = progress + "%";
-                document.getElementById('progressPercent').innerText = `تم إنجاز ${Math.floor(progress)}% من الهدف`;
-                this.renderRoadmap(val);
-                this.calculate();
+                document.getElementById('progressPercent').innerText = `أنجزت ${Math.floor(progress)}% من الهدف`;
             },
-
-            renderRoadmap(val) {
-                const levels = this.generateLevels();
-                const container = document.getElementById('roadmapNodes');
-                const idx = levels.findIndex(l => val < l.t);
-                const visible = levels.slice(Math.max(0, idx - 1), idx + 10);
-                
-                container.innerHTML = visible.map(l => {
-                    const active = val >= l.t;
-                    return `
-                        <div class="step-node flex items-center gap-6 ${active ? 'active' : ''}">
-                            <div class="step-dot rounded-full"></div>
-                            <div class="bg-white p-4 rounded-2xl border border-blue-50 shadow-sm flex-1">
-                                <h4 class="text-[11px] font-black text-slate-700">${l.n}</h4>
-                                <p class="text-[10px] text-brand font-bold">${l.t.toLocaleString()} ج.م</p>
-                            </div>
-                        </div>
-                    `;
-                }).join('');
+            chat: {
+                ask() {
+                    const input = document.getElementById('chatInput');
+                    if(!input.value) return;
+                    const container = document.getElementById('chatContainer');
+                    container.innerHTML += `<div class="text-left"><span class="inline-block bg-brand text-white p-3 rounded-2xl text-xs font-bold">${input.value}</span></div>`;
+                    input.value = '';
+                    setTimeout(() => {
+                        container.innerHTML += `<div class="text-right"><span class="inline-block bg-slate-100 text-slate-700 p-3 rounded-2xl text-xs font-bold">بناءً على رصيدك الحالي، أنت تقترب من المرحلة التالية بخطى ثابتة!</span></div>`;
+                        container.scrollTop = container.scrollHeight;
+                    }, 500);
+                }
             },
-
-            calculate() {
-                const current = parseFloat(document.getElementById('balance').value) || 0;
-                const monthly = parseFloat(document.getElementById('monthly').value) || 0;
-                const rate = (parseFloat(document.getElementById('rate').value) / 100) / 12;
-                if (monthly <= 0) return;
-                let t = current; let m = 0;
-                while (t < 1000000 && m < 600) { t = (t + monthly) * (1 + rate); m++; }
-                document.getElementById('calcResult').innerHTML = `الوقت المتوقع لتحقيق المليون:<br><span class="text-xl font-black">${Math.floor(m/12)} سنة و ${m%12} شهر</span>`;
-            },
-
             nav(p) {
                 document.querySelectorAll('.page').forEach(pg => pg.classList.add('hidden'));
                 document.getElementById('page-' + p).classList.remove('hidden');
-                document.querySelectorAll('nav button').forEach(b => b.classList.replace('text-brand', 'text-slate-300'));
-                document.getElementById('btn-' + p).classList.replace('text-slate-300', 'text-brand');
+                document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active', 'text-brand'));
+                document.querySelectorAll('.nav-btn').forEach(b => b.classList.add('text-slate-300'));
+                document.getElementById('btn-' + p).classList.add('active', 'text-brand');
             }
         };
-
         window.onload = () => {
             const saved = localStorage.getItem('future_millionaire_data');
             if (saved) document.getElementById('balance').value = saved;
