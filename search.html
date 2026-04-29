@@ -1,0 +1,36 @@
+<div class="bg-white rounded-xl p-4 shadow-sm mb-4">
+    <div class="flex items-center gap-2 bg-gray-100 rounded-full px-4 py-3">
+        <i class="fa-solid fa-magnifying-glass text-gray-500"></i>
+        <input type="text" id="searchQuery" placeholder="ابحث عن منشورات، أفكار، مشاريع..." 
+               class="bg-transparent outline-none flex-1 text-sm">
+        <button onclick="performSearch()" class="bg-sky-500 text-white px-4 py-1.5 rounded-full text-xs font-bold">
+            بحث
+        </button>
+    </div>
+</div>
+
+<div id="searchResults" class="text-center text-gray-400 text-sm py-10">
+    اكتب كلمة البحث أعلاه وابدأ الاستكشاف
+</div>
+
+<script>
+    // دالة بحث بسيطة (يمكن ربطها بقاعدة البيانات لاحقاً)
+    async function performSearch() {
+        const query = document.getElementById('searchQuery').value.trim();
+        const resultsDiv = document.getElementById('searchResults');
+        if(!query) return;
+        resultsDiv.innerHTML = '<div class="flex justify-center py-10"><div class="w-8 h-8 border-4 border-sky-500 border-t-transparent rounded-full animate-spin"></div></div>';
+        
+        // مثال للبحث في المنشورات (إذا أردت لاحقاً)
+        // هنا مجرد وهم بحث
+        setTimeout(() => {
+            resultsDiv.innerHTML = `
+                <div class="text-center py-12">
+                    <i class="fa-solid fa-fish-fins text-5xl text-sky-200 mb-4"></i>
+                    <p class="text-gray-500">لا توجد نتائج لـ "${query}" حتى الآن</p>
+                    <p class="text-xs text-gray-400 mt-2">ميزة البحث قيد التطوير</p>
+                </div>
+            `;
+        }, 800);
+    }
+</script>
