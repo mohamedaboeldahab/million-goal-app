@@ -1,16 +1,15 @@
 {
-  "name": "مليونير المستقبل",
   "short_name": "Millionaire",
-  "start_url": "./index.html",
-  "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#0ea5e9",
+  "name": "Millionaire Future Community",
   "icons": [
     {
- "src": "icon.png",
-      "sizes": "512x512",
+      "src": "https://cdn-icons-png.flaticon.com/512/3135/3135706.png",
       "type": "image/png",
-      "purpose": "any maskable"
+      "sizes": "512x512"
     }
-  ]
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#0ea5e9",
+  "background_color": "#ffffff"
 }
