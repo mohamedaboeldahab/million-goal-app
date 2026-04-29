@@ -87,26 +87,31 @@ window.engine = {
         }
     },
 
-    async loadPage(pageName) {
-        const content = document.getElementById('app-content');
-        if(!content) return;
+async loadPage(pageName) {
+    const content = document.getElementById('app-content');
+    if(!content) return;
 
-        // تمييز الزر النشط في الـ Nav
-        document.querySelectorAll('.nav-link').forEach(l => {
-            l.classList.toggle('active', l.dataset.page === pageName);
-        });
+    // تمييز الزر النشط ...
+    document.querySelectorAll('.nav-link').forEach(l => {
+        l.classList.toggle('active', l.dataset.page === pageName);
+    });
 
-        content.innerHTML = '<div class="flex justify-center py-20"><div class="w-8 h-8 border-4 border-sky-500 border-t-transparent rounded-full animate-spin"></div></div>';
+    content.innerHTML = '<div class="flex justify-center py-20">...</div>';
 
-        try {
-            const response = await fetch(`${pageName}.html`);
-            const html = await response.text();
-            content.innerHTML = html;
-            if (pageName === 'home') this.listenToPosts();
-        } catch (e) {
-            content.innerHTML = `<div class="text-center py-20 text-slate-400">قريباً..</div>`;
+    try {
+        const response = await fetch(`${pageName}.html`);
+        const html = await response.text();
+        content.innerHTML = html;
+
+        // ✅ تفعيل الميزات الخاصة بصفحة Home بعد تحميلها
+        if (pageName === 'home') {
+            this.listenToPosts();
+            this.activateCharCounter();   // ← السطر الجديد
         }
-    },
+    } catch (e) {
+        content.innerHTML = `<div class="text-center py-20 text-slate-400">قريباً..</div>`;
+    }
+},
 
     // --- نظام التصويت والتعليقات ---
     async handleVote(postId, type) {
