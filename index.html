@@ -10,16 +10,15 @@
 </head>
 <body class="bg-gray-100 font-tajawal">
 
-    <!-- Header -->
     <header class="bg-white shadow-sm sticky top-0 z-50 px-4 py-3 flex justify-between items-center border-b">
         <h1 class="text-xl font-black">مليونير <span class="text-[#0ea5e9]">المستقبل</span></h1>
-        <div class="flex gap-4 text-gray-500">
-            <i class="fa-solid fa-magnifying-glass text-lg"></i>
-            <i class="fa-solid fa-circle-user text-2xl"></i>
+        <div class="flex items-center gap-4 text-gray-500">
+            <div id="userProfile" class="flex items-center gap-2">
+                <button onclick="engine.login()" id="loginBtn" class="text-xs bg-gray-100 px-3 py-1 rounded-full border font-bold">دخول بجوجل</button>
+            </div>
         </div>
     </header>
 
-    <!-- Navigation -->
     <nav class="bg-white sticky top-[52px] z-40 border-b flex justify-around">
         <button onclick="engine.nav('home')" id="tab-home" class="nav-tab flex flex-col items-center py-2 px-3 text-[#0ea5e9]">
             <i class="fa-solid fa-house text-xl"></i>
@@ -44,36 +43,35 @@
     </nav>
 
     <main class="max-w-lg mx-auto p-4">
-        <!-- صفحة الرئيسية -->
+        <div id="authNotice" class="bg-yellow-50 border border-yellow-200 text-yellow-700 p-3 rounded-lg mb-4 text-xs font-bold text-center">
+            ⚠️ سجل دخولك بجوجل لحفظ بياناتك في السحابة
+        </div>
+
         <div id="page-home" class="page">
             <div class="bg-white rounded-lg shadow p-4 mb-4">
                 <div class="flex items-center gap-3">
                     <i class="fa-solid fa-circle-user text-3xl text-[#0ea5e9]"></i>
                     <input type="text" id="postInput" placeholder="اكتب تحديث أعمال..." class="flex-1 bg-gray-100 rounded-full px-4 py-2 border-none focus:outline-none">
                 </div>
-                <button onclick="engine.addPost()" class="mt-3 w-full bg-[#0ea5e9] text-white font-bold py-2 rounded-lg">
-                    <i class="fa-solid fa-paper-plane ml-2"></i> نشر
-                </button>
+                <button onclick="engine.addPost()" class="mt-3 w-full bg-[#0ea5e9] text-white font-bold py-2 rounded-lg">نشر</button>
             </div>
             <div id="feedList"></div>
         </div>
 
-        <!-- صفحة الأصول -->
         <div id="page-assets" class="page hidden">
-            <div class="bg-[#0ea5e9] text-white rounded-xl p-6 text-center mb-4">
+            <div class="bg-[#0ea5e9] text-white rounded-xl p-6 text-center mb-4 shadow-lg shadow-sky-100">
                 <small>إجمالي ثروتك</small>
-                <h2 id="totalValAssets" class="text-3xl font-bold my-1">0</h2>
+                <h2 id="totalValAssets" class="text-4xl font-black my-1">0</h2>
                 <small>جنيه مصري</small>
             </div>
-
             <div class="bg-white rounded-lg shadow p-4 mb-4">
-                <div class="flex justify-between items-center">
-                    <span class="font-bold">الرصيد النقدي</span>
-                    <span id="cashDisplay" class="text-lg">0 ج.م</span>
+                <div class="flex justify-between items-center font-bold border-b pb-2 mb-3">
+                    <span>الرصيد النقدي</span>
+                    <span id="cashDisplay" class="text-[#0ea5e9]">0 ج.م</span>
                 </div>
-                <div class="flex gap-2 mt-3">
-                    <input type="number" id="cashAmount" placeholder="المبلغ" class="flex-1 border rounded-lg px-3 py-2 text-center">
-                    <select id="cashType" class="border rounded-lg px-2 py-2 bg-gray-50">
+                <div class="flex gap-2">
+                    <input type="number" id="cashAmount" placeholder="المبلغ" class="w-1/2 border rounded-lg px-3 py-2 text-center">
+                    <select id="cashType" class="w-1/2 border rounded-lg px-2 py-2 bg-gray-50">
                         <option value="income">+ إضافة</option>
                         <option value="expense">- خصم</option>
                     </select>
@@ -84,51 +82,38 @@
 
             <h3 class="font-bold mb-2">محفظة الأصول</h3>
             <div id="assetsList"></div>
-            <div class="bg-white rounded-lg shadow p-4 mt-4">
+            <div class="bg-white rounded-lg shadow p-4 mt-4 border-t-4 border-sky-500">
                 <input type="text" id="aName" placeholder="اسم الأصل" class="w-full border rounded-lg px-3 py-2 mb-2">
                 <input type="number" id="aVal" placeholder="القيمة" class="w-full border rounded-lg px-3 py-2 mb-2">
                 <input type="number" id="aRate" placeholder="العائد السنوي %" value="20" class="w-full border rounded-lg px-3 py-2 mb-2">
-                <button onclick="engine.addAsset()" class="w-full bg-[#0ea5e9] text-white font-bold py-2 rounded-lg">إضافة الأصل</button>
+                <button onclick="engine.addAsset()" class="w-full bg-gray-800 text-white font-bold py-2 rounded-lg">إضافة الأصل</button>
             </div>
         </div>
 
-        <!-- الحاسبة -->
         <div id="page-calc" class="page hidden text-center">
-            <div class="bg-white rounded-lg shadow p-6">
-                <p class="text-gray-600 mb-2">الإيداع الشهري</p>
-                <input type="number" id="calcMonthly" value="1000" oninput="engine.recalc()" class="w-full text-center text-xl border rounded-lg px-3 py-2 mb-4">
-                <h4 id="calcRes" class="text-[#0ea5e9] font-bold text-lg"></h4>
-                <small class="text-gray-400">يُحتسب بناءً على أصولك الحالية</small>
+             <div class="bg-white rounded-lg shadow p-6">
+                <p class="text-gray-600 mb-2 font-bold">الإيداع الشهري المتوقع</p>
+                <input type="number" id="calcMonthly" value="1000" oninput="engine.recalc()" class="w-full text-center text-2xl border-none font-black text-[#0ea5e9] mb-4">
+                <div class="p-4 bg-sky-50 rounded-lg">
+                    <h4 id="calcRes" class="text-sky-800 font-bold"></h4>
+                </div>
             </div>
         </div>
 
-        <!-- الخريطة (لوحة لعبة) -->
         <div id="page-roadmap" class="page hidden">
-            <h3 class="text-center font-bold mb-3">لوحة الطريق إلى المليون</h3>
-            <div id="gameBoard" class="snake-board bg-white p-4 rounded-xl shadow"></div>
+            <h3 class="text-center font-bold mb-3">خريطة الطريق للمليون</h3>
+            <div id="gameBoard" class="snake-board bg-white p-2 rounded-xl shadow"></div>
         </div>
 
-        <!-- المستشار (شاشة كاملة) -->
-        <div id="page-chat" class="page hidden flex flex-col h-[calc(100vh-120px)]">
-            <div class="flex flex-wrap gap-2 mb-3">
-                <button onclick="engine.sendPredefined('كم ثروتي الآن؟')" class="bg-white border rounded-full px-3 py-1 text-xs font-bold">💰 ثروتي</button>
-                <button onclick="engine.sendPredefined('ما هي أصولي؟')" class="bg-white border rounded-full px-3 py-1 text-xs font-bold">📊 أصولي</button>
-                <button onclick="engine.sendPredefined('متى سأصبح مليونيراً؟')" class="bg-white border rounded-full px-3 py-1 text-xs font-bold">⏳ المدة</button>
-                <button onclick="engine.sendPredefined('حلل نمط إنفاقي')" class="bg-white border rounded-full px-3 py-1 text-xs font-bold">📈 إنفاقي</button>
-                <button onclick="engine.sendPredefined('أعطني نصيحة')" class="bg-white border rounded-full px-3 py-1 text-xs font-bold">💡 نصيحة</button>
-            </div>
-            <div id="chatBox" class="flex-1 overflow-y-auto bg-white rounded-lg shadow p-4 mb-3 flex flex-col gap-3">
-                <div class="msg ai">أهلاً! أنا مستشارك الذكي. اسألني عن أي شيء يخص أموالك.</div>
-            </div>
+        <div id="page-chat" class="page hidden flex flex-col h-[calc(100vh-200px)]">
+            <div id="chatBox" class="flex-1 overflow-y-auto bg-white rounded-lg shadow p-4 mb-3 flex flex-col gap-3 border"></div>
             <div class="flex gap-2">
-                <input type="text" id="chatInput" placeholder="اسأل عن استثماراتك..." class="flex-1 border rounded-full px-4 py-2 bg-white">
-                <button onclick="engine.sendMessage()" class="bg-[#0ea5e9] text-white w-12 h-12 rounded-full flex items-center justify-center">
-                    <i class="fa-solid fa-paper-plane"></i>
-                </button>
+                <input type="text" id="chatInput" placeholder="اسأل المستشار..." class="flex-1 border rounded-full px-4 py-2 shadow-inner">
+                <button onclick="engine.sendMessage()" class="bg-[#0ea5e9] text-white w-12 h-12 rounded-full flex items-center justify-center shadow-lg"><i class="fa-solid fa-paper-plane"></i></button>
             </div>
         </div>
     </main>
 
-    <script src="script.js"></script>
+    <script type="module" src="script.js"></script>
 </body>
 </html>
