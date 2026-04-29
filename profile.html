@@ -43,6 +43,7 @@
         <div id="avatarOverlay" class="absolute inset-0 bg-black/40 hidden group-hover:flex items-center justify-center text-white cursor-pointer text-sm">
             <i class="fa-solid fa-camera"></i>
         </div>
+        <input type="file" id="avatarFileInput" accept="image/*" class="hidden">
     </div>
 
     <!-- الاسم والبريد (قابلان للتعديل والحفظ) -->
@@ -159,16 +160,27 @@
             document.getElementById('userPostsContainer').innerHTML = '<p class="text-red-500 text-sm">خاصية المنشورات غير متاحة حالياً</p>';
         }
 
-        // === تحرير الصورة الشخصية (عبر رابط URL) ===
-        const avatarImg = document.getElementById('profileAvatar');
+        // === تحميل صورة جديدة من الجهاز ===
         const avatarOverlay = document.getElementById('avatarOverlay');
+        const avatarFileInput = document.getElementById('avatarFileInput');
+        const avatarImg = document.getElementById('profileAvatar');
+
         avatarOverlay.addEventListener('click', () => {
-            const newUrl = prompt('أدخل رابط صورة البروفايل الجديدة:', avatarImg.src);
-            if (newUrl && newUrl.trim()) {
-                avatarImg.src = newUrl;
-                localStorage.setItem('sharkhub_photo', newUrl);
+            avatarFileInput.click();
+        });
+
+        avatarFileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = () => {
+                const dataUrl = reader.result;
+                avatarImg.src = dataUrl;
+                localStorage.setItem('sharkhub_photo', dataUrl);
                 showToast('تم تحديث الصورة ✅');
-            }
+            };
+            reader.readAsDataURL(file);
         });
 
         // === تحرير الاسم والبايو ===
