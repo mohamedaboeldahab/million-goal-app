@@ -137,5 +137,19 @@
         }
     </script>
     <script type="module" src="app.js"></script>
+    <!-- طبقة البحث الكاملة -->
+<div id="searchOverlay" class="fixed inset-0 z-[100] bg-white hidden flex-col">
+    <!-- رأس الـ overlay -->
+    <div class="flex items-center gap-3 px-4 h-14 bg-sky-500 text-white">
+        <button onclick="closeSearchOverlay()" class="text-white text-xl">
+            <i class="fa-solid fa-arrow-right"></i>
+        </button>
+        <h2 class="font-bold text-lg">بحث</h2>
+    </div>
+    <!-- محتوى البحث (يتم حقنه هنا) -->
+    <div id="searchOverlayContent" class="flex-1 overflow-y-auto p-4">
+        <!-- سيتم تحميل search.html هنا -->
+    </div>
+</div>
 </body>
 </html>
