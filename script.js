@@ -14,7 +14,6 @@ const engine = {
             const parsed = JSON.parse(saved);
             appData = { ...appData, ...parsed };
         }
-        // تأكد من وجود المصفوفات
         if (!appData.posts) appData.posts = [];
         if (!appData.milestonesReached) appData.milestonesReached = [];
         this.sync();
@@ -22,17 +21,14 @@ const engine = {
     },
 
     sync() {
-        // حساب الإجمالي
         const assetsTotal = appData.assets.reduce((s, a) => s + a.val, 0);
         const total = appData.cash + assetsTotal;
 
-        // تحديث واجهة الثروة
         if (document.getElementById('totalVal'))
             document.getElementById('totalVal').innerText = Math.floor(total).toLocaleString();
 
-        // كشف المراحل الجديدة (كل 10%)
         for (let pct = 10; pct <= 100; pct += 10) {
-            const target = 10000 * pct; // 10% = 100,000
+            const target = 10000 * pct;
             if (total >= target && !appData.milestonesReached.includes(pct)) {
                 appData.milestonesReached.push(pct);
                 this.addPost(`🎉 وصلت إلى ${pct}% من حلم المليون! استمر يا بطل.`);
@@ -44,7 +40,6 @@ const engine = {
         this.renderRoadmap(total);
         this.calculate();
 
-        // حفظ البيانات
         localStorage.setItem('millionaire_engine_data', JSON.stringify(appData));
     },
 
@@ -56,7 +51,6 @@ const engine = {
         document.getElementById('tab-' + pageId).classList.add('active');
     },
 
-    // ----- المنشورات (Business Feed) -----
     addPost(text = null) {
         const input = document.getElementById('postInput');
         const content = text || (input ? input.value.trim() : '');
@@ -67,7 +61,7 @@ const engine = {
             content: content,
             date: new Date().toLocaleString('ar-EG', { hour12: true })
         };
-        appData.posts.unshift(post); // الأحدث في الأعلى
+        appData.posts.unshift(post);
         if (input) input.value = '';
         this.sync();
     },
@@ -103,11 +97,9 @@ const engine = {
         `).join('');
     },
 
-    // ----- إدارة الأصول -----
     addAsset(name, val, rate) {
         if (!name || !val) return;
         appData.assets.push({ name, val: parseFloat(val), rate: parseFloat(rate) });
-        // منشور تلقائي
         this.addPost(`📈 أصل جديد: ${name} بقيمة ${parseFloat(val).toLocaleString()} ج.م (عائد ${rate}%)`);
         this.sync();
     },
@@ -131,15 +123,14 @@ const engine = {
         this.sync();
     },
 
-    // ----- الخريطة -----
     renderRoadmap(total) {
         const container = document.getElementById('roadmapList');
         if (!container) return;
         let html = '';
-        const step = 100000; // كل 100 ألف
+        const step = 100000;
         for (let target = step; target <= 1000000; target += step) {
             const pct = Math.round((target / 1000000) * 100);
-            if (total >= target - 50000) { // عرض إذا قريب
+            if (total >= target - 50000) {
                 html += `
                 <div class="step-item ${total >= target ? 'completed' : ''}">
                     <div class="step-circle"></div>
@@ -152,7 +143,6 @@ const engine = {
         container.innerHTML = html;
     },
 
-    // ----- الحاسبة -----
     calculate() {
         let temp = appData.cash + appData.assets.reduce((s, a) => s + a.val, 0);
         let months = 0;
