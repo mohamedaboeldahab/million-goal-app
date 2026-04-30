@@ -154,7 +154,7 @@ initStoryClicks() {
     const row = document.getElementById('storiesRow');
     if (!row) return;
 
-    row.addEventListener('pointerup', (e) => {
+    row.addEventListener('click', (e) => {
         const storyElement = e.target.closest('[data-story-index]');
         if (!storyElement) return;
 
