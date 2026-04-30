@@ -1,28 +1,12 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-app.js";
 import {
-    getAuth,
-    GoogleAuthProvider,
-    signInWithPopup,
-    onAuthStateChanged,
-    signOut,
-    setPersistence,
-    browserLocalPersistence
+    getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut,
+    setPersistence, browserLocalPersistence
 } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-auth.js";
 import {
-    getFirestore,
-    collection,
-    addDoc,
-    updateDoc,
-    doc,
-    setDoc,
-    onSnapshot,
-    query,
-    orderBy,
-    where,
-    serverTimestamp,
-    increment,
-    arrayUnion,
-    getDoc
+    getFirestore, collection, addDoc, updateDoc, doc, setDoc,
+    onSnapshot, query, orderBy, where, serverTimestamp, increment,
+    arrayUnion, getDoc
 } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -37,42 +21,30 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 window.auth = auth;
-
 const db = getFirestore(app);
 window.db = db;
-
 const provider = new GoogleAuthProvider();
 
 window.engine = {
     _allComments: {},
+    _allPosts: [],
+    _visibleCount: 10,           // عدد المنشورات المعروضة حاليًا
+    _currentSnapUnsubscribe: null, // لإلغاء الاشتراك عند الحاجة
 
     async init() {
-        try {
-            await setPersistence(auth, browserLocalPersistence);
-        } catch (e) {
-            console.error("Persistence error", e);
-        }
+        try { await setPersistence(auth, browserLocalPersistence); } catch (e) { console.error("Persistence error", e); }
 
         onAuthStateChanged(auth, (user) => {
             const splash = document.getElementById('splash');
             const nav = document.getElementById('main-nav');
-
             if (user) {
                 if (splash) splash.style.display = 'none';
                 if (nav) nav.classList.remove('hidden');
-
                 const userBtn = document.getElementById('userBtn');
                 this.getOrCreateUserProfile().then(profile => {
                     const photo = profile.photoURL || user.photoURL;
-                    if (userBtn) {
-                        userBtn.innerHTML = `<img src="${photo}" class="w-full h-full object-cover rounded-2xl">`;
-                    }
-                }).catch(() => {
-                    if (userBtn) {
-                        userBtn.innerHTML = `<img src="${user.photoURL}" class="w-full h-full object-cover rounded-2xl">`;
-                    }
+                    if (userBtn) userBtn.innerHTML = `<img src="${photo}" class="w-full h-full object-cover rounded-2xl">`;
                 });
-
                 this.loadPage('home');
             } else {
                 if (nav) nav.classList.add('hidden');
@@ -91,26 +63,17 @@ window.engine = {
                 </div>
                 <h1 class="text-white text-2xl font-black mb-10 tracking-widest uppercase">Shark Hub</h1>
                 <button onclick="engine.login()" class="bg-white text-slate-900 px-10 py-4 rounded-2xl font-black shadow-2xl flex items-center gap-3 active:scale-95 transition-all">
-                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20">
-                    دخول القروش
-                </button>
-            `;
+                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20"> دخول القروش
+                </button>`;
         }
     },
 
     async login() {
-        try {
-            await signInWithPopup(auth, provider);
-        } catch (error) {
-            alert("حدث خطأ في الدخول، تأكد من السماح بالنوافذ المنبثقة (Popups)");
-        }
+        try { await signInWithPopup(auth, provider); } catch (error) { alert("حدث خطأ في الدخول"); }
     },
 
     async logout() {
-        if (confirm("هل تريد مغادرة المحيط؟")) {
-            await signOut(auth);
-            location.reload();
-        }
+        if (confirm("هل تريد مغادرة المحيط؟")) { await signOut(auth); location.reload(); }
     },
 
     async loadPage(pageName) {
@@ -164,55 +127,84 @@ window.engine = {
         await updateDoc(postRef, updateData);
     },
 
-    // ---------- المنشورات: حجم مريح للموبايل ----------
+    // ---------- المنشورات مع تحميل تدريجي ----------
     listenToPosts() {
         const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
-        onSnapshot(q, (snapshot) => {
-            const feed = document.getElementById('feedList');
-            if (!feed) return;
+        // إلغاء أي اشتراك سابق
+        if (this._currentSnapUnsubscribe) this._currentSnapUnsubscribe();
 
-            feed.innerHTML = snapshot.docs.map(doc => {
-                const p = doc.data();
-                const postId = doc.id;
-                return `
-                <div class="bg-white rounded-2xl p-4 mb-4 shadow-sm border border-gray-100">
-                    <div class="flex items-center gap-3 mb-3">
-                        <img src="${p.authorPhoto}" class="w-10 h-10 rounded-full border border-sky-200 object-cover">
-                        <div>
-                            <span class="font-extrabold text-gray-800 text-sm">${p.authorName}</span>
-                            <div class="text-xs text-gray-400">${new Date(p.createdAt?.toDate()).toLocaleString('ar-EG')}</div>
-                        </div>
-                    </div>
-                    <p class="text-gray-700 text-sm leading-relaxed mb-4 whitespace-pre-wrap">${p.content}</p>
-                    <div class="flex gap-2 mb-3">
-                        <button onclick="engine.handleVote('${postId}', 'support')" 
-                            class="flex-1 flex items-center justify-center gap-1.5 bg-gradient-to-r from-sky-400 to-blue-500 text-white font-bold py-2 rounded-lg shadow text-xs">
-                            🦈 أؤيد <span class="bg-white/20 px-1.5 py-0.5 rounded-full text-xs">${p.supportCount || 0}</span>
-                        </button>
-                        <button onclick="engine.handleVote('${postId}', 'oppose')" 
-                            class="flex-1 flex items-center justify-center gap-1.5 bg-gradient-to-r from-amber-400 to-orange-400 text-white font-bold py-2 rounded-lg shadow text-xs">
-                            🐟 لا أؤيد <span class="bg-white/20 px-1.5 py-0.5 rounded-full text-xs">${p.opposeCount || 0}</span>
-                        </button>
-                    </div>
-                    <div class="border-t border-gray-100 pt-3">
-                        <div id="comments_list_${postId}" class="space-y-2 mb-2"></div>
-                        <button id="load_more_btn_${postId}" style="display:none;" onclick="engine.loadMoreComments('${postId}')" 
-                            class="text-sky-600 text-xs font-bold hover:underline w-full text-center py-1">عرض كل التعليقات</button>
-                        <div class="flex gap-2 mt-2">
-                            <input type="text" id="comm_${postId}" placeholder="أضف تعليقاً..." 
-                                class="flex-1 bg-gray-100 rounded-lg px-3 py-1.5 text-xs border border-gray-200 outline-none focus:ring-1 focus:ring-sky-400">
-                            <button onclick="engine.addComment('${postId}')" 
-                                class="bg-sky-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold">
-                                <i class="fa-solid fa-paper-plane"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>`;
-            }).join('');
-            snapshot.docs.forEach(d => this.listenToComments(d.id));
+        this._currentSnapUnsubscribe = onSnapshot(q, (snapshot) => {
+            // تخزين جميع المنشورات
+            this._allPosts = snapshot.docs.map(doc => ({ id: doc.id, data: doc.data() }));
+            // إعادة تعيين العداد الظاهر إذا كان أكبر من العدد الكلي
+            if (this._visibleCount > this._allPosts.length) {
+                this._visibleCount = this._allPosts.length;
+            }
+            this.renderVisiblePosts();
         });
     },
 
+    renderVisiblePosts() {
+        const feed = document.getElementById('feedList');
+        if (!feed) return;
+
+        const postsToShow = this._allPosts.slice(0, this._visibleCount);
+        feed.innerHTML = postsToShow.map(({ id, data: p }) => {
+            const postId = id;
+            return `
+            <div class="bg-white rounded-2xl p-4 mb-4 shadow-sm border border-gray-100">
+                <div class="flex items-center gap-3 mb-3">
+                    <img src="${p.authorPhoto}" class="w-10 h-10 rounded-full border border-sky-200 object-cover">
+                    <div>
+                        <span class="font-extrabold text-gray-800 text-sm">${p.authorName}</span>
+                        <div class="text-xs text-gray-400">${new Date(p.createdAt?.toDate()).toLocaleString('ar-EG')}</div>
+                    </div>
+                </div>
+                <p class="text-gray-700 text-sm leading-relaxed mb-4 whitespace-pre-wrap">${p.content}</p>
+                <div class="flex gap-2 mb-3">
+                    <button onclick="engine.handleVote('${postId}', 'support')" class="flex-1 flex items-center justify-center gap-1.5 bg-gradient-to-r from-sky-400 to-blue-500 text-white font-bold py-2 rounded-lg shadow text-xs">
+                        🦈 أؤيد <span class="bg-white/20 px-1.5 py-0.5 rounded-full text-xs">${p.supportCount || 0}</span>
+                    </button>
+                    <button onclick="engine.handleVote('${postId}', 'oppose')" class="flex-1 flex items-center justify-center gap-1.5 bg-gradient-to-r from-amber-400 to-orange-400 text-white font-bold py-2 rounded-lg shadow text-xs">
+                        🐟 لا أؤيد <span class="bg-white/20 px-1.5 py-0.5 rounded-full text-xs">${p.opposeCount || 0}</span>
+                    </button>
+                </div>
+                <div class="border-t border-gray-100 pt-3">
+                    <div id="comments_list_${postId}" class="space-y-2 mb-2"></div>
+                    <button id="load_more_btn_${postId}" style="display:none;" onclick="engine.loadMoreComments('${postId}')" class="text-sky-600 text-xs font-bold hover:underline w-full text-center py-1">عرض كل التعليقات</button>
+                    <div class="flex gap-2 mt-2">
+                        <input type="text" id="comm_${postId}" placeholder="أضف تعليقاً..." class="flex-1 bg-gray-100 rounded-lg px-3 py-1.5 text-xs border border-gray-200 outline-none focus:ring-1 focus:ring-sky-400">
+                        <button onclick="engine.addComment('${postId}')" class="bg-sky-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold"><i class="fa-solid fa-paper-plane"></i></button>
+                    </div>
+                </div>
+            </div>`;
+        }).join('');
+
+        // إزالة زر التحميل القديم إن وجد
+        const oldBtn = document.getElementById('loadMorePostsBtn');
+        if (oldBtn) oldBtn.remove();
+
+        // زر "تحميل المزيد من المنشورات"
+        if (this._allPosts.length > this._visibleCount) {
+            const loadMoreBtn = document.createElement('div');
+            loadMoreBtn.id = 'loadMorePostsBtn';
+            loadMoreBtn.className = 'text-center mt-4 mb-8';
+            const remaining = this._allPosts.length - this._visibleCount;
+            loadMoreBtn.innerHTML = `<button class="bg-sky-500 text-white px-6 py-2 rounded-full font-bold text-sm shadow hover:bg-sky-600 active:scale-95 transition">
+                تحميل المزيد (${remaining} منشور)
+            </button>`;
+            loadMoreBtn.onclick = () => {
+                this._visibleCount = Math.min(this._visibleCount + 10, this._allPosts.length);
+                this.renderVisiblePosts();
+            };
+            feed.parentNode.appendChild(loadMoreBtn);
+        }
+
+        // تفعيل مستمعات التعليقات للمنشورات الظاهرة
+        postsToShow.forEach(({ id }) => this.listenToComments(id));
+    },
+
+    // ---------- التعليقات (أول ٣) ----------
     listenToComments(postId) {
         const q = query(collection(db, `posts/${postId}/comments`), orderBy("createdAt", "asc"));
         onSnapshot(q, (snap) => {
@@ -222,11 +214,7 @@ window.engine = {
             const loadBtn = document.getElementById(`load_more_btn_${postId}`);
             if (!list) return;
             const visible = allComments.slice(0, 3);
-            list.innerHTML = visible.map(c => `
-                <div class="bg-gray-50 p-2 rounded-lg text-xs">
-                    <b class="text-sky-600">${c.userName}:</b> ${c.text}
-                </div>
-            `).join('');
+            list.innerHTML = visible.map(c => `<div class="bg-gray-50 p-2 rounded-lg text-xs"><b class="text-sky-600">${c.userName}:</b> ${c.text}</div>`).join('');
             if (allComments.length > 3 && loadBtn) {
                 loadBtn.style.display = 'block';
                 loadBtn.textContent = `عرض كل التعليقات (${allComments.length})`;
@@ -239,11 +227,7 @@ window.engine = {
         const loadBtn = document.getElementById(`load_more_btn_${postId}`);
         const all = this._allComments[postId] || [];
         if (!list || !loadBtn) return;
-        list.innerHTML = all.map(c => `
-            <div class="bg-gray-50 p-2 rounded-lg text-xs">
-                <b class="text-sky-600">${c.userName}:</b> ${c.text}
-            </div>
-        `).join('');
+        list.innerHTML = all.map(c => `<div class="bg-gray-50 p-2 rounded-lg text-xs"><b class="text-sky-600">${c.userName}:</b> ${c.text}</div>`).join('');
         loadBtn.style.display = 'none';
     },
 
