@@ -15,7 +15,16 @@
         .nav-link.active { color: white; background-color: rgba(255,255,255,0.2); }
         .nav-links-container { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
         .nav-links-container::-webkit-scrollbar { display: none; }
-        #storyPlayer { position: fixed !important; inset: 0; background-color: black !important; z-index: 99999; display: none; flex-direction: column; align-items: center; justify-content: center; }
+        #storyPlayer {
+    position: fixed !important;
+    inset: 0;
+    background-color: black !important;
+    z-index: 99999;
+
+    opacity: 0;
+    pointer-events: none;
+    transition: 0.2s;
+}
     </style>
 </head>
 <body>
