@@ -44,6 +44,8 @@ window.db = db;
 const provider = new GoogleAuthProvider();
 
 window.engine = {
+    _allComments: {}, // تخزين جميع التعليقات لكل منشور
+
     async init() {
         try {
             await setPersistence(auth, browserLocalPersistence);
@@ -191,35 +193,105 @@ window.engine = {
         await updateDoc(postRef, updateData);
     },
 
+    // ---------- المنشورات بشكل فيسبوكي محترف ----------
     listenToPosts() {
         const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
         onSnapshot(q, (snapshot) => {
             const feed = document.getElementById('feedList');
             if (!feed) return;
+
             feed.innerHTML = snapshot.docs.map(doc => {
                 const p = doc.data();
+                const postId = doc.id;
                 return `
-                <div class="bg-white rounded-[2rem] p-6 mb-5 shadow-sm border border-slate-50">
-                    <div class="flex items-center gap-2 mb-3">
-                        <img src="${p.authorPhoto}" class="w-6 h-6 rounded-full border">
-                        <span class="text-[10px] font-black text-slate-400 uppercase tracking-tighter">${p.authorName}</span>
-                    </div>
-                    <p class="text-slate-800 text-sm font-bold mb-5">${p.content}</p>
-                    <div class="flex gap-2">
-                        <button onclick="engine.handleVote('${doc.id}', 'support')" class="flex-1 bg-emerald-50 text-emerald-600 py-3 rounded-xl font-black text-[10px] transition-all active:scale-95">أؤيد (${p.supportCount || 0})</button>
-                        <button onclick="engine.handleVote('${doc.id}', 'oppose')" class="flex-1 bg-rose-50 text-rose-600 py-3 rounded-xl font-black text-[10px] transition-all active:scale-95">لا أؤيد (${p.opposeCount || 0})</button>
-                    </div>
-                    <div class="mt-4 pt-4 border-t border-dashed border-slate-100">
-                        <div class="flex gap-2 mb-2">
-                            <input type="text" id="comm_${doc.id}" placeholder="ردك.." class="flex-1 bg-slate-50 rounded-lg px-3 py-2 text-[10px] outline-none">
-                            <button onclick="engine.addComment('${doc.id}')" class="bg-slate-900 text-white px-4 rounded-lg text-[10px] font-black">رد</button>
+                <div class="bg-white rounded-[2rem] p-5 mb-6 shadow-md border border-gray-100 hover:shadow-lg transition-shadow">
+                    <!-- رأس المنشور -->
+                    <div class="flex items-center gap-3 mb-4">
+                        <img src="${p.authorPhoto}" class="w-12 h-12 rounded-full border-2 border-sky-200 object-cover">
+                        <div>
+                            <span class="font-extrabold text-gray-800 text-base block">${p.authorName}</span>
+                            <span class="text-xs text-gray-400">${new Date(p.createdAt?.toDate()).toLocaleString('ar-EG')}</span>
                         </div>
-                        <div id="list_${doc.id}" class="space-y-1"></div>
+                    </div>
+                    <!-- محتوى المنشور -->
+                    <p class="text-gray-700 text-sm leading-relaxed mb-6 whitespace-pre-wrap">${p.content}</p>
+                    <!-- أزرار التصويت -->
+                    <div class="flex gap-3 mb-5">
+                        <button onclick="engine.handleVote('${postId}', 'support')" 
+                            class="flex-1 bg-gradient-to-r from-emerald-400 to-emerald-500 text-white font-bold py-3 rounded-xl shadow-md hover:shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 text-sm">
+                            🦈 أؤيد <span class="bg-white/20 px-2 py-0.5 rounded-full text-xs">${p.supportCount || 0}</span>
+                        </button>
+                        <button onclick="engine.handleVote('${postId}', 'oppose')" 
+                            class="flex-1 bg-gradient-to-r from-rose-400 to-rose-500 text-white font-bold py-3 rounded-xl shadow-md hover:shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 text-sm">
+                            🦈 لا أؤيد <span class="bg-white/20 px-2 py-0.5 rounded-full text-xs">${p.opposeCount || 0}</span>
+                        </button>
+                    </div>
+                    <!-- قسم التعليقات -->
+                    <div class="border-t border-gray-100 pt-4">
+                        <div id="comments_list_${postId}" class="space-y-3 mb-3"></div>
+                        <button id="load_more_btn_${postId}" 
+                            style="display: none;" 
+                            onclick="engine.loadMoreComments('${postId}')" 
+                            class="text-sky-600 text-xs font-bold hover:underline w-full text-center py-2">
+                            عرض المزيد من التعليقات
+                        </button>
+                        <div class="flex gap-2 mt-2">
+                            <input type="text" id="comm_${postId}" placeholder="أضف تعليقاً..." 
+                                class="flex-1 bg-gray-50 rounded-xl px-4 py-3 text-xs border border-gray-200 outline-none focus:ring-2 focus:ring-sky-400 transition">
+                            <button onclick="engine.addComment('${postId}')" 
+                                class="bg-sky-500 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-sky-600 active:scale-95 transition">
+                                <i class="fa-solid fa-paper-plane"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>`;
             }).join('');
             snapshot.docs.forEach(d => this.listenToComments(d.id));
         });
+    },
+
+    // ---------- التعليقات مع عرض أول ٣ فقط ----------
+    listenToComments(postId) {
+        const q = query(collection(db, `posts/${postId}/comments`), orderBy("createdAt", "asc"));
+        onSnapshot(q, (snap) => {
+            const allComments = snap.docs.map(d => d.data());
+            this._allComments[postId] = allComments;
+
+            const list = document.getElementById(`comments_list_${postId}`);
+            const loadBtn = document.getElementById(`load_more_btn_${postId}`);
+            if (!list) return;
+
+            // عرض أول ٣ تعليقات فقط
+            const visible = allComments.slice(0, 3);
+            list.innerHTML = visible.map(c => `
+                <div class="bg-gray-50 p-3 rounded-xl text-xs">
+                    <b class="text-sky-600">${c.userName}:</b> ${c.text}
+                </div>
+            `).join('');
+
+            // زر "عرض المزيد" إذا وجد أكثر من ٣ تعليقات
+            if (allComments.length > 3 && loadBtn) {
+                loadBtn.style.display = 'block';
+                loadBtn.textContent = `عرض كل التعليقات (${allComments.length})`;
+            } else if (loadBtn) {
+                loadBtn.style.display = 'none';
+            }
+        });
+    },
+
+    // ---------- تحميل جميع التعليقات عند الضغط على "عرض المزيد" ----------
+    loadMoreComments(postId) {
+        const list = document.getElementById(`comments_list_${postId}`);
+        const loadBtn = document.getElementById(`load_more_btn_${postId}`);
+        const all = this._allComments[postId] || [];
+        if (!list || !loadBtn) return;
+
+        list.innerHTML = all.map(c => `
+            <div class="bg-gray-50 p-3 rounded-xl text-xs">
+                <b class="text-sky-600">${c.userName}:</b> ${c.text}
+            </div>
+        `).join('');
+        loadBtn.style.display = 'none';
     },
 
     listenToUserPosts(containerId) {
@@ -305,20 +377,6 @@ window.engine = {
             createdAt: serverTimestamp()
         });
         input.value = '';
-    },
-
-    listenToComments(postId) {
-        const q = query(collection(db, `posts/${postId}/comments`), orderBy("createdAt", "asc"));
-        onSnapshot(q, (snap) => {
-            const list = document.getElementById(`list_${postId}`);
-            if (list) {
-                list.innerHTML = snap.docs.map(d => `
-                    <div class="text-[9px] bg-slate-50 p-2 rounded-lg">
-                        <b class="text-sky-600">${d.data().userName}:</b> ${d.data().text}
-                    </div>
-                `).join('');
-            }
-        });
     }
 };
 
