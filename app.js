@@ -113,6 +113,7 @@ document.addEventListener('pointerup', (e) => {
                     this.activateCharCounter();
                     this.updateTypeButtons();
                     this.updateCreatorAvatar();
+                    this.initStoryClicks();
                 }, 50);
             } else if (pageName === 'profile') {
                 setTimeout(() => {
@@ -161,7 +162,20 @@ document.addEventListener('pointerup', (e) => {
             countSpan.className = current >= max - 30 ? 'text-xs text-red-500 font-bold' : 'text-xs text-gray-400 font-medium';
         });
     },
+initStoryClicks() {
+    const row = document.getElementById('storiesRow');
+    if (!row) return;
 
+    row.addEventListener('pointerup', (e) => {
+        const storyElement = e.target.closest('[data-story-index]');
+        if (!storyElement) return;
+
+        const index = parseInt(storyElement.dataset.storyIndex);
+        console.log("فتح ستوري:", index);
+
+        this.openStoryPlayer(index);
+    });
+},
     async handleVote(postId, type) {
         const postRef = doc(db, "posts", postId);
         const userId = auth.currentUser.uid;
