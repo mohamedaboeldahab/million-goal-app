@@ -37,9 +37,6 @@ window.engine = {
 
     async init() {
         try { await setPersistence(auth, browserLocalPersistence); } catch (e) { console.error("Persistence error", e); }
-// إصلاح مشكلة اللمس على الهاتف: تفويض حدث الضغط لشريط الستوريز
-// اكتشاف نوع الحدث (لمس للموبايل أو ضغط للكمبيوتر)
-    const clickEvent = 'ontouchstart' in window ? 'touchend' : 'click';
         setInterval(() => this.deleteExpiredBites(), 600000);
         this.deleteExpiredBites();
 
@@ -150,20 +147,19 @@ window.engine = {
             countSpan.className = current >= max - 30 ? 'text-xs text-red-500 font-bold' : 'text-xs text-gray-400 font-medium';
         });
     },
-initStoryClicks() {
-    const row = document.getElementById('storiesRow');
-    if (!row) return;
 
-    row.addEventListener('click', (e) => {
-        const storyElement = e.target.closest('[data-story-index]');
-        if (!storyElement) return;
+    initStoryClicks() {
+        const row = document.getElementById('storiesRow');
+        if (!row) return;
+        // استخدام حدث click بدلاً من pointerup
+        row.addEventListener('click', (e) => {
+            const storyElement = e.target.closest('[data-story-index]');
+            if (!storyElement) return;
+            const index = parseInt(storyElement.dataset.storyIndex);
+            this.openStoryPlayer(index);
+        });
+    },
 
-        const index = parseInt(storyElement.dataset.storyIndex);
-        console.log("فتح ستوري:", index);
-
-        this.openStoryPlayer(index);
-    });
-},
     async handleVote(postId, type) {
         const postRef = doc(db, "posts", postId);
         const userId = auth.currentUser.uid;
@@ -201,58 +197,59 @@ initStoryClicks() {
         });
     },
 
-renderStories() {
-    const row = document.getElementById('storiesRow');
-    if (!row) return;
-    this._activeBites = this.getActiveBites();
-    
-    // تفريغ الصف أولاً لضمان عدم حدوث تكرار
-    row.innerHTML = ''; 
+    renderStories() {
+        const row = document.getElementById('storiesRow');
+        if (!row) return;
+        this._activeBites = this.getActiveBites();
+        row.innerHTML = '';
+        if (this._activeBites.length === 0) return;
+        const html = this._activeBites.map((bite, index) => `
+            <div class="flex flex-col items-center gap-1 flex-shrink-0"
+                 data-story-index="${index}"
+                 style="cursor:pointer; position:relative; z-index:5;">
+                <div class="w-16 h-16 rounded-full bg-gradient-to-tr from-sky-400 to-blue-500 p-0.5 shadow-md">
+                    <img src="${bite.data.authorPhoto}" 
+                         class="w-full h-full rounded-full object-cover border-2 border-white">
+                </div>
+                <span class="text-[10px] font-bold text-gray-700 text-center truncate w-16">
+                    ${bite.data.authorName}
+                </span>
+            </div>
+        `).join('');
+        row.innerHTML = html;
+    },
 
-    if (this._activeBites.length === 0) return;
+    // دوال مشغل القصص المعدلة بالكامل
+    closeStory() {
+        const player = document.getElementById('storyPlayer');
+        if (player) {
+            player.style.display = 'none';
+            player.classList.add('hidden');
+        }
+    },
 
-const html = this._activeBites.map((bite, index) => `
-    <div class="flex flex-col items-center gap-1 flex-shrink-0"
-         data-story-index="${index}"
-         style="cursor:pointer; position:relative; z-index:5;">
-         
-        <div class="w-16 h-16 rounded-full bg-gradient-to-tr from-sky-400 to-blue-500 p-0.5 shadow-md">
-            <img src="${bite.data.authorPhoto}" 
-                 class="w-full h-full rounded-full object-cover border-2 border-white">
-        </div>
+    openStoryPlayer(index) {
+        this._storyIndex = index;
+        const player = document.getElementById('storyPlayer');
+        if (player) {
+            player.classList.remove('hidden');
+            player.style.display = 'flex';
+            player.style.position = 'fixed';
+            player.style.top = '0';
+            player.style.left = '0';
+            player.style.width = '100%';
+            player.style.height = '100%';
+            player.style.zIndex = '999999';
+            player.style.background = 'black';
+            this.showCurrentStory();
+        }
+    },
 
-        <span class="text-[10px] font-bold text-gray-700 text-center truncate w-16">
-            ${bite.data.authorName}
-        </span>
-    </div>
-`).join('');
-    row.innerHTML = html;
-},
-
-// دالة فتح مشغل القصص الثابت
-closeStory() {
-    const player = document.getElementById('storyPlayer');
-    if (player) {
-        player.style.display = 'none';
-    }
-},
-openStoryPlayer(index) {
-    this._storyIndex = index;
-
-    const player = document.getElementById('storyPlayer');
-    if (player) {
-        player.style.display = 'flex'; // 👈 ده المهم
-        player.style.opacity = '1';
-        player.style.pointerEvents = 'auto';
-
-        this.showCurrentStory();
-    }
-},
     showCurrentStory() {
         const player = document.getElementById('storyPlayer');
-        if (!player || player.classList.contains('hidden')) return;
+        if (!player || player.style.display !== 'flex') return;
         if (this._storyIndex < 0 || this._storyIndex >= this._activeBites.length) {
-            player.classList.add('hidden');
+            this.closeStory();
             return;
         }
         const bite = this._activeBites[this._storyIndex];
@@ -271,7 +268,7 @@ openStoryPlayer(index) {
             this._storyIndex++;
             this.showCurrentStory();
         } else {
-            document.getElementById('storyPlayer').classList.add('hidden');
+            this.closeStory();
         }
     },
 
@@ -282,7 +279,7 @@ openStoryPlayer(index) {
         }
     },
 
-    // ---------- المنشورات ----------
+    // دوال المنشورات والتعليقات (بدون تغيير)
     listenToPosts() {
         const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
         this._currentSnapUnsubscribe = onSnapshot(q, (snapshot) => {
@@ -300,12 +297,10 @@ openStoryPlayer(index) {
         if (!feed) return;
         const normalPosts = this._allPosts.filter(p => p.data.type !== 'bite');
         const postsToShow = normalPosts.slice(0, this._visibleCount);
-
         feed.innerHTML = postsToShow.map(({ id, data: p }) => {
             const postId = id;
             let dateStr = '';
             try { dateStr = p.createdAt?.toDate().toLocaleString('ar-EG'); } catch(e) { dateStr = '---'; }
-
             return `
             <div class="bg-white rounded-2xl p-4 mb-4 shadow-sm border border-gray-100">
                 <div class="flex items-center gap-3 mb-3">
@@ -330,10 +325,8 @@ openStoryPlayer(index) {
                 </div>
             </div>`;
         }).join('');
-
         const oldBtn = document.getElementById('loadMorePostsBtn');
         if (oldBtn) oldBtn.remove();
-
         if (normalPosts.length > this._visibleCount) {
             const loadMoreBtn = document.createElement('div');
             loadMoreBtn.id = 'loadMorePostsBtn';
@@ -348,7 +341,6 @@ openStoryPlayer(index) {
             };
             feed.parentNode.appendChild(loadMoreBtn);
         }
-
         postsToShow.forEach(({ id }) => this.listenToComments(id));
     },
 
@@ -375,7 +367,6 @@ openStoryPlayer(index) {
         btn.style.display = 'none';
     },
 
-    // ========== صفحة البروفايل ==========
     listenToProfilePosts(containerId) {
         const userId = auth.currentUser?.uid;
         if (!userId) return;
@@ -428,13 +419,11 @@ openStoryPlayer(index) {
                 document.getElementById('tab-about').classList.toggle('hidden', target !== 'about');
             });
         });
-
         const avatarImg = document.getElementById('profileAvatar');
         const nameEl = document.getElementById('profileName');
         const emailEl = document.getElementById('profileEmail');
         const bioEl = document.getElementById('profileBio');
         const aboutEl = document.getElementById('aboutBio');
-
         if (avatarImg && nameEl) {
             this.getOrCreateUserProfile().then(profile => {
                 const u = auth.currentUser;
@@ -446,7 +435,6 @@ openStoryPlayer(index) {
                 if (emailEl) emailEl.textContent = u.email || '';
             });
         }
-
         const editBtn = document.getElementById('editProfileBtn');
         const saveBtn = document.getElementById('saveProfileBtn');
         if (editBtn && saveBtn) {
@@ -466,7 +454,6 @@ openStoryPlayer(index) {
                 this.showToast(ok ? 'تم حفظ البيانات ☁️' : 'تم حفظ البيانات محلياً ⚠️');
             };
         }
-
         document.getElementById('avatarOverlay')?.addEventListener('click', () => document.getElementById('avatarFileInput').click());
         document.getElementById('avatarFileInput')?.addEventListener('change', (e) => {
             const file = e.target.files[0];
