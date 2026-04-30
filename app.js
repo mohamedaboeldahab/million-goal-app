@@ -34,12 +34,12 @@ window.engine = {
     _activeBites: [],
     _storyIndex: 0,
     _storyTimer: null,
-    _dynamicPlayer: null,      // العنصر الديناميكي للمشغل
+    _dynamicPlayer: null,
 
     async init() {
         try { await setPersistence(auth, browserLocalPersistence); } catch (e) { console.error("Persistence error", e); }
 
-        // حذف العضّات المنتهية كل 10 دقائق
+        // تنظيف العضّات القديمة
         setInterval(() => this.deleteExpiredBites(), 600000);
         this.deleteExpiredBites();
 
@@ -104,9 +104,18 @@ window.engine = {
                 this.listenToPosts();
                 this.activateCharCounter();
                 this.updateTypeButtons();
+                this.updateCreatorAvatar();   // <-- تحديث الصورة الرمزية فوراً
             }
             if (typeof setActiveNavLink === 'function') setActiveNavLink(pageName);
         } catch (e) { content.innerHTML = `<div class="text-center py-20 text-slate-400">قريباً..</div>`; }
+    },
+
+    // تحديث صورة المستخدم في صندوق النشر
+    async updateCreatorAvatar() {
+        const img = document.getElementById('creatorAvatar');
+        if (!img || !auth.currentUser) return;
+        const profile = await this.getOrCreateUserProfile();
+        img.src = profile.photoURL || auth.currentUser.photoURL || '';
     },
 
     // ---------- حذف العضّات الأقدم من 24 ساعة ----------
@@ -119,7 +128,6 @@ window.engine = {
         });
     },
 
-    // ---------- اختيار نوع المنشور ----------
     setPostType(type) {
         this._currentPostType = type;
         this.updateTypeButtons();
@@ -166,7 +174,6 @@ window.engine = {
         await updateDoc(postRef, updateData);
     },
 
-    // ---------- نشر المنشور ----------
     async addPost() {
         const input = document.getElementById('postInput');
         if (!input?.value.trim()) return;
@@ -190,7 +197,6 @@ window.engine = {
         input.value = '';
     },
 
-    // ---------- العضّات النشطة ----------
     getActiveBites() {
         const cutoff = Date.now() - 24 * 60 * 60 * 1000;
         return this._allPosts.filter(p => p.data.type === 'bite' && p.data.createdAt?.toDate().getTime() > cutoff);
@@ -217,39 +223,33 @@ window.engine = {
         `).join('');
     },
 
-    // ---------- مشغل القصص الجديد (بدون خلفية سوداء) ----------
+    // ---------- مشغل القصص الديناميكي (بدون خلفية سوداء) ----------
     openStoryPlayer(startIndex = 0) {
         this._activeBites = this.getActiveBites();
         if (this._activeBites.length === 0) return;
 
         this._storyIndex = startIndex;
 
-        // إزالة أي مشغل قديم
         if (this._dynamicPlayer) this._dynamicPlayer.remove();
 
-        // إنشاء المشغل الديناميكي
         const player = document.createElement('div');
         player.id = 'dynamicStoryPlayer';
         player.className = 'fixed inset-0 z-50 flex flex-col';
-        player.style.background = 'linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%)'; // تدرج أزرق غامق جذاب
+        player.style.background = 'linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%)';
 
-        // شريط التقدم
         const progressBars = document.createElement('div');
         progressBars.className = 'absolute top-4 left-4 right-4 flex gap-1 z-10';
         progressBars.id = 'progressBars';
 
-        // زر الإغلاق
         const closeBtn = document.createElement('button');
         closeBtn.className = 'absolute top-4 right-4 text-white text-3xl z-10 hover:scale-110 transition';
         closeBtn.innerHTML = '&times;';
         closeBtn.onclick = () => this.closeStoryPlayer();
 
-        // منطقة المحتوى
         const content = document.createElement('div');
         content.className = 'flex-1 flex items-center justify-center p-4';
         content.id = 'storyContent';
 
-        // أزرار التنقل
         const prevBtn = document.createElement('button');
         prevBtn.className = 'absolute left-4 top-1/2 -translate-y-1/2 text-white text-2xl bg-white/20 rounded-full w-12 h-12 flex items-center justify-center backdrop-blur-sm';
         prevBtn.innerHTML = '&#8249;';
@@ -334,7 +334,7 @@ window.engine = {
         if (this._storyTimer) clearTimeout(this._storyTimer);
     },
 
-    // ---------- المنشورات مع تحميل تدريجي ----------
+    // ---------- المنشورات ----------
     listenToPosts() {
         const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
         if (this._currentSnapUnsubscribe) this._currentSnapUnsubscribe();
@@ -416,7 +416,6 @@ window.engine = {
         postsToShow.forEach(({ id }) => this.listenToComments(id));
     },
 
-    // ---------- التعليقات (أول ٣) ----------
     listenToComments(postId) {
         const q = query(collection(db, `posts/${postId}/comments`), orderBy("createdAt", "asc"));
         onSnapshot(q, (snap) => {
