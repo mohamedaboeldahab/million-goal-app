@@ -33,3 +33,53 @@
 
 <!-- قائمة المنشورات -->
 <div id="feedList"></div>
+
+<script>
+    // تحديث صورة المستخدم في صندوق النشر
+    (async function() {
+        if (window.auth && window.engine) {
+            const img = document.getElementById('creatorAvatar');
+            if (img) {
+                const profile = await window.engine.getOrCreateUserProfile();
+                img.src = profile.photoURL || window.auth.currentUser?.photoURL || '';
+            }
+        }
+    })();
+
+    // نظام مراقبة وربط الأحداث للقصص (يعمل على الجوال والكمبيوتر)
+    (function() {
+        const storiesRow = document.getElementById('storiesRow');
+        if (!storiesRow) return;
+
+        function handleStoryTap(e) {
+            const storyDiv = e.target.closest('[data-story-index]');
+            if (storyDiv) {
+                e.preventDefault();
+                const index = parseInt(storyDiv.getAttribute('data-story-index'));
+                if (!isNaN(index) && window.engine) {
+                    window.engine.openStoryPlayer(index);
+                }
+            }
+        }
+
+        // يراقب إضافة القصص ويربط الأحداث تلقائياً
+        const observer = new MutationObserver(() => {
+            const stories = storiesRow.querySelectorAll('[data-story-index]');
+            stories.forEach(story => {
+                story.removeEventListener('touchstart', handleStoryTap);
+                story.addEventListener('touchstart', handleStoryTap, { passive: false });
+                story.removeEventListener('click', handleStoryTap);
+                story.addEventListener('click', handleStoryTap);
+            });
+        });
+
+        observer.observe(storiesRow, { childList: true, subtree: true });
+
+        // ربط أولي للعناصر الموجودة
+        const initialStories = storiesRow.querySelectorAll('[data-story-index]');
+        initialStories.forEach(story => {
+            story.addEventListener('touchstart', handleStoryTap, { passive: false });
+            story.addEventListener('click', handleStoryTap);
+        });
+    })();
+</script>
