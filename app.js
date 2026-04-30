@@ -140,7 +140,7 @@ window.engine = {
         const input = document.getElementById('postInput');
         const countSpan = document.getElementById('charCount');
         if (!input || !countSpan) return;
-        const max = parseInt(input.getAttribute('maxlength')) || 300;
+        const max = parseInt(input.getAttribute('maxlength')) || 600;
         const update = () => {
             const current = input.value.length;
             countSpan.textContent = `${current}/${max} حرف`;
