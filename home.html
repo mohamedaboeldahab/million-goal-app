@@ -35,23 +35,7 @@
 <div id="feedList"></div>
 
 <script>
-    // 1. تفويض الأحداث للقصص (يعمل على الجوال والكمبيوتر)
-    (function() {
-        const storiesRow = document.getElementById('storiesRow');
-        if (storiesRow) {
-            storiesRow.addEventListener('click', function(e) {
-                const storyDiv = e.target.closest('[data-story-index]');
-                if (storyDiv) {
-                    const index = parseInt(storyDiv.getAttribute('data-story-index'));
-                    if (!isNaN(index) && window.engine) {
-                        window.engine.openStoryPlayer(index);
-                    }
-                }
-            });
-        }
-    })();
-
-    // 2. تحديث صورة الأفاتار في صندوق النشر
+    // 1. تحديث صورة الأفاتار
     (async function() {
         if (window.auth && window.engine) {
             const img = document.getElementById('creatorAvatar');
@@ -60,5 +44,33 @@
                 img.src = profile.photoURL || window.auth.currentUser?.photoURL || '';
             }
         }
+    })();
+
+    // 2. راقب ظهور القصص الجديدة واربط النقرات
+    (function() {
+        const storiesRow = document.getElementById('storiesRow');
+        if (!storiesRow) return;
+
+        // مستمع دائم لأي عنصر يتم إضافته داخل الحاوية
+        storiesRow.addEventListener('click', function(e) {
+            const storyDiv = e.target.closest('[data-story-index]');
+            if (storyDiv) {
+                const index = parseInt(storyDiv.getAttribute('data-story-index'));
+                if (!isNaN(index) && window.engine) {
+                    window.engine.openStoryPlayer(index);
+                }
+            }
+        });
+
+        // استخدم MutationObserver للتأكد من أنه عند إدراج القصص، نعيد ربط الأحداث
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                if (mutation.type === 'childList') {
+                    // لا حاجة لإعادة ربط لأن المستمع على الحاوية يكفي
+                    // لكن يمكننا التأكد من أن البيانات المرئية محدثة
+                }
+            });
+        });
+        observer.observe(storiesRow, { childList: true, subtree: true });
     })();
 </script>
