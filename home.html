@@ -1,21 +1,15 @@
-<!-- صندوق الكتابة يفضل زي ما هو مع صورة المستخدم -->
-<div class="bg-white rounded-2xl p-6 shadow-lg mb-8 border border-gray-100 hover:shadow-xl transition-shadow">
-    <div class="flex items-start gap-4">
-        <img id="creatorAvatar" src="" class="w-12 h-12 rounded-full border-2 border-sky-200 object-cover flex-shrink-0">
+<!-- home.html - Millionaire Future | FB Pro -->
+<div class="bg-white rounded-2xl p-5 shadow-md mb-6 border border-gray-100">
+    <div class="flex items-start gap-3">
+        <img id="creatorAvatar" src="" class="w-11 h-11 rounded-full border-2 border-sky-200 object-cover flex-shrink-0">
         <div class="flex-1">
-            <textarea 
-                id="postInput" 
-                placeholder="شاركنا بفكرة مشروعك..." 
-                maxlength="300"
-                class="w-full bg-gray-50 p-4 outline-none border border-gray-200 rounded-xl text-sm font-normal resize-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all placeholder:text-gray-400"
-                rows="3"
-            ></textarea>
+            <textarea id="postInput" placeholder="ما هي فكرة مشروعك الجديدة؟" maxlength="300"
+                class="w-full bg-gray-50 p-3 outline-none border border-gray-200 rounded-xl text-sm resize-none focus:ring-2 focus:ring-sky-500 transition"
+                rows="3"></textarea>
             <div class="flex items-center justify-between mt-3 gap-3">
                 <span id="charCount" class="text-xs text-gray-400 font-medium">0 / 300</span>
-                <button 
-                    onclick="engine.addPost()" 
-                    class="flex items-center gap-2 bg-gradient-to-r from-sky-500 to-blue-600 text-white font-bold py-3 px-6 rounded-xl shadow-md hover:shadow-lg hover:from-sky-600 hover:to-blue-700 active:scale-95 transition-all duration-200"
-                >
+                <button onclick="engine.addPost()"
+                    class="flex items-center gap-2 bg-gradient-to-r from-sky-500 to-blue-600 text-white font-bold py-2.5 px-5 rounded-lg shadow-md hover:shadow-lg active:scale-95 transition text-sm">
                     <i class="fa-solid fa-paper-plane"></i> نشر
                 </button>
             </div>
@@ -26,17 +20,150 @@
 <div id="feedList"></div>
 
 <script>
-    // هذا السكريبت صغير عشان يظبط صورة المستخدم ويساعد في العداد
-    (function() {
-        function updateAvatar() {
-            const img = document.getElementById('creatorAvatar');
-            if (!img || !window.auth?.currentUser) return;
-            const user = auth.currentUser;
-            window.engine.getOrCreateUserProfile().then(profile => {
-                img.src = profile.photoURL || user.photoURL || '';
+(function() {
+    // انتظار تحميل engine
+    function waitForEngine(cb) {
+        if (window.engine && window.engine.listenToPosts) cb();
+        else setTimeout(() => waitForEngine(cb), 100);
+    }
+
+    // تحديث صورة الأفاتار
+    function updateAvatar() {
+        const img = document.getElementById('creatorAvatar');
+        if (!img || !window.auth?.currentUser) return;
+        window.engine.getOrCreateUserProfile().then(profile => {
+            img.src = profile.photoURL || auth.currentUser.photoURL || '';
+        });
+    }
+
+    // إعادة تعريف عرض المنشورات بشكل جديد
+    function upgradeUI() {
+        if (!window.engine) return;
+
+        // حفظ الدالة الأصلية
+        const originalListen = window.engine.listenToPosts.bind(window.engine);
+
+        window.engine.listenToPosts = function() {
+            const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
+            onSnapshot(q, (snapshot) => {
+                const feed = document.getElementById('feedList');
+                if (!feed) return;
+
+                feed.innerHTML = snapshot.docs.map(doc => {
+                    const p = doc.data();
+                    const postId = doc.id;
+                    return `
+                    <div class="bg-white rounded-2xl p-5 mb-5 shadow-md border border-gray-100 hover:shadow-lg transition-shadow">
+                        <!-- رأس المنشور -->
+                        <div class="flex items-center gap-3 mb-4">
+                            <img src="${p.authorPhoto}" class="w-11 h-11 rounded-full border-2 border-sky-200 object-cover flex-shrink-0">
+                            <div class="flex-1">
+                                <span class="font-extrabold text-gray-800 text-sm">${p.authorName}</span>
+                                <div class="text-xs text-gray-400">${new Date(p.createdAt?.toDate()).toLocaleString('ar-EG')}</div>
+                            </div>
+                        </div>
+                        <!-- محتوى -->
+                        <p class="text-gray-700 text-sm leading-relaxed mb-5 whitespace-pre-wrap">${p.content}</p>
+                        <!-- أزرار تفاعلية -->
+                        <div class="flex gap-3 mb-4">
+                            <button onclick="engine.handleVote('${postId}', 'support')" 
+                                class="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-sky-400 to-blue-500 text-white font-bold py-2.5 rounded-xl shadow hover:shadow-md active:scale-95 transition text-sm">
+                                🦈 أؤيد <span class="bg-white/20 px-2 py-0.5 rounded-full text-xs">${p.supportCount || 0}</span>
+                            </button>
+                            <button onclick="engine.handleVote('${postId}', 'oppose')" 
+                                class="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-amber-400 to-orange-400 text-white font-bold py-2.5 rounded-xl shadow hover:shadow-md active:scale-95 transition text-sm">
+                                🐬 لا أؤيد <span class="bg-white/20 px-2 py-0.5 rounded-full text-xs">${p.opposeCount || 0}</span>
+                            </button>
+                        </div>
+                        <!-- تعليقات -->
+                        <div class="border-t border-gray-100 pt-4">
+                            <div id="comments_list_${postId}" class="space-y-2 mb-2"></div>
+                            <button id="load_more_btn_${postId}" style="display:none;" onclick="engine.loadMoreComments('${postId}')"
+                                class="text-sky-600 text-xs font-bold hover:underline w-full text-center py-1">عرض كل التعليقات</button>
+                            <div class="flex gap-2 mt-2">
+                                <input type="text" id="comm_${postId}" placeholder="أضف تعليقاً..." 
+                                    class="flex-1 bg-gray-100 rounded-xl px-4 py-2 text-xs border border-gray-200 outline-none focus:ring-2 focus:ring-sky-400 transition">
+                                <button onclick="engine.addComment('${postId}')" 
+                                    class="bg-sky-500 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-sky-600 active:scale-95 transition">
+                                    <i class="fa-solid fa-paper-plane"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>`;
+                }).join('');
+
+                snapshot.docs.forEach(d => engine.listenToComments(d.id));
             });
+        };
+
+        // تعريف loadMoreComments إذا لم تكن موجودة
+        if (!window.engine.loadMoreComments) {
+            window.engine.loadMoreComments = function(postId) {
+                const list = document.getElementById(`comments_list_${postId}`);
+                const btn = document.getElementById(`load_more_btn_${postId}`);
+                const all = window.engine._allComments[postId] || [];
+                if (!list || !btn) return;
+                list.innerHTML = all.map(c => `
+                    <div class="bg-gray-50 p-2 rounded-lg text-xs">
+                        <b class="text-sky-600">${c.userName}:</b> ${c.text}
+                    </div>
+                `).join('');
+                btn.style.display = 'none';
+            };
         }
-        window.addEventListener('load', updateAvatar);
-        if (document.readyState === 'complete') updateAvatar();
-    })();
+
+        // تعديل listenToComments لعرض أول ٣ فقط
+        const origListenToComments = window.engine.listenToComments.bind(window.engine);
+        window.engine.listenToComments = function(postId) {
+            const q = query(collection(db, `posts/${postId}/comments`), orderBy("createdAt", "asc"));
+            onSnapshot(q, (snap) => {
+                const all = snap.docs.map(d => d.data());
+                if (!window.engine._allComments) window.engine._allComments = {};
+                window.engine._allComments[postId] = all;
+                const list = document.getElementById(`comments_list_${postId}`);
+                const btn = document.getElementById(`load_more_btn_${postId}`);
+                if (!list) return;
+
+                const visible = all.slice(0, 3);
+                list.innerHTML = visible.map(c => `
+                    <div class="bg-gray-50 p-2 rounded-lg text-xs">
+                        <b class="text-sky-600">${c.userName}:</b> ${c.text}
+                    </div>
+                `).join('');
+
+                if (all.length > 3 && btn) {
+                    btn.style.display = 'block';
+                    btn.textContent = `عرض كل التعليقات (${all.length})`;
+                } else if (btn) {
+                    btn.style.display = 'none';
+                }
+            });
+        };
+
+        // تحديث عداد الأحرف
+        window.engine.activateCharCounter = function() {
+            const input = document.getElementById('postInput');
+            const countSpan = document.getElementById('charCount');
+            if (!input || !countSpan) return;
+            const max = parseInt(input.getAttribute('maxlength')) || 300;
+            const update = () => {
+                const current = input.value.length;
+                countSpan.textContent = `${current}/${max} حرف`;
+                countSpan.className = current >= max - 30
+                    ? 'text-xs text-red-500 font-bold'
+                    : 'text-xs text-gray-400 font-medium';
+            };
+            input.addEventListener('input', update);
+            update();
+        };
+
+        // بدء الاستماع
+        window.engine.listenToPosts();
+        updateAvatar();
+    }
+
+    // بدء التحديث
+    waitForEngine(upgradeUI);
+    window.addEventListener('load', updateAvatar);
+})();
 </script>
