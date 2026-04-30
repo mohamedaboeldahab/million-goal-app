@@ -46,27 +46,20 @@
         }
     })();
 
-    // ---------- ربط أحداث القصص باستخدام تفويض الحدث ----------
+    // ---------- ربط القصص باستخدام تفويض الحدث (click فقط) ----------
     (function() {
         const storiesRow = document.getElementById('storiesRow');
         if (!storiesRow) return;
 
-        // دالة معالجة النقر / اللمس
-        function handleStoryTap(e) {
+        storiesRow.addEventListener('click', function(e) {
+            // نبحث عن أقرب عنصر يحمل data-story-index
             const storyDiv = e.target.closest('[data-story-index]');
             if (storyDiv && window.engine) {
-                // منع التمرير أو التكبير غير المقصود على الجوال
-                e.preventDefault();
                 const index = parseInt(storyDiv.getAttribute('data-story-index'));
                 if (!isNaN(index)) {
                     window.engine.openStoryPlayer(index);
                 }
             }
-        }
-
-        // استخدام Touchstart للجوال مع passive: false للسماح بـ preventDefault
-        storiesRow.addEventListener('touchstart', handleStoryTap, { passive: false });
-        // النقر العادي للمكتبي
-        storiesRow.addEventListener('click', handleStoryTap);
+        });
     })();
 </script>
