@@ -47,9 +47,9 @@ document.addEventListener('pointerup', (e) => {
     const storyElement = e.target.closest('[data-story-index]');
     if (!storyElement) return;
 
-    const index = parseInt(storyElement.dataset.storyIndex);
-    console.log("فتح ستوري:", index);
+    console.log("FOUND STORY ELEMENT");
 
+    const index = parseInt(storyElement.dataset.storyIndex);
     window.engine.openStoryPlayer(index);
 });
         setInterval(() => this.deleteExpiredBites(), 600000);
