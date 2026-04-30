@@ -6,7 +6,7 @@ import {
 import {
     getFirestore, collection, addDoc, updateDoc, doc, setDoc,
     onSnapshot, query, orderBy, where, serverTimestamp, increment,
-    arrayUnion, getDoc
+    arrayUnion, getDoc, deleteDoc, getDocs
 } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -31,9 +31,17 @@ window.engine = {
     _visibleCount: 10,
     _currentSnapUnsubscribe: null,
     _currentPostType: 'post',     // 'post' أو 'bite'
+    _activeBites: [],             // العضّات السارية
+    _storyIndex: 0,
+    _storyTimer: null,
 
     async init() {
         try { await setPersistence(auth, browserLocalPersistence); } catch (e) { console.error("Persistence error", e); }
+
+        // حذف العضّات المنتهية تلقائياً كل 10 دقائق
+        setInterval(() => this.deleteExpiredBites(), 600000);
+        // تشغيل أولي للحذف عند البدء
+        this.deleteExpiredBites();
 
         onAuthStateChanged(auth, (user) => {
             const splash = document.getElementById('splash');
@@ -101,6 +109,16 @@ window.engine = {
         } catch (e) { content.innerHTML = `<div class="text-center py-20 text-slate-400">قريباً..</div>`; }
     },
 
+    // ---------- حذف العضّات الأقدم من 24 ساعة ----------
+    async deleteExpiredBites() {
+        const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
+        const q = query(collection(db, "posts"), where("type", "==", "bite"), where("createdAt", "<=", cutoff));
+        const snap = await getDocs(q);
+        snap.forEach(async (docSnap) => {
+            await deleteDoc(doc(db, "posts", docSnap.id));
+        });
+    },
+
     // ---------- اختيار نوع المنشور ----------
     setPostType(type) {
         this._currentPostType = type;
@@ -165,54 +183,109 @@ window.engine = {
             opposeCount: 0,
             voters: [],
             createdAt: serverTimestamp(),
-            type: this._currentPostType  // 'post' أو 'bite'
+            type: this._currentPostType
         };
 
         await addDoc(collection(db, "posts"), postData);
         input.value = '';
     },
 
-    // ---------- عرض الستوريز (عضّات) ----------
+    // ---------- العضّات النشطة (آخر 24 ساعة) ----------
+    getActiveBites() {
+        const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+        return this._allPosts.filter(p => p.data.type === 'bite' && p.data.createdAt?.toDate().getTime() > cutoff);
+    },
+
+    // ---------- عرض شريط الستوريز ----------
     renderStories() {
         const row = document.getElementById('storiesRow');
         if (!row) return;
 
-        const bites = this._allPosts.filter(p => p.data.type === 'bite');
-        if (bites.length === 0) {
+        this._activeBites = this.getActiveBites();
+        if (this._activeBites.length === 0) {
             row.innerHTML = '';
             return;
         }
 
-        row.innerHTML = bites.map(({ id, data: b }) => `
-            <div class="flex flex-col items-center gap-1 flex-shrink-0 cursor-pointer" onclick="engine.openStory('${id}')">
+        row.innerHTML = this._activeBites.map((bite, index) => `
+            <div class="flex flex-col items-center gap-1 flex-shrink-0 cursor-pointer" onclick="engine.openStoryPlayer(${index})">
                 <div class="w-16 h-16 rounded-full bg-gradient-to-tr from-sky-400 to-blue-500 p-0.5 shadow-md">
-                    <img src="${b.authorPhoto}" class="w-full h-full rounded-full object-cover border-2 border-white">
+                    <img src="${bite.data.authorPhoto}" class="w-full h-full rounded-full object-cover border-2 border-white">
                 </div>
-                <span class="text-[10px] font-bold text-gray-700 text-center leading-tight max-w-[64px] truncate">${b.authorName}</span>
+                <span class="text-[10px] font-bold text-gray-700 text-center leading-tight max-w-[64px] truncate">${bite.data.authorName}</span>
             </div>
         `).join('');
     },
 
-    openStory(postId) {
-        const bite = this._allPosts.find(p => p.id === postId);
-        if (!bite) return;
+    // ---------- مشغل القصص (Story Player) ----------
+    openStoryPlayer(startIndex = 0) {
+        this._activeBites = this.getActiveBites();
+        if (this._activeBites.length === 0) return;
 
-        // عرض الستوري في مودال بسيط
-        const modal = document.createElement('div');
-        modal.className = 'fixed inset-0 bg-black bg-opacity-80 z-50 flex items-center justify-center p-4';
-        modal.innerHTML = `
-            <div class="bg-white rounded-2xl p-6 max-w-sm w-full relative">
-                <button class="absolute top-3 right-3 text-gray-500 text-2xl" onclick="this.parentElement.parentElement.remove()">&times;</button>
-                <div class="flex items-center gap-3 mb-4">
-                    <img src="${bite.data.authorPhoto}" class="w-12 h-12 rounded-full border">
-                    <span class="font-extrabold text-gray-800">${bite.data.authorName}</span>
-                </div>
-                <p class="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap">${bite.data.content}</p>
-                <div class="text-xs text-gray-400 mt-4">${new Date(bite.data.createdAt?.toDate()).toLocaleString('ar-EG')}</div>
+        this._storyIndex = startIndex;
+        const player = document.getElementById('storyPlayer');
+        if (player) player.classList.remove('hidden');
+
+        this.showCurrentStory();
+    },
+
+    showCurrentStory() {
+        if (this._storyIndex < 0 || this._storyIndex >= this._activeBites.length) {
+            this.closeStoryPlayer();
+            return;
+        }
+
+        const bite = this._activeBites[this._storyIndex];
+        const content = document.getElementById('storyContent');
+        const progressBars = document.getElementById('progressBars');
+
+        content.innerHTML = `
+            <div class="text-white text-center max-w-md">
+                <img src="${bite.data.authorPhoto}" class="w-16 h-16 rounded-full border-2 border-white mb-3 mx-auto">
+                <p class="font-bold text-lg">${bite.data.authorName}</p>
+                <p class="text-sm mt-2 leading-relaxed">${bite.data.content}</p>
             </div>
         `;
-        modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
-        document.body.appendChild(modal);
+
+        progressBars.innerHTML = this._activeBites.map((_, i) => `
+            <div class="flex-1 h-1 bg-white/30 rounded-full overflow-hidden">
+                <div class="h-full bg-white rounded-full transition-all duration-[5000ms] ease-linear ${i === this._storyIndex ? 'w-full' : i < this._storyIndex ? 'w-full' : 'w-0'}" id="bar-${i}"></div>
+            </div>
+        `).join('');
+
+        if (this._storyTimer) clearTimeout(this._storyTimer);
+
+        const bar = document.getElementById(`bar-${this._storyIndex}`);
+        if (bar) bar.style.transition = 'width 5s linear';
+        setTimeout(() => {
+            if (bar) bar.classList.add('w-full');
+        }, 50);
+
+        this._storyTimer = setTimeout(() => {
+            this.nextStory();
+        }, 5000);
+    },
+
+    nextStory() {
+        if (this._storyIndex < this._activeBites.length - 1) {
+            this._storyIndex++;
+            this.showCurrentStory();
+        } else {
+            this.closeStoryPlayer();
+        }
+    },
+
+    prevStory() {
+        if (this._storyIndex > 0) {
+            this._storyIndex--;
+            this.showCurrentStory();
+        }
+    },
+
+    closeStoryPlayer() {
+        const player = document.getElementById('storyPlayer');
+        if (player) player.classList.add('hidden');
+        if (this._storyTimer) clearTimeout(this._storyTimer);
     },
 
     // ---------- المنشورات مع تحميل تدريجي ----------
@@ -226,7 +299,7 @@ window.engine = {
                 this._visibleCount = this._allPosts.length;
             }
             this.renderVisiblePosts();
-            this.renderStories();   // <-- تحديث شريط الستوريز
+            this.renderStories();
         });
     },
 
@@ -234,7 +307,6 @@ window.engine = {
         const feed = document.getElementById('feedList');
         if (!feed) return;
 
-        // عرض البوستات العادية فقط (نوع 'post')
         const normalPosts = this._allPosts.filter(p => p.data.type !== 'bite');
         const postsToShow = normalPosts.slice(0, this._visibleCount);
 
@@ -277,7 +349,6 @@ window.engine = {
             </div>`;
         }).join('');
 
-        // زر تحميل المزيد (للبوستات العادية فقط)
         const oldBtn = document.getElementById('loadMorePostsBtn');
         if (oldBtn) oldBtn.remove();
 
