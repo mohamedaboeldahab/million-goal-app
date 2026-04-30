@@ -141,12 +141,91 @@
     }
     loadProfile();
 
-    // المنشورات
-    if (window.engine?.listenToUserPosts) {
-        window.engine.listenToUserPosts('userPostsContainer');
-    } else {
-        document.getElementById('userPostsContainer').innerHTML = '<p class="text-red-500 text-sm">تعذر تحميل المنشورات</p>';
+    // ---------- عرض منشورات المستخدم مع الإعجابات والتعليقات ----------
+    function renderUserPosts() {
+        const userId = window.auth?.currentUser?.uid;
+        if (!userId) return;
+
+        const container = document.getElementById('userPostsContainer');
+        if (!container) return;
+
+        // الاستماع لمنشورات المستخدم
+        const q = query(
+            collection(window.db, "posts"),
+            where("authorId", "==", userId),
+            orderBy("createdAt", "desc")
+        );
+
+        onSnapshot(q, (snapshot) => {
+            if (snapshot.empty) {
+                container.innerHTML = '<p class="text-gray-400 text-sm text-center py-8">لا توجد منشورات بعد</p>';
+                return;
+            }
+
+            container.innerHTML = snapshot.docs.map(doc => {
+                const p = doc.data();
+                const postId = doc.id;
+                let dateStr = '';
+                try {
+                    const date = p.createdAt ? (p.createdAt.toDate ? p.createdAt.toDate() : new Date(p.createdAt.seconds * 1000)) : new Date();
+                    dateStr = date.toLocaleString('ar-EG');
+                } catch (e) { dateStr = '---'; }
+
+                return `
+                <div class="bg-white rounded-2xl p-4 mb-4 shadow-sm border border-gray-100">
+                    <div class="flex items-center gap-3 mb-3">
+                        <img src="${p.authorPhoto}" class="w-10 h-10 rounded-full border border-sky-200 object-cover">
+                        <div>
+                            <span class="font-extrabold text-gray-800 text-sm">${p.authorName}</span>
+                            <div class="text-xs text-gray-400">${dateStr}</div>
+                        </div>
+                    </div>
+                    <p class="text-gray-700 text-sm leading-relaxed mb-4 whitespace-pre-wrap">${p.content}</p>
+                    <!-- أزرار التصويت -->
+                    <div class="flex gap-2 mb-3">
+                        <button onclick="engine.handleVote('${postId}', 'support')" 
+                            class="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-sky-400 to-blue-500 text-white font-bold py-2 rounded-xl shadow text-sm">
+                            <span class="text-base">🦈</span> أؤيد <span class="bg-white/40 px-2 py-0.5 rounded-full text-sm font-extrabold">${p.supportCount || 0}</span>
+                        </button>
+                        <button onclick="engine.handleVote('${postId}', 'oppose')" 
+                            class="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-amber-400 to-orange-400 text-white font-bold py-2 rounded-xl shadow text-sm">
+                            <span class="text-base">🐟</span> لا أؤيد <span class="bg-white/40 px-2 py-0.5 rounded-full text-sm font-extrabold">${p.opposeCount || 0}</span>
+                        </button>
+                    </div>
+                    <!-- التعليقات -->
+                    <div class="border-t border-gray-100 pt-3">
+                        <div id="comments_list_${postId}" class="space-y-2 mb-2"></div>
+                        <button id="load_more_btn_${postId}" style="display:none;" 
+                            onclick="engine.loadMoreComments('${postId}')" 
+                            class="text-sky-600 text-xs font-bold hover:underline w-full text-center py-1">عرض كل التعليقات</button>
+                        <div class="flex gap-2 mt-2">
+                            <input type="text" id="comm_${postId}" placeholder="أضف تعليقاً..." 
+                                class="flex-1 bg-gray-100 rounded-lg px-3 py-1.5 text-xs border border-gray-200 outline-none focus:ring-1 focus:ring-sky-400">
+                            <button onclick="engine.addComment('${postId}')" 
+                                class="bg-sky-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold">
+                                <i class="fa-solid fa-paper-plane"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>`;
+            }).join('');
+
+            // بدء مستمعي التعليقات
+            snapshot.docs.forEach(d => {
+                window.engine.listenToComments(d.id);
+            });
+        });
     }
+
+    // استدعاء عرض المنشورات بعد التأكد من وجود engine
+    function initPosts() {
+        if (window.engine && window.engine.listenToComments) {
+            renderUserPosts();
+        } else {
+            setTimeout(initPosts, 200);
+        }
+    }
+    initPosts();
 
     // تغيير الصورة مباشرة
     avatarOverlay.addEventListener('click', () => avatarInput.click());
