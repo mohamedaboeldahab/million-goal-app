@@ -233,27 +233,17 @@ const html = this._activeBites.map((bite, index) => `
 closeStory() {
     const player = document.getElementById('storyPlayer');
     if (player) {
-        player.style.setProperty('display', 'none', 'important');
-        player.classList.add('hidden');
+        player.style.display = 'none';
     }
 },
-
 openStoryPlayer(index) {
     this._storyIndex = index;
 
     const player = document.getElementById('storyPlayer');
     if (player) {
-        player.classList.remove('hidden');
-
-        // 🔥 force show
-        player.style.display = 'flex';
-        player.style.position = 'fixed';
-        player.style.top = '0';
-        player.style.left = '0';
-        player.style.width = '100%';
-        player.style.height = '100%';
-        player.style.zIndex = '999999'; // 🔥 مهم جدًا
-        player.style.background = 'black';
+        player.style.display = 'flex'; // 👈 ده المهم
+        player.style.opacity = '1';
+        player.style.pointerEvents = 'auto';
 
         this.showCurrentStory();
     }
