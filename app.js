@@ -39,7 +39,7 @@ window.engine = {
     async init() {
         try { await setPersistence(auth, browserLocalPersistence); } catch (e) { console.error("Persistence error", e); }
 
-        // تنظيف العضّات القديمة
+        // تنظيف دوري للعضّات القديمة
         setInterval(() => this.deleteExpiredBites(), 600000);
         this.deleteExpiredBites();
 
@@ -104,13 +104,12 @@ window.engine = {
                 this.listenToPosts();
                 this.activateCharCounter();
                 this.updateTypeButtons();
-                this.updateCreatorAvatar();   // <-- تحديث الصورة الرمزية فوراً
+                this.updateCreatorAvatar();
             }
             if (typeof setActiveNavLink === 'function') setActiveNavLink(pageName);
         } catch (e) { content.innerHTML = `<div class="text-center py-20 text-slate-400">قريباً..</div>`; }
     },
 
-    // تحديث صورة المستخدم في صندوق النشر
     async updateCreatorAvatar() {
         const img = document.getElementById('creatorAvatar');
         if (!img || !auth.currentUser) return;
@@ -120,12 +119,14 @@ window.engine = {
 
     // ---------- حذف العضّات الأقدم من 24 ساعة ----------
     async deleteExpiredBites() {
-        const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
-        const q = query(collection(db, "posts"), where("type", "==", "bite"), where("createdAt", "<=", cutoff));
-        const snap = await getDocs(q);
-        snap.forEach(async (docSnap) => {
-            await deleteDoc(doc(db, "posts", docSnap.id));
-        });
+        try {
+            const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
+            const q = query(collection(db, "posts"), where("type", "==", "bite"), where("createdAt", "<=", cutoff));
+            const snap = await getDocs(q);
+            snap.forEach(async (docSnap) => {
+                await deleteDoc(doc(db, "posts", docSnap.id));
+            });
+        } catch (e) { console.warn("Expired bites cleanup error", e); }
     },
 
     setPostType(type) {
@@ -197,9 +198,16 @@ window.engine = {
         input.value = '';
     },
 
+    // الحصول على العضّات النشطة (آخر 24 ساعة) – مع معالجة أمان
     getActiveBites() {
         const cutoff = Date.now() - 24 * 60 * 60 * 1000;
-        return this._allPosts.filter(p => p.data.type === 'bite' && p.data.createdAt?.toDate().getTime() > cutoff);
+        return this._allPosts.filter(p => {
+            if (p.data.type !== 'bite') return false;
+            const t = p.data.createdAt;
+            if (!t) return false; // لم يكتمل بعد
+            const time = t.toDate ? t.toDate().getTime() : t.seconds ? t.seconds * 1000 : 0;
+            return time > cutoff;
+        });
     },
 
     // ---------- شريط الستوريز ----------
@@ -223,7 +231,7 @@ window.engine = {
         `).join('');
     },
 
-    // ---------- مشغل القصص الديناميكي (بدون خلفية سوداء) ----------
+    // ---------- مشغل القصص الديناميكي ----------
     openStoryPlayer(startIndex = 0) {
         this._activeBites = this.getActiveBites();
         if (this._activeBites.length === 0) return;
@@ -358,13 +366,20 @@ window.engine = {
 
         feed.innerHTML = postsToShow.map(({ id, data: p }) => {
             const postId = id;
+            // ضمان صحة التاريخ
+            let dateStr = '';
+            try {
+                const date = p.createdAt ? (p.createdAt.toDate ? p.createdAt.toDate() : new Date(p.createdAt.seconds * 1000)) : new Date();
+                dateStr = date.toLocaleString('ar-EG');
+            } catch (e) { dateStr = '---'; }
+
             return `
             <div class="bg-white rounded-2xl p-4 mb-4 shadow-sm border border-gray-100">
                 <div class="flex items-center gap-3 mb-3">
                     <img src="${p.authorPhoto}" class="w-10 h-10 rounded-full border border-sky-200 object-cover">
                     <div>
                         <span class="font-extrabold text-gray-800 text-sm">${p.authorName}</span>
-                        <div class="text-xs text-gray-400">${new Date(p.createdAt?.toDate()).toLocaleString('ar-EG')}</div>
+                        <div class="text-xs text-gray-400">${dateStr}</div>
                     </div>
                 </div>
                 <p class="text-gray-700 text-sm leading-relaxed mb-4 whitespace-pre-wrap">${p.content}</p>
@@ -416,6 +431,7 @@ window.engine = {
         postsToShow.forEach(({ id }) => this.listenToComments(id));
     },
 
+    // ---------- التعليقات ----------
     listenToComments(postId) {
         const q = query(collection(db, `posts/${postId}/comments`), orderBy("createdAt", "asc"));
         onSnapshot(q, (snap) => {
