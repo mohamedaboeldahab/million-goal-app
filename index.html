@@ -130,22 +130,18 @@
 
 <!-- مشغل القصص (Story Player) -->
 <!-- في ملف index.html -->
+<!-- في ملف index.html قبل </body> -->
 <div id="storyPlayer" 
-     class="fixed inset-0 bg-black z-[9999] hidden flex-col items-center justify-center pointer-events-auto" 
-     style="display: none; background-color: rgba(0,0,0,0.95) !important;">
-     
-    <!-- زر إغلاق كبير ليسهل ضغطه بالإصبع -->
-    <div class="absolute top-10 right-6 text-white p-4" onclick="engine.closeStory()">
-        <i class="fa-solid fa-xmark text-3xl"></i>
-    </div>
+     class="fixed inset-0 bg-black z-[99999]" 
+     style="display: none; flex-direction: column; align-items: center; justify-content: center; position: fixed !important;">
     
-    <div id="storyContent" class="w-full flex flex-col items-center text-white px-6"></div>
-
-    <!-- أزرار تنقل واضحة -->
-    <div class="flex gap-10 mt-12 w-full justify-center">
-        <button onclick="engine.prevStory()" class="bg-white/20 p-6 rounded-full text-white"><i class="fa-solid fa-chevron-right text-2xl"></i></button>
-        <button onclick="engine.nextStory()" class="bg-white/20 p-6 rounded-full text-white"><i class="fa-solid fa-chevron-left text-2xl"></i></button>
+    <!-- زر إغلاق ضخم جداً -->
+    <div style="position: absolute; top: 40px; right: 20px; z-index: 100000; padding: 20px;" 
+         onclick="window.engine.closeStory()">
+        <i class="fa-solid fa-xmark text-white text-4xl"></i>
     </div>
+
+    <div id="storyContent" class="text-white text-center w-full px-4"></div>
 </div>
     <!-- السكريبتات -->
     <script>
