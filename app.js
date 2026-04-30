@@ -101,7 +101,6 @@ window.engine = {
                 this.updateTypeButtons();
                 this.updateCreatorAvatar();
             } else if (pageName === 'profile') {
-                // تأخير صغير لضمان رسم الـ DOM
                 setTimeout(() => {
                     this.listenToProfilePosts('userPostsContainer');
                     this.activateProfile();
@@ -199,32 +198,120 @@ window.engine = {
             </div>`).join('');
     },
 
+    // ========== مشغل القصص كامل ==========
     openStoryPlayer(startIndex = 0) {
         this._activeBites = this.getActiveBites();
         if (this._activeBites.length === 0) return;
+
         this._storyIndex = startIndex;
+
         if (this._dynamicPlayer) this._dynamicPlayer.remove();
+
         const player = document.createElement('div');
         player.id = 'dynamicStoryPlayer';
         player.className = 'fixed inset-0 z-50 flex flex-col';
         player.style.background = 'linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%)';
+
+        const progressBars = document.createElement('div');
+        progressBars.className = 'absolute top-4 left-4 right-4 flex gap-1 z-10';
+        progressBars.id = 'progressBars';
+
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'absolute top-4 right-4 text-white text-3xl z-10 hover:scale-110 transition';
+        closeBtn.innerHTML = '&times;';
+        closeBtn.onclick = () => this.closeStoryPlayer();
+
+        const content = document.createElement('div');
+        content.className = 'flex-1 flex items-center justify-center p-4';
+        content.id = 'storyContent';
+
+        const prevBtn = document.createElement('button');
+        prevBtn.className = 'absolute left-4 top-1/2 -translate-y-1/2 text-white text-2xl bg-white/20 rounded-full w-12 h-12 flex items-center justify-center backdrop-blur-sm';
+        prevBtn.innerHTML = '&#8249;';
+        prevBtn.onclick = () => this.prevStory();
+
+        const nextBtn = document.createElement('button');
+        nextBtn.className = 'absolute right-4 top-1/2 -translate-y-1/2 text-white text-2xl bg-white/20 rounded-full w-12 h-12 flex items-center justify-center backdrop-blur-sm';
+        nextBtn.innerHTML = '&#8250;';
+        nextBtn.onclick = () => this.nextStory();
+
+        player.appendChild(progressBars);
+        player.appendChild(closeBtn);
+        player.appendChild(content);
+        player.appendChild(prevBtn);
+        player.appendChild(nextBtn);
+
         document.body.appendChild(player);
         this._dynamicPlayer = player;
+
         this.showCurrentStory();
     },
 
     showCurrentStory() {
         if (!this._dynamicPlayer) return;
-        if (this._storyIndex < 0 || this._storyIndex >= this._activeBites.length) { this.closeStoryPlayer(); return; }
+        if (this._storyIndex < 0 || this._storyIndex >= this._activeBites.length) {
+            this.closeStoryPlayer();
+            return;
+        }
+
         const bite = this._activeBites[this._storyIndex];
         const content = document.getElementById('storyContent');
-        content.innerHTML = `<div class="text-white text-center max-w-md"><img src="${bite.data.authorPhoto}" class="w-16 h-16 rounded-full border-2 border-white/40 mb-3 mx-auto shadow-lg"><p class="font-bold text-lg">${bite.data.authorName}</p><p class="text-sm mt-2 leading-relaxed text-white/90">${bite.data.content}</p></div>`;
+        const progressBars = document.getElementById('progressBars');
+
+        if (content) {
+            content.innerHTML = `
+                <div class="text-white text-center max-w-md">
+                    <img src="${bite.data.authorPhoto}" class="w-16 h-16 rounded-full border-2 border-white/40 mb-3 mx-auto shadow-lg">
+                    <p class="font-bold text-lg">${bite.data.authorName}</p>
+                    <p class="text-sm mt-2 leading-relaxed text-white/90">${bite.data.content}</p>
+                </div>`;
+        }
+
+        if (progressBars) {
+            progressBars.innerHTML = this._activeBites.map((_, i) => `
+                <div class="flex-1 h-1 bg-white/30 rounded-full overflow-hidden">
+                    <div class="h-full bg-white rounded-full transition-all duration-[5000ms] ease-linear ${i === this._storyIndex ? 'w-full' : i < this._storyIndex ? 'w-full' : 'w-0'}" id="bar-${i}"></div>
+                </div>`).join('');
+        }
+
+        if (this._storyTimer) clearTimeout(this._storyTimer);
+
+        const bar = document.getElementById(`bar-${this._storyIndex}`);
+        if (bar) bar.style.transition = 'width 5s linear';
+        setTimeout(() => {
+            if (bar) bar.classList.add('w-full');
+        }, 50);
+
+        this._storyTimer = setTimeout(() => {
+            this.nextStory();
+        }, 5000);
     },
 
-    nextStory() { /* ... */ },
-    prevStory() { /* ... */ },
-    closeStoryPlayer() { if (this._dynamicPlayer) { this._dynamicPlayer.remove(); this._dynamicPlayer = null; } clearTimeout(this._storyTimer); },
+    nextStory() {
+        if (this._storyIndex < this._activeBites.length - 1) {
+            this._storyIndex++;
+            this.showCurrentStory();
+        } else {
+            this.closeStoryPlayer();
+        }
+    },
 
+    prevStory() {
+        if (this._storyIndex > 0) {
+            this._storyIndex--;
+            this.showCurrentStory();
+        }
+    },
+
+    closeStoryPlayer() {
+        if (this._dynamicPlayer) {
+            this._dynamicPlayer.remove();
+            this._dynamicPlayer = null;
+        }
+        if (this._storyTimer) clearTimeout(this._storyTimer);
+    },
+
+    // ========== المنشورات ==========
     listenToPosts() {
         const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
         this._currentSnapUnsubscribe = onSnapshot(q, (snapshot) => {
@@ -295,7 +382,7 @@ window.engine = {
         btn.style.display = 'none';
     },
 
-    // ---------- صفحة البروفايل (خفيفة وسريعة) ----------
+    // ========== صفحة البروفايل ==========
     listenToProfilePosts(containerId) {
         const userId = auth.currentUser?.uid;
         if (!userId) return;
@@ -310,7 +397,7 @@ window.engine = {
     },
 
     activateProfile() {
-        // ========== التبويبات ==========
+        // التبويبات
         document.querySelectorAll('.tab-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 document.querySelectorAll('.tab-btn').forEach(b => { b.classList.remove('active','bg-gray-100'); b.classList.add('text-gray-500'); });
@@ -328,7 +415,6 @@ window.engine = {
         const bioEl = document.getElementById('profileBio');
         const aboutEl = document.getElementById('aboutBio');
 
-        // تحميل البيانات
         if (avatarImg && nameEl) {
             this.getOrCreateUserProfile().then(profile => {
                 const u = auth.currentUser;
@@ -341,48 +427,26 @@ window.engine = {
             });
         }
 
-        // تحرير الملف الشخصي
         const editBtn = document.getElementById('editProfileBtn');
         const saveBtn = document.getElementById('saveProfileBtn');
         if (editBtn && saveBtn) {
             editBtn.onclick = () => {
-                if (nameEl) {
-                    nameEl.contentEditable = 'true';
-                    nameEl.classList.add('bg-yellow-50','px-2','rounded','outline-none');
-                }
-                if (bioEl) {
-                    bioEl.contentEditable = 'true';
-                    bioEl.classList.add('bg-yellow-50','px-2','rounded','outline-none');
-                }
-                editBtn.classList.add('hidden');
-                saveBtn.classList.remove('hidden');
+                if (nameEl) { nameEl.contentEditable = 'true'; nameEl.classList.add('bg-yellow-50','px-2','rounded','outline-none'); }
+                if (bioEl) { bioEl.contentEditable = 'true'; bioEl.classList.add('bg-yellow-50','px-2','rounded','outline-none'); }
+                editBtn.classList.add('hidden'); saveBtn.classList.remove('hidden');
             };
-
             saveBtn.onclick = async () => {
-                if (nameEl) {
-                    nameEl.contentEditable = 'false';
-                    nameEl.classList.remove('bg-yellow-50','px-2','rounded','outline-none');
-                }
-                if (bioEl) {
-                    bioEl.contentEditable = 'false';
-                    bioEl.classList.remove('bg-yellow-50','px-2','rounded','outline-none');
-                }
-                editBtn.classList.remove('hidden');
-                saveBtn.classList.add('hidden');
-
+                if (nameEl) { nameEl.contentEditable = 'false'; nameEl.classList.remove('bg-yellow-50','px-2','rounded','outline-none'); }
+                if (bioEl) { bioEl.contentEditable = 'false'; bioEl.classList.remove('bg-yellow-50','px-2','rounded','outline-none'); }
+                editBtn.classList.remove('hidden'); saveBtn.classList.add('hidden');
                 const n = nameEl ? nameEl.textContent.trim() : '';
                 const b = bioEl ? bioEl.textContent.trim() : '';
                 let ok = false;
-                try {
-                    await this.updateUserProfile({ displayName: n, bio: b });
-                    ok = true;
-                    if (aboutEl) aboutEl.textContent = b;
-                } catch(e) {}
+                try { await this.updateUserProfile({ displayName: n, bio: b }); ok = true; if (aboutEl) aboutEl.textContent = b; } catch(e) {}
                 this.showToast(ok ? 'تم حفظ البيانات ☁️' : 'تم حفظ البيانات محلياً ⚠️');
             };
         }
 
-        // تغيير الصورة
         document.getElementById('avatarOverlay')?.addEventListener('click', () => document.getElementById('avatarFileInput').click());
         document.getElementById('avatarFileInput')?.addEventListener('change', (e) => {
             const file = e.target.files[0];
