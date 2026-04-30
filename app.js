@@ -193,14 +193,16 @@ renderStories() {
         row.innerHTML = '';
         return;
     }
+    // أضفنا onclick="engine.openStoryPlayer(${index})" مباشرة هنا
     row.innerHTML = this._activeBites.map((bite, index) => `
         <div class="flex flex-col items-center gap-1 flex-shrink-0 cursor-pointer" 
-     style="touch-action: manipulation; user-select: none;"
-     data-story-index="${index}">
+             onclick="engine.openStoryPlayer(${index})">
             <div class="w-16 h-16 rounded-full bg-gradient-to-tr from-sky-400 to-blue-500 p-0.5 shadow-md">
                 <img src="${bite.data.authorPhoto}" class="w-full h-full rounded-full object-cover border-2 border-white">
             </div>
-            <span class="text-[10px] font-bold text-gray-700 text-center leading-tight max-w-[64px] truncate">${bite.data.authorName}</span>
+            <span class="text-[10px] font-bold text-gray-700 text-center leading-tight max-w-[64px] truncate">
+                ${bite.data.authorName}
+            </span>
         </div>
     `).join('');
 },
