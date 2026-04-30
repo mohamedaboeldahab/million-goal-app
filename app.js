@@ -34,6 +34,11 @@ window.engine = {
     _activeBites: [],
     _storyIndex: 0,
     _storyTimer: null,
+    _storyTouchMoved: false,
+    _storyTarget: null,
+    _storyTouchStart: null,
+    _storyTouchEnd: null,
+    _storyClick: null,
 
     async init() {
         try { await setPersistence(auth, browserLocalPersistence); } catch (e) { console.error("Persistence error", e); }
@@ -151,13 +156,39 @@ window.engine = {
     initStoryClicks() {
         const row = document.getElementById('storiesRow');
         if (!row) return;
-        // استخدام حدث click بدلاً من pointerup
-        row.addEventListener('click', (e) => {
-            const storyElement = e.target.closest('[data-story-index]');
-            if (!storyElement) return;
-            const index = parseInt(storyElement.dataset.storyIndex);
-            this.openStoryPlayer(index);
-        });
+        
+        row.removeEventListener('touchstart', this._storyTouchStart);
+        row.removeEventListener('touchend', this._storyTouchEnd);
+        row.removeEventListener('click', this._storyClick);
+        
+        this._storyTouchMoved = false;
+        
+        this._storyTouchStart = (e) => {
+            this._storyTouchMoved = false;
+            this._storyTarget = e.target.closest('[data-story-index]');
+        };
+        
+        this._storyTouchEnd = (e) => {
+            if (!this._storyTouchMoved && this._storyTarget) {
+                e.preventDefault();
+                const index = parseInt(this._storyTarget.dataset.storyIndex);
+                if (!isNaN(index)) this.openStoryPlayer(index);
+            }
+            this._storyTarget = null;
+        };
+        
+        this._storyClick = (e) => {
+            const target = e.target.closest('[data-story-index]');
+            if (target) {
+                const index = parseInt(target.dataset.storyIndex);
+                if (!isNaN(index)) this.openStoryPlayer(index);
+            }
+        };
+        
+        row.addEventListener('touchstart', this._storyTouchStart, { passive: false });
+        row.addEventListener('touchmove', () => { this._storyTouchMoved = true; });
+        row.addEventListener('touchend', this._storyTouchEnd);
+        row.addEventListener('click', this._storyClick);
     },
 
     async handleVote(postId, type) {
@@ -197,28 +228,28 @@ window.engine = {
         });
     },
 
-renderStories() {
-    const row = document.getElementById('storiesRow');
-    if (!row) return;
-    this._activeBites = this.getActiveBites();
-    row.innerHTML = '';
-    if (this._activeBites.length === 0) return;
-    const html = this._activeBites.map((bite, index) => `
-        <div class="flex flex-col items-center gap-1 flex-shrink-0"
-             style="cursor:pointer; position:relative; z-index:5;"
-             onclick="engine.openStoryPlayer(${index})">
-            <div class="w-16 h-16 rounded-full bg-gradient-to-tr from-sky-400 to-blue-500 p-0.5 shadow-md">
-                <img src="${bite.data.authorPhoto}" 
-                     class="w-full h-full rounded-full object-cover border-2 border-white">
+    renderStories() {
+        const row = document.getElementById('storiesRow');
+        if (!row) return;
+        this._activeBites = this.getActiveBites();
+        row.innerHTML = '';
+        if (this._activeBites.length === 0) return;
+        const html = this._activeBites.map((bite, index) => `
+            <div class="flex flex-col items-center gap-1 flex-shrink-0"
+                 data-story-index="${index}"
+                 style="cursor:pointer; position:relative; z-index:5;">
+                <div class="w-16 h-16 rounded-full bg-gradient-to-tr from-sky-400 to-blue-500 p-0.5 shadow-md">
+                    <img src="${bite.data.authorPhoto}" 
+                         class="w-full h-full rounded-full object-cover border-2 border-white">
+                </div>
+                <span class="text-[10px] font-bold text-gray-700 text-center truncate w-16">
+                    ${bite.data.authorName}
+                </span>
             </div>
-            <span class="text-[10px] font-bold text-gray-700 text-center truncate w-16">
-                ${bite.data.authorName}
-            </span>
-        </div>
-    `).join('');
-    row.innerHTML = html;
-},
-    // دوال مشغل القصص المعدلة بالكامل
+        `).join('');
+        row.innerHTML = html;
+    },
+
     closeStory() {
         const player = document.getElementById('storyPlayer');
         if (player) {
@@ -278,7 +309,6 @@ renderStories() {
         }
     },
 
-    // دوال المنشورات والتعليقات (بدون تغيير)
     listenToPosts() {
         const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
         this._currentSnapUnsubscribe = onSnapshot(q, (snapshot) => {
