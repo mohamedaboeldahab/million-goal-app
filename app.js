@@ -40,18 +40,6 @@ window.engine = {
 // إصلاح مشكلة اللمس على الهاتف: تفويض حدث الضغط لشريط الستوريز
 // اكتشاف نوع الحدث (لمس للموبايل أو ضغط للكمبيوتر)
     const clickEvent = 'ontouchstart' in window ? 'touchend' : 'click';
-document.addEventListener('pointerup', (e) => {
-    console.log("ANY CLICK", e.target);
-});
-document.addEventListener('pointerup', (e) => {
-    const storyElement = e.target.closest('[data-story-index]');
-    if (!storyElement) return;
-
-    console.log("FOUND STORY ELEMENT");
-
-    const index = parseInt(storyElement.dataset.storyIndex);
-    window.engine.openStoryPlayer(index);
-});
         setInterval(() => this.deleteExpiredBites(), 600000);
         this.deleteExpiredBites();
 
