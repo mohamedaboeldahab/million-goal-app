@@ -223,8 +223,9 @@ openStoryPlayer(startIndex = 0) {
     this._storyIndex = startIndex;
     const player = document.getElementById('storyPlayer');
     if (player) {
-        player.style.display = 'flex'; // استخدام style مباشرة أضمن
+        // أزل الكلاس hidden أولاً ثم ضع display flex
         player.classList.remove('hidden');
+        player.style.display = 'flex'; 
         this.showCurrentStory();
     }
 },
