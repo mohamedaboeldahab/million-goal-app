@@ -34,16 +34,6 @@
 <!-- قائمة المنشورات -->
 <div id="feedList"></div>
 
-<!-- مشغل القصص الثابت (يتم إظهاره/إخفاؤه) -->
-<div id="storyPlayer" class="fixed inset-0 z-50 flex flex-col items-center justify-center hidden" style="background: linear-gradient(135deg, #0f172a, #1e3a5f);">
-    <button id="closeStoryBtn" class="absolute top-4 right-4 text-white text-3xl z-10">&times;</button>
-    <div id="storyContent" class="flex-1 flex flex-col items-center justify-center text-white p-6"></div>
-    <div class="flex justify-between w-full mt-4 px-6">
-        <button id="prevStoryBtn" class="text-white text-2xl bg-white/20 rounded-full w-10 h-10 flex items-center justify-center">&larr;</button>
-        <button id="nextStoryBtn" class="text-white text-2xl bg-white/20 rounded-full w-10 h-10 flex items-center justify-center">&rarr;</button>
-    </div>
-</div>
-
 <script>
     // تحديث صورة الأفاتار
     (async function() {
@@ -56,7 +46,7 @@
         }
     })();
 
-    // تفويض الأحداث للقصص (يدعم اللمس والنقر)
+    // تفويض الأحداث للقصص (يعمل على الموبايل والكمبيوتر)
     (function() {
         const storiesRow = document.getElementById('storiesRow');
         if (!storiesRow) return;
@@ -74,19 +64,5 @@
 
         storiesRow.addEventListener('touchstart', handleStoryTap, { passive: false });
         storiesRow.addEventListener('click', handleStoryTap);
-    })();
-
-    // ربط أزرار المشغل الثابت
-    (function() {
-        const player = document.getElementById('storyPlayer');
-        document.getElementById('closeStoryBtn').addEventListener('click', () => {
-            player.classList.add('hidden');
-        });
-        document.getElementById('prevStoryBtn').addEventListener('click', () => {
-            if (window.engine) window.engine.prevStory();
-        });
-        document.getElementById('nextStoryBtn').addEventListener('click', () => {
-            if (window.engine) window.engine.nextStory();
-        });
     })();
 </script>
