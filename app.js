@@ -96,10 +96,13 @@ window.engine = {
                 oldScript.replaceWith(newScript);
             });
             if (pageName === 'home') {
-                this.listenToPosts();
-                this.activateCharCounter();
-                this.updateTypeButtons();
-                this.updateCreatorAvatar();
+                // تأخير بسيط لضمان وجود #storiesRow
+                setTimeout(() => {
+                    this.listenToPosts();
+                    this.activateCharCounter();
+                    this.updateTypeButtons();
+                    this.updateCreatorAvatar();
+                }, 100);
             } else if (pageName === 'profile') {
                 setTimeout(() => {
                     this.listenToProfilePosts('userPostsContainer');
@@ -178,7 +181,7 @@ window.engine = {
         return this._allPosts.filter(p => {
             if (p.data.type !== 'bite') return false;
             const t = p.data.createdAt;
-            if (!t) return true;
+            if (!t) return true; // حديث النشر
             const time = t.toDate ? t.toDate().getTime() : t.seconds ? t.seconds * 1000 : 0;
             return time > cutoff;
         });
@@ -188,7 +191,10 @@ window.engine = {
         const row = document.getElementById('storiesRow');
         if (!row) return;
         this._activeBites = this.getActiveBites();
-        if (this._activeBites.length === 0) { row.innerHTML = ''; return; }
+        if (this._activeBites.length === 0) {
+            row.innerHTML = '';
+            return;
+        }
         row.innerHTML = this._activeBites.map((bite, index) => `
             <div class="flex flex-col items-center gap-1 flex-shrink-0 cursor-pointer" onclick="engine.openStoryPlayer(${index})">
                 <div class="w-16 h-16 rounded-full bg-gradient-to-tr from-sky-400 to-blue-500 p-0.5 shadow-md">
@@ -198,11 +204,12 @@ window.engine = {
             </div>`).join('');
     },
 
-    // ========== مشغل القصص كامل ==========
+    // ========== مشغل القصص (مضمون) ==========
     openStoryPlayer(startIndex = 0) {
-        this._activeBites = this.getActiveBites();
-        if (this._activeBites.length === 0) return;
-
+        // نجلب العضّات المحدثة مباشرة
+        const bites = this.getActiveBites();
+        if (bites.length === 0) return;
+        this._activeBites = bites;
         this._storyIndex = startIndex;
 
         if (this._dynamicPlayer) this._dynamicPlayer.remove();
@@ -397,7 +404,6 @@ window.engine = {
     },
 
     activateProfile() {
-        // التبويبات
         document.querySelectorAll('.tab-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 document.querySelectorAll('.tab-btn').forEach(b => { b.classList.remove('active','bg-gray-100'); b.classList.add('text-gray-500'); });
