@@ -38,17 +38,23 @@ window.engine = {
     async init() {
         try { await setPersistence(auth, browserLocalPersistence); } catch (e) { console.error("Persistence error", e); }
 // إصلاح مشكلة اللمس على الهاتف: تفويض حدث الضغط لشريط الستوريز
-    // داخل دالة init()
-document.addEventListener('click', (e) => {
-    // البحث عن أقرب عنصر يحمل الـ index سواء ضغطت على الصورة أو الاسم
-    const storyElement = e.target.closest('[data-story-index]');
-    if (storyElement) {
-        // منع أي سلوك افتراضي قد يعطل الفتح على بعض المتصفحات
-        e.stopPropagation(); 
-        const index = parseInt(storyElement.getAttribute('data-story-index'));
-        this.openStoryPlayer(index);
-    }
-});
+// اكتشاف نوع الحدث (لمس للموبايل أو ضغط للكمبيوتر)
+    const clickEvent = 'ontouchstart' in window ? 'touchend' : 'click';
+
+    document.addEventListener(clickEvent, (e) => {
+        const storyElement = e.target.closest('[data-story-index]');
+        if (storyElement) {
+            // منع المتصفح من تنفيذ "الضغط" و "اللمس" معاً
+            if (e.cancelable) e.preventDefault(); 
+            
+            const index = parseInt(storyElement.getAttribute('data-story-index'));
+            console.log("Opening story index:", index); // للتأكد في Console الموبايل
+            this.openStoryPlayer(index);
+        }
+    }, { passive: false }); // ضروري جداً لعمل preventDefault على الموبايل
+
+    setInterval(() => this.deleteExpiredBites(), 600000);
+    this.deleteExpiredBites();
         setInterval(() => this.deleteExpiredBites(), 600000);
         this.deleteExpiredBites();
 
