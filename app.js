@@ -195,24 +195,24 @@ window.engine = {
         });
     },
 
-    renderStories() {
-        const row = document.getElementById('storiesRow');
-        if (!row) return;
-        this._activeBites = this.getActiveBites();
-        if (this._activeBites.length === 0) {
-            row.innerHTML = '';
-            return;
-        }
-        row.innerHTML = this._activeBites.map((bite, index) => `
-            <div class="flex flex-col items-center gap-1 flex-shrink-0 cursor-pointer" onclick="engine.openStoryPlayer(${index})">
-                            data-story-index="${index}"   <!-- أضف هذا السطر -->
-
-                <div class="w-16 h-16 rounded-full bg-gradient-to-tr from-sky-400 to-blue-500 p-0.5 shadow-md">
-                    <img src="${bite.data.authorPhoto}" class="w-full h-full rounded-full object-cover border-2 border-white">
-                </div>
-                <span class="text-[10px] font-bold text-gray-700 text-center leading-tight max-w-[64px] truncate">${bite.data.authorName}</span>
-            </div>`).join('');
-    },
+renderStories() {
+    const row = document.getElementById('storiesRow');
+    if (!row) return;
+    this._activeBites = this.getActiveBites();
+    if (this._activeBites.length === 0) {
+        row.innerHTML = '';
+        return;
+    }
+    row.innerHTML = this._activeBites.map((bite, index) => `
+        <div class="flex flex-col items-center gap-1 flex-shrink-0 cursor-pointer" 
+             data-story-index="${index}">
+            <div class="w-16 h-16 rounded-full bg-gradient-to-tr from-sky-400 to-blue-500 p-0.5 shadow-md">
+                <img src="${bite.data.authorPhoto}" class="w-full h-full rounded-full object-cover border-2 border-white">
+            </div>
+            <span class="text-[10px] font-bold text-gray-700 text-center leading-tight max-w-[64px] truncate">${bite.data.authorName}</span>
+        </div>
+    `).join('');
+},
 
     // ---------- مشغل القصص (يعمل 100%) ----------
     openStoryPlayer(startIndex = 0) {
