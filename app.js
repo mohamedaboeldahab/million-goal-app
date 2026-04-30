@@ -158,14 +158,15 @@ window.engine = {
                     </div>
                 </div>
                 <p class="text-gray-700 text-sm leading-relaxed mb-4 whitespace-pre-wrap">${p.content}</p>
+                <!-- أزرار التصويت بشكل واضح -->
                 <div class="flex gap-2 mb-3">
                     <button onclick="engine.handleVote('${postId}', 'support')" 
-                        class="flex-1 flex items-center justify-center gap-1.5 bg-gradient-to-r from-sky-400 to-blue-500 text-white font-bold py-2 rounded-lg shadow text-xs">
-                        🦈 أؤيد <span class="bg-white/40 px-2 py-0.5 rounded-full text-sm font-extrabold">${p.supportCount || 0}</span>
+                        class="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-sky-400 to-blue-500 text-white font-bold py-2.5 rounded-xl shadow text-sm">
+                        <span class="text-base">🦈</span> أؤيد <span class="bg-white/40 px-2 py-0.5 rounded-full text-sm font-extrabold">${p.supportCount || 0}</span>
                     </button>
                     <button onclick="engine.handleVote('${postId}', 'oppose')" 
-                        class="flex-1 flex items-center justify-center gap-1.5 bg-gradient-to-r from-amber-400 to-orange-400 text-white font-bold py-2 rounded-lg shadow text-xs">
-                        🐟 لا أؤيد <span class="bg-white/40 px-2 py-0.5 rounded-full text-sm font-extrabold">${p.opposeCount || 0}</span>
+                        class="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-amber-400 to-orange-400 text-white font-bold py-2.5 rounded-xl shadow text-sm">
+                        <span class="text-base">🐟</span> لا أؤيد <span class="bg-white/40 px-2 py-0.5 rounded-full text-sm font-extrabold">${p.opposeCount || 0}</span>
                     </button>
                 </div>
                 <div class="border-t border-gray-100 pt-3">
