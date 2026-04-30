@@ -1,12 +1,12 @@
 <div class="p-4">
     <!-- هيدر الصفحة -->
-    <div class="bg-sky-500 rounded-[2rem] p-6 text-white mb-6 shadow-lg shadow-sky-200">
-        <h2 class="text-2xl font-black mb-1">🗺️ رحلة المليونير</h2>
+    <div class="bg-sky-500 rounded-[2rem] p-5 text-white mb-5 shadow-lg shadow-sky-200">
+        <h2 class="text-xl font-black mb-1">🗺️ رحلة المليونير</h2>
         <p class="text-xs opacity-80 font-bold">كل خطوة تقربك من هدفك – القرش 🦈 بينط للمراحل اللي فاتت</p>
     </div>
 
     <!-- إعدادات الهدف -->
-    <div class="bg-white rounded-2xl p-4 shadow mb-6 border border-gray-100">
+    <div class="bg-white rounded-2xl p-4 shadow mb-5 border border-gray-100">
         <div class="grid grid-cols-2 gap-3 mb-3">
             <div>
                 <label class="text-xs font-bold text-gray-500 block mb-1">🎯 الهدف (ج.م)</label>
@@ -28,7 +28,7 @@
     </div>
 
     <!-- المسار الأفقي الملتف (Snake) -->
-    <div class="bg-white rounded-2xl p-4 shadow-md border border-gray-100 overflow-x-auto">
+    <div class="bg-white rounded-2xl p-3 shadow-md border border-gray-100 overflow-x-auto">
         <div id="snakePath" class="snake-path"></div>
     </div>
 
@@ -50,7 +50,6 @@
             }
             if (current >= goal) break;
         }
-        // إضافة الهدف إذا لم يكن موجودًا
         if (milestones[milestones.length - 1] !== goal) {
             milestones.push(goal);
         }
@@ -68,14 +67,15 @@
         const milestones = generateMilestones(goal);
         const container = document.getElementById('snakePath');
         let html = '';
-        const colsPerRow = 6; // عدد الأعمدة في كل صف
-        const totalRows = Math.ceil(milestones.length / colsPerRow);
+        const colsPerRow = 5; // عدد الأعمدة في كل صف (مناسب للموبايل)
+
+        const totalCols = colsPerRow;
+        const totalRows = Math.ceil(milestones.length / totalCols);
 
         for (let row = 0; row < totalRows; row++) {
             html += '<div class="snake-row">';
-            for (let col = 0; col < colsPerRow; col++) {
-                // المسار متعرج: الصفوف الزوجية من اليسار لليمين، الفردية من اليمين لليسار
-                const index = row % 2 === 0 ? row * colsPerRow + col : row * colsPerRow + (colsPerRow - 1 - col);
+            for (let col = 0; col < totalCols; col++) {
+                const index = row % 2 === 0 ? row * totalCols + col : row * totalCols + (totalCols - 1 - col);
                 if (index >= milestones.length) {
                     html += '<div class="snake-cell empty"></div>';
                     continue;
@@ -142,19 +142,19 @@
     .snake-path {
         display: flex;
         flex-direction: column;
-        gap: 8px;
-        min-width: 480px;
+        gap: 6px;
+        min-width: 360px;
     }
     .snake-row {
         display: flex;
-        gap: 8px;
+        gap: 6px;
         justify-content: center;
     }
     .snake-cell {
-        width: 60px;
-        height: 60px;
+        width: 52px;
+        height: 52px;
         background: #f1f5f9;
-        border-radius: 16px;
+        border-radius: 14px;
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -171,12 +171,12 @@
         background: linear-gradient(135deg, #0ea5e9, #0284c7);
         color: white;
         transform: scale(1.02);
-        box-shadow: 0 0 14px rgba(14,165,233,0.4);
+        box-shadow: 0 0 12px rgba(14,165,233,0.4);
     }
     .snake-cell.current {
         animation: pulse 1.2s infinite;
         border: 2px solid #facc15;
-        transform: scale(1.08);
+        transform: scale(1.06);
     }
     .snake-cell.next {
         background: #e0f2fe;
@@ -189,19 +189,19 @@
         100% { transform: scale(1); }
     }
     .stage-num {
-        font-size: 18px;
+        font-size: 16px;
         font-weight: 800;
         line-height: 1;
     }
     .stage-amount {
-        font-size: 10px;
+        font-size: 9px;
         font-weight: 600;
         margin-top: 2px;
     }
     .shark-icon {
         position: absolute;
-        bottom: -16px;
-        font-size: 22px;
+        bottom: -14px;
+        font-size: 18px;
     }
     .snake-cell:not(.completed) .shark-icon { display: none; }
 </style>
