@@ -197,28 +197,27 @@ window.engine = {
         });
     },
 
-    renderStories() {
-        const row = document.getElementById('storiesRow');
-        if (!row) return;
-        this._activeBites = this.getActiveBites();
-        row.innerHTML = '';
-        if (this._activeBites.length === 0) return;
-        const html = this._activeBites.map((bite, index) => `
-            <div class="flex flex-col items-center gap-1 flex-shrink-0"
-                 data-story-index="${index}"
-                 style="cursor:pointer; position:relative; z-index:5;">
-                <div class="w-16 h-16 rounded-full bg-gradient-to-tr from-sky-400 to-blue-500 p-0.5 shadow-md">
-                    <img src="${bite.data.authorPhoto}" 
-                         class="w-full h-full rounded-full object-cover border-2 border-white">
-                </div>
-                <span class="text-[10px] font-bold text-gray-700 text-center truncate w-16">
-                    ${bite.data.authorName}
-                </span>
+renderStories() {
+    const row = document.getElementById('storiesRow');
+    if (!row) return;
+    this._activeBites = this.getActiveBites();
+    row.innerHTML = '';
+    if (this._activeBites.length === 0) return;
+    const html = this._activeBites.map((bite, index) => `
+        <div class="flex flex-col items-center gap-1 flex-shrink-0"
+             style="cursor:pointer; position:relative; z-index:5;"
+             onclick="engine.openStoryPlayer(${index})">
+            <div class="w-16 h-16 rounded-full bg-gradient-to-tr from-sky-400 to-blue-500 p-0.5 shadow-md">
+                <img src="${bite.data.authorPhoto}" 
+                     class="w-full h-full rounded-full object-cover border-2 border-white">
             </div>
-        `).join('');
-        row.innerHTML = html;
-    },
-
+            <span class="text-[10px] font-bold text-gray-700 text-center truncate w-16">
+                ${bite.data.authorName}
+            </span>
+        </div>
+    `).join('');
+    row.innerHTML = html;
+},
     // دوال مشغل القصص المعدلة بالكامل
     closeStory() {
         const player = document.getElementById('storyPlayer');
