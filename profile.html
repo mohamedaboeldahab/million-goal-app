@@ -28,11 +28,11 @@
 @keyframes moveWave { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
 </style>
 
-<!-- ========== معلومات البروفايل ========== -->
-<div class="bg-white rounded-t-3xl shadow-xl -mt-8 sm:-mt-10 px-4 pb-6 pt-4 relative">
+<!-- ========== معلومات البروفايل (RTL) ========== -->
+<div dir="rtl" class="bg-white rounded-t-3xl shadow-xl -mt-8 sm:-mt-10 px-4 pb-6 pt-4 relative">
     <!-- صف الصورة والبيانات -->
     <div class="flex flex-col sm:flex-row items-center sm:items-start gap-4">
-        <!-- الصورة (مربعة، على اليمين في RTL) -->
+        <!-- الصورة (على اليمين في RTL) -->
         <div class="w-28 h-28 sm:w-32 sm:h-32 rounded-2xl border-4 border-white shadow-lg overflow-hidden bg-white group flex-shrink-0 relative -mt-16 sm:-mt-20">
             <img id="profileAvatar" class="w-full h-full object-cover" src="" alt="صورتي">
             <div id="avatarOverlay" class="absolute inset-0 bg-black/30 hidden group-hover:flex items-center justify-center text-white cursor-pointer text-2xl">
@@ -41,7 +41,7 @@
             <input type="file" id="avatarFileInput" accept="image/*" class="hidden">
         </div>
 
-        <!-- البيانات (اسم، بريد، بايو، أزرار) -->
+        <!-- البيانات (الاسم، البريد، البايو، الأزرار) -->
         <div class="flex-1 text-center sm:text-right mt-2 sm:mt-0">
             <div class="flex items-center justify-center sm:justify-start gap-2">
                 <h1 id="profileName" class="text-2xl sm:text-3xl font-black text-gray-800" contenteditable="false">جار التحميل...</h1>
@@ -166,15 +166,16 @@
 
     // تعديل الاسم والوصف
     editBtn.addEventListener('click', () => {
-        nameEl.contentEditable = nameEl.nextElementSibling.contentEditable = 'true';
-        nameEl.classList.add('bg-yellow-50','px-2','rounded','outline-none');
+        nameEl.contentEditable = 'true';
         bioEl.contentEditable = 'true';
+        nameEl.classList.add('bg-yellow-50','px-2','rounded','outline-none');
         bioEl.classList.add('bg-yellow-50','px-2','rounded','outline-none');
         editBtn.classList.add('hidden');
         saveBtn.classList.remove('hidden');
     });
     saveBtn.addEventListener('click', async () => {
-        nameEl.contentEditable = bioEl.contentEditable = 'false';
+        nameEl.contentEditable = 'false';
+        bioEl.contentEditable = 'false';
         nameEl.classList.remove('bg-yellow-50','px-2','rounded','outline-none');
         bioEl.classList.remove('bg-yellow-50','px-2','rounded','outline-none');
         editBtn.classList.remove('hidden');
@@ -191,7 +192,7 @@
 
     function showToast(m){
         const t = document.createElement('div');
-        t.className = 'fixed bottom-4 left-4 bg-gray-800 text-white px-4 py-2 rounded-lg text-sm z-50 shadow-lg animate-pulse';
+        t.className = 'fixed bottom-4 right-4 bg-gray-800 text-white px-4 py-2 rounded-lg text-sm z-50 shadow-lg animate-pulse';
         t.textContent = m;
         document.body.appendChild(t);
         setTimeout(() => t.remove(), 2500);
