@@ -30,6 +30,7 @@ window.engine = {
     _allPosts: [],
     _visibleCount: 10,
     _currentSnapUnsubscribe: null,
+    _currentPostType: 'post',     // 'post' أو 'bite'
 
     async init() {
         try { await setPersistence(auth, browserLocalPersistence); } catch (e) { console.error("Persistence error", e); }
@@ -94,9 +95,29 @@ window.engine = {
             if (pageName === 'home') {
                 this.listenToPosts();
                 this.activateCharCounter();
+                this.updateTypeButtons();
             }
             if (typeof setActiveNavLink === 'function') setActiveNavLink(pageName);
         } catch (e) { content.innerHTML = `<div class="text-center py-20 text-slate-400">قريباً..</div>`; }
+    },
+
+    // ---------- اختيار نوع المنشور ----------
+    setPostType(type) {
+        this._currentPostType = type;
+        this.updateTypeButtons();
+    },
+
+    updateTypeButtons() {
+        const postBtn = document.getElementById('typePostBtn');
+        const biteBtn = document.getElementById('typeBiteBtn');
+        if (!postBtn || !biteBtn) return;
+        if (this._currentPostType === 'post') {
+            postBtn.className = 'flex-1 py-2 rounded-lg font-bold text-sm bg-sky-500 text-white shadow';
+            biteBtn.className = 'flex-1 py-2 rounded-lg font-bold text-sm bg-gray-200 text-gray-600 shadow';
+        } else {
+            biteBtn.className = 'flex-1 py-2 rounded-lg font-bold text-sm bg-sky-500 text-white shadow';
+            postBtn.className = 'flex-1 py-2 rounded-lg font-bold text-sm bg-gray-200 text-gray-600 shadow';
+        }
     },
 
     activateCharCounter() {
@@ -127,6 +148,73 @@ window.engine = {
         await updateDoc(postRef, updateData);
     },
 
+    // ---------- نشر المنشور (بوست أو عضّة) ----------
+    async addPost() {
+        const input = document.getElementById('postInput');
+        if (!input?.value.trim()) return;
+        const profile = await this.getOrCreateUserProfile();
+        const displayName = profile.displayName || auth.currentUser.displayName;
+        const photoURL = profile.photoURL || auth.currentUser.photoURL;
+
+        const postData = {
+            content: input.value,
+            authorName: displayName,
+            authorPhoto: photoURL,
+            authorId: auth.currentUser.uid,
+            supportCount: 0,
+            opposeCount: 0,
+            voters: [],
+            createdAt: serverTimestamp(),
+            type: this._currentPostType  // 'post' أو 'bite'
+        };
+
+        await addDoc(collection(db, "posts"), postData);
+        input.value = '';
+    },
+
+    // ---------- عرض الستوريز (عضّات) ----------
+    renderStories() {
+        const row = document.getElementById('storiesRow');
+        if (!row) return;
+
+        const bites = this._allPosts.filter(p => p.data.type === 'bite');
+        if (bites.length === 0) {
+            row.innerHTML = '';
+            return;
+        }
+
+        row.innerHTML = bites.map(({ id, data: b }) => `
+            <div class="flex flex-col items-center gap-1 flex-shrink-0 cursor-pointer" onclick="engine.openStory('${id}')">
+                <div class="w-16 h-16 rounded-full bg-gradient-to-tr from-sky-400 to-blue-500 p-0.5 shadow-md">
+                    <img src="${b.authorPhoto}" class="w-full h-full rounded-full object-cover border-2 border-white">
+                </div>
+                <span class="text-[10px] font-bold text-gray-700 text-center leading-tight max-w-[64px] truncate">${b.authorName}</span>
+            </div>
+        `).join('');
+    },
+
+    openStory(postId) {
+        const bite = this._allPosts.find(p => p.id === postId);
+        if (!bite) return;
+
+        // عرض الستوري في مودال بسيط
+        const modal = document.createElement('div');
+        modal.className = 'fixed inset-0 bg-black bg-opacity-80 z-50 flex items-center justify-center p-4';
+        modal.innerHTML = `
+            <div class="bg-white rounded-2xl p-6 max-w-sm w-full relative">
+                <button class="absolute top-3 right-3 text-gray-500 text-2xl" onclick="this.parentElement.parentElement.remove()">&times;</button>
+                <div class="flex items-center gap-3 mb-4">
+                    <img src="${bite.data.authorPhoto}" class="w-12 h-12 rounded-full border">
+                    <span class="font-extrabold text-gray-800">${bite.data.authorName}</span>
+                </div>
+                <p class="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap">${bite.data.content}</p>
+                <div class="text-xs text-gray-400 mt-4">${new Date(bite.data.createdAt?.toDate()).toLocaleString('ar-EG')}</div>
+            </div>
+        `;
+        modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
+        document.body.appendChild(modal);
+    },
+
     // ---------- المنشورات مع تحميل تدريجي ----------
     listenToPosts() {
         const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
@@ -138,6 +226,7 @@ window.engine = {
                 this._visibleCount = this._allPosts.length;
             }
             this.renderVisiblePosts();
+            this.renderStories();   // <-- تحديث شريط الستوريز
         });
     },
 
@@ -145,7 +234,10 @@ window.engine = {
         const feed = document.getElementById('feedList');
         if (!feed) return;
 
-        const postsToShow = this._allPosts.slice(0, this._visibleCount);
+        // عرض البوستات العادية فقط (نوع 'post')
+        const normalPosts = this._allPosts.filter(p => p.data.type !== 'bite');
+        const postsToShow = normalPosts.slice(0, this._visibleCount);
+
         feed.innerHTML = postsToShow.map(({ id, data: p }) => {
             const postId = id;
             return `
@@ -158,14 +250,13 @@ window.engine = {
                     </div>
                 </div>
                 <p class="text-gray-700 text-sm leading-relaxed mb-4 whitespace-pre-wrap">${p.content}</p>
-                <!-- أزرار التصويت بشكل واضح -->
                 <div class="flex gap-2 mb-3">
                     <button onclick="engine.handleVote('${postId}', 'support')" 
-                        class="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-sky-400 to-blue-500 text-white font-bold py-2.5 rounded-xl shadow text-sm">
+                        class="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-sky-400 to-blue-500 text-white font-bold py-2 rounded-xl shadow text-sm">
                         <span class="text-base">🦈</span> أؤيد <span class="bg-white/40 px-2 py-0.5 rounded-full text-sm font-extrabold">${p.supportCount || 0}</span>
                     </button>
                     <button onclick="engine.handleVote('${postId}', 'oppose')" 
-                        class="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-amber-400 to-orange-400 text-white font-bold py-2.5 rounded-xl shadow text-sm">
+                        class="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-amber-400 to-orange-400 text-white font-bold py-2 rounded-xl shadow text-sm">
                         <span class="text-base">🐟</span> لا أؤيد <span class="bg-white/40 px-2 py-0.5 rounded-full text-sm font-extrabold">${p.opposeCount || 0}</span>
                     </button>
                 </div>
@@ -186,19 +277,20 @@ window.engine = {
             </div>`;
         }).join('');
 
+        // زر تحميل المزيد (للبوستات العادية فقط)
         const oldBtn = document.getElementById('loadMorePostsBtn');
         if (oldBtn) oldBtn.remove();
 
-        if (this._allPosts.length > this._visibleCount) {
+        if (normalPosts.length > this._visibleCount) {
             const loadMoreBtn = document.createElement('div');
             loadMoreBtn.id = 'loadMorePostsBtn';
             loadMoreBtn.className = 'text-center mt-4 mb-8';
-            const remaining = this._allPosts.length - this._visibleCount;
+            const remaining = normalPosts.length - this._visibleCount;
             loadMoreBtn.innerHTML = `<button class="bg-sky-500 text-white px-6 py-2 rounded-full font-bold text-sm shadow hover:bg-sky-600 active:scale-95 transition">
                 تحميل المزيد (${remaining} منشور)
             </button>`;
             loadMoreBtn.onclick = () => {
-                this._visibleCount = Math.min(this._visibleCount + 10, this._allPosts.length);
+                this._visibleCount = Math.min(this._visibleCount + 10, normalPosts.length);
                 this.renderVisiblePosts();
             };
             feed.parentNode.appendChild(loadMoreBtn);
@@ -276,25 +368,6 @@ window.engine = {
                 userBtn.innerHTML = `<img src="${updates.photoURL}" class="w-full h-full object-cover rounded-2xl">`;
             }
         }
-    },
-
-    async addPost() {
-        const input = document.getElementById('postInput');
-        if (!input?.value.trim()) return;
-        const profile = await this.getOrCreateUserProfile();
-        const displayName = profile.displayName || auth.currentUser.displayName;
-        const photoURL = profile.photoURL || auth.currentUser.photoURL;
-        await addDoc(collection(db, "posts"), {
-            content: input.value,
-            authorName: displayName,
-            authorPhoto: photoURL,
-            authorId: auth.currentUser.uid,
-            supportCount: 0,
-            opposeCount: 0,
-            voters: [],
-            createdAt: serverTimestamp()
-        });
-        input.value = '';
     },
 
     async addComment(postId) {
