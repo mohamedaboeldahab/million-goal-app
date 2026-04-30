@@ -1,5 +1,5 @@
 <!-- ========== غلاف محيطي ========== -->
-<div class="relative h-60 sm:h-72 bg-gradient-to-b from-cyan-400 via-sky-500 to-blue-600 overflow-hidden">
+<div class="relative h-60 sm:h-72 bg-gradient-to-b from-cyan-400 via-sky-500 to-blue-600 overflow-hidden z-0">
     <div class="absolute inset-0 opacity-30">
         <div class="bubble w-4 h-4 bg-white rounded-full absolute top-8 left-10 animate-ping"></div>
         <div class="bubble w-6 h-6 bg-white rounded-full absolute top-16 right-16 animate-bounce"></div>
@@ -28,8 +28,8 @@
 @keyframes moveWave { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
 </style>
 
-<!-- ========== معلومات البروفايل (RTL – الصورة فوق والاسم تحتها) ========== -->
-<div dir="rtl" class="bg-white rounded-t-3xl shadow-xl -mt-8 sm:-mt-10 px-4 pb-6 pt-4 relative">
+<!-- ========== معلومات البروفايل (تتداخل مع الغلاف) ========== -->
+<div dir="rtl" class="bg-white rounded-t-3xl shadow-xl -mt-12 sm:-mt-14 px-4 pb-6 pt-6 relative z-10">
     <!-- الصورة والاسم في عمود -->
     <div class="flex flex-col items-start">
         <!-- الصورة (على اليمين) -->
