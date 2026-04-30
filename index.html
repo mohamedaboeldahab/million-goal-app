@@ -15,16 +15,17 @@
         .nav-link.active { color: white; background-color: rgba(255,255,255,0.2); }
         .nav-links-container { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
         .nav-links-container::-webkit-scrollbar { display: none; }
-#storyPlayer {
-    position: fixed !important;
-    inset: 0;
-    background-color: black !important;
-    z-index: 99999;
-
-    opacity: 1;
-    pointer-events: auto;
-    display: none;
-}
+        /* تم تعديل CSS للمشغل */
+        #storyPlayer {
+            position: fixed !important;
+            inset: 0;
+            background-color: black !important;
+            z-index: 99999;
+            display: none;
+            opacity: 1;
+            pointer-events: auto;
+            transition: 0.2s;
+        }
     </style>
 </head>
 <body>
@@ -81,26 +82,22 @@
         <div id="searchOverlayContent" class="flex-1 overflow-y-auto p-4"></div>
     </div>
 
-    <!-- مشغل القصص (Story Player) الموحد والمحمي -->
+    <!-- مشغل القصص (Story Player) المعدل -->
     <div id="storyPlayer">
         <div style="position: absolute; top: 40px; right: 20px; z-index: 100001; padding: 20px;" onclick="window.engine.closeStory()">
             <i class="fa-solid fa-xmark text-white text-4xl shadow-sm"></i>
         </div>
         <div id="storyContent" class="text-white text-center w-full px-4"></div>
-        <!-- مناطق لمس جانبية للتقليب -->
         <div class="absolute inset-y-0 left-0 w-1/3 z-[100000]" onclick="window.engine.prevStory()"></div>
         <div class="absolute inset-y-0 right-0 w-1/3 z-[100000]" onclick="window.engine.nextStory()"></div>
     </div>
 
     <script>
-        // دالة تحديد الصفحة النشطة
         function setActiveNavLink(pageName) {
             document.querySelectorAll('.nav-link').forEach(link => {
                 link.classList.toggle('active', link.dataset.page === pageName);
             });
         }
-
-        // دوال البحث
         async function openSearchOverlay() {
             const overlay = document.getElementById('searchOverlay');
             const content = document.getElementById('searchOverlayContent');
@@ -111,13 +108,11 @@
                 content.innerHTML = await res.text();
             } catch (e) { content.innerHTML = '<p class="p-4 text-center">خطأ في التحميل</p>'; }
         }
-
         function closeSearchOverlay() {
             document.getElementById('searchOverlay').classList.replace('flex', 'hidden');
         }
     </script>
 
-    <!-- تحميل ملفات الجافاسكريبت بترتيب سليم -->
     <script type="module" src="app.js"></script>
 </body>
 </html>
