@@ -34,7 +34,7 @@ window.engine = {
     _activeBites: [],
     _storyIndex: 0,
     _storyTimer: null,
-    // _dynamicPlayer لم يعد مطلوباً، المشغل ثابت في home.html
+    _dynamicPlayer: null,
 
     async init() {
         try { await setPersistence(auth, browserLocalPersistence); } catch (e) { console.error("Persistence error", e); }
@@ -95,6 +95,7 @@ window.engine = {
                 oldScript.replaceWith(newScript);
             });
             if (pageName === 'home') {
+                // انتظر قليلاً ليتم رسم العناصر
                 setTimeout(() => {
                     this.listenToPosts();
                     this.activateCharCounter();
@@ -178,6 +179,7 @@ window.engine = {
             createdAt: serverTimestamp(), type: this._currentPostType
         });
         input.value = '';
+        // تحديث شريط الستوريز فوراً
         this.renderStories();
     },
 
@@ -211,24 +213,50 @@ window.engine = {
         `).join('');
     },
 
-    // ---------- مشغل القصص الثابت ----------
+    // ---------- مشغل القصص الديناميكي ----------
     openStoryPlayer(startIndex = 0) {
         this._activeBites = this.getActiveBites();
         if (this._activeBites.length === 0) return;
 
         this._storyIndex = startIndex;
-        const player = document.getElementById('storyPlayer');
-        if (player) {
-            player.classList.remove('hidden');
-            this.showCurrentStory();
-        }
+        if (this._dynamicPlayer) this._dynamicPlayer.remove();
+
+        const player = document.createElement('div');
+        player.className = 'fixed inset-0 z-50 flex flex-col items-center justify-center';
+        player.style.background = 'linear-gradient(135deg, #0f172a, #1e3a5f)';
+
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'absolute top-4 right-4 text-white text-3xl z-10';
+        closeBtn.innerHTML = '&times;';
+        closeBtn.onclick = () => this.closeStoryPlayer();
+
+        const content = document.createElement('div');
+        content.className = 'flex-1 flex flex-col items-center justify-center text-white p-6';
+        content.id = 'storyContent';
+
+        const nav = document.createElement('div');
+        nav.className = 'flex justify-between w-full mt-4 px-6';
+        nav.innerHTML = `
+            <button id="prevStoryBtn" class="text-white text-2xl bg-white/20 rounded-full w-10 h-10 flex items-center justify-center">&larr;</button>
+            <button id="nextStoryBtn" class="text-white text-2xl bg-white/20 rounded-full w-10 h-10 flex items-center justify-center">&rarr;</button>
+        `;
+
+        player.appendChild(closeBtn);
+        player.appendChild(content);
+        player.appendChild(nav);
+        document.body.appendChild(player);
+        this._dynamicPlayer = player;
+
+        document.getElementById('prevStoryBtn').onclick = () => this.prevStory();
+        document.getElementById('nextStoryBtn').onclick = () => this.nextStory();
+
+        this.showCurrentStory();
     },
 
     showCurrentStory() {
-        const player = document.getElementById('storyPlayer');
-        if (!player || player.classList.contains('hidden')) return;
+        if (!this._dynamicPlayer) return;
         if (this._storyIndex < 0 || this._storyIndex >= this._activeBites.length) {
-            player.classList.add('hidden');
+            this.closeStoryPlayer();
             return;
         }
         const bite = this._activeBites[this._storyIndex];
@@ -247,7 +275,7 @@ window.engine = {
             this._storyIndex++;
             this.showCurrentStory();
         } else {
-            document.getElementById('storyPlayer').classList.add('hidden');
+            this.closeStoryPlayer();
         }
     },
 
@@ -259,8 +287,10 @@ window.engine = {
     },
 
     closeStoryPlayer() {
-        const player = document.getElementById('storyPlayer');
-        if (player) player.classList.add('hidden');
+        if (this._dynamicPlayer) {
+            this._dynamicPlayer.remove();
+            this._dynamicPlayer = null;
+        }
     },
 
     // ---------- المنشورات ----------
@@ -268,7 +298,9 @@ window.engine = {
         const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
         this._currentSnapUnsubscribe = onSnapshot(q, (snapshot) => {
             this._allPosts = snapshot.docs.map(doc => ({ id: doc.id, data: doc.data() }));
-            this._visibleCount = Math.min(10, this._allPosts.length);
+            if (this._visibleCount > this._allPosts.length) {
+                this._visibleCount = this._allPosts.length;
+            }
             this.renderVisiblePosts();
             this.renderStories();
         });
@@ -279,36 +311,56 @@ window.engine = {
         if (!feed) return;
         const normalPosts = this._allPosts.filter(p => p.data.type !== 'bite');
         const postsToShow = normalPosts.slice(0, this._visibleCount);
-        feed.innerHTML = postsToShow.map(({ id, data: p }) => this.postHTML(id, p)).join('');
-        postsToShow.forEach(({ id }) => this.listenToComments(id));
-    },
 
-    postHTML(postId, p) {
-        let dateStr = '';
-        try { dateStr = p.createdAt?.toDate().toLocaleString('ar-EG'); } catch(e) { dateStr = '---'; }
-        return `
-        <div class="bg-white rounded-2xl p-4 mb-4 shadow-sm border border-gray-100">
-            <div class="flex items-center gap-3 mb-3">
-                <img src="${p.authorPhoto}" class="w-10 h-10 rounded-full border border-sky-200 object-cover">
-                <div>
-                    <span class="font-extrabold text-gray-800 text-sm">${p.authorName}</span>
-                    <div class="text-xs text-gray-400">${dateStr}</div>
+        feed.innerHTML = postsToShow.map(({ id, data: p }) => {
+            const postId = id;
+            let dateStr = '';
+            try { dateStr = p.createdAt?.toDate().toLocaleString('ar-EG'); } catch(e) { dateStr = '---'; }
+
+            return `
+            <div class="bg-white rounded-2xl p-4 mb-4 shadow-sm border border-gray-100">
+                <div class="flex items-center gap-3 mb-3">
+                    <img src="${p.authorPhoto}" class="w-10 h-10 rounded-full border border-sky-200 object-cover">
+                    <div>
+                        <span class="font-extrabold text-gray-800 text-sm">${p.authorName}</span>
+                        <div class="text-xs text-gray-400">${dateStr}</div>
+                    </div>
                 </div>
-            </div>
-            <p class="text-gray-700 text-sm leading-relaxed mb-4 whitespace-pre-wrap">${p.content}</p>
-            <div class="flex gap-2 mb-3">
-                <button onclick="engine.handleVote('${postId}', 'support')" class="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-sky-400 to-blue-500 text-white font-bold py-2 rounded-xl shadow text-sm"><span class="text-base">🦈</span> أؤيد <span class="bg-white/40 px-2 py-0.5 rounded-full text-sm font-extrabold">${p.supportCount || 0}</span></button>
-                <button onclick="engine.handleVote('${postId}', 'oppose')" class="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-amber-400 to-orange-400 text-white font-bold py-2 rounded-xl shadow text-sm"><span class="text-base">🐟</span> لا أؤيد <span class="bg-white/40 px-2 py-0.5 rounded-full text-sm font-extrabold">${p.opposeCount || 0}</span></button>
-            </div>
-            <div class="border-t border-gray-100 pt-3">
-                <div id="comments_list_${postId}" class="space-y-2 mb-2"></div>
-                <button id="load_more_btn_${postId}" style="display:none;" onclick="engine.loadMoreComments('${postId}')" class="text-sky-600 text-xs font-bold hover:underline w-full text-center py-1">عرض كل التعليقات</button>
-                <div class="flex gap-2 mt-2">
-                    <input type="text" id="comm_${postId}" placeholder="أضف تعليقاً..." class="flex-1 bg-gray-100 rounded-lg px-3 py-1.5 text-xs border border-gray-200 outline-none focus:ring-1 focus:ring-sky-400">
-                    <button onclick="engine.addComment('${postId}')" class="bg-sky-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold"><i class="fa-solid fa-paper-plane"></i></button>
+                <p class="text-gray-700 text-sm leading-relaxed mb-4 whitespace-pre-wrap">${p.content}</p>
+                <div class="flex gap-2 mb-3">
+                    <button onclick="engine.handleVote('${postId}', 'support')" class="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-sky-400 to-blue-500 text-white font-bold py-2 rounded-xl shadow text-sm"><span class="text-base">🦈</span> أؤيد <span class="bg-white/40 px-2 py-0.5 rounded-full text-sm font-extrabold">${p.supportCount || 0}</span></button>
+                    <button onclick="engine.handleVote('${postId}', 'oppose')" class="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-amber-400 to-orange-400 text-white font-bold py-2 rounded-xl shadow text-sm"><span class="text-base">🐟</span> لا أؤيد <span class="bg-white/40 px-2 py-0.5 rounded-full text-sm font-extrabold">${p.opposeCount || 0}</span></button>
                 </div>
-            </div>
-        </div>`;
+                <div class="border-t border-gray-100 pt-3">
+                    <div id="comments_list_${postId}" class="space-y-2 mb-2"></div>
+                    <button id="load_more_btn_${postId}" style="display:none;" onclick="engine.loadMoreComments('${postId}')" class="text-sky-600 text-xs font-bold hover:underline w-full text-center py-1">عرض كل التعليقات</button>
+                    <div class="flex gap-2 mt-2">
+                        <input type="text" id="comm_${postId}" placeholder="أضف تعليقاً..." class="flex-1 bg-gray-100 rounded-lg px-3 py-1.5 text-xs border border-gray-200 outline-none focus:ring-1 focus:ring-sky-400">
+                        <button onclick="engine.addComment('${postId}')" class="bg-sky-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold"><i class="fa-solid fa-paper-plane"></i></button>
+                    </div>
+                </div>
+            </div>`;
+        }).join('');
+
+        const oldBtn = document.getElementById('loadMorePostsBtn');
+        if (oldBtn) oldBtn.remove();
+
+        if (normalPosts.length > this._visibleCount) {
+            const loadMoreBtn = document.createElement('div');
+            loadMoreBtn.id = 'loadMorePostsBtn';
+            loadMoreBtn.className = 'text-center mt-4 mb-8';
+            const remaining = normalPosts.length - this._visibleCount;
+            loadMoreBtn.innerHTML = `<button class="bg-sky-500 text-white px-6 py-2 rounded-full font-bold text-sm shadow hover:bg-sky-600 active:scale-95 transition">
+                تحميل المزيد (${remaining} منشور)
+            </button>`;
+            loadMoreBtn.onclick = () => {
+                this._visibleCount = Math.min(this._visibleCount + 10, normalPosts.length);
+                this.renderVisiblePosts();
+            };
+            feed.parentNode.appendChild(loadMoreBtn);
+        }
+
+        postsToShow.forEach(({ id }) => this.listenToComments(id));
     },
 
     listenToComments(postId) {
@@ -346,6 +398,35 @@ window.engine = {
             container.innerHTML = snapshot.docs.map(doc => this.postHTML(doc.id, doc.data())).join('');
             snapshot.docs.forEach(d => this.listenToComments(d.id));
         });
+    },
+
+    // دالة مساعدة لعرض HTML المنشورات في البروفايل (استخدم نفس تنسيق الصفحة الرئيسية)
+    postHTML(postId, p) {
+        let dateStr = '';
+        try { dateStr = p.createdAt?.toDate().toLocaleString('ar-EG'); } catch(e) { dateStr = '---'; }
+        return `
+        <div class="bg-white rounded-2xl p-4 mb-4 shadow-sm border border-gray-100">
+            <div class="flex items-center gap-3 mb-3">
+                <img src="${p.authorPhoto}" class="w-10 h-10 rounded-full border border-sky-200 object-cover">
+                <div>
+                    <span class="font-extrabold text-gray-800 text-sm">${p.authorName}</span>
+                    <div class="text-xs text-gray-400">${dateStr}</div>
+                </div>
+            </div>
+            <p class="text-gray-700 text-sm leading-relaxed mb-4 whitespace-pre-wrap">${p.content}</p>
+            <div class="flex gap-2 mb-3">
+                <button onclick="engine.handleVote('${postId}', 'support')" class="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-sky-400 to-blue-500 text-white font-bold py-2 rounded-xl shadow text-sm"><span class="text-base">🦈</span> أؤيد <span class="bg-white/40 px-2 py-0.5 rounded-full text-sm font-extrabold">${p.supportCount || 0}</span></button>
+                <button onclick="engine.handleVote('${postId}', 'oppose')" class="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-amber-400 to-orange-400 text-white font-bold py-2 rounded-xl shadow text-sm"><span class="text-base">🐟</span> لا أؤيد <span class="bg-white/40 px-2 py-0.5 rounded-full text-sm font-extrabold">${p.opposeCount || 0}</span></button>
+            </div>
+            <div class="border-t border-gray-100 pt-3">
+                <div id="comments_list_${postId}" class="space-y-2 mb-2"></div>
+                <button id="load_more_btn_${postId}" style="display:none;" onclick="engine.loadMoreComments('${postId}')" class="text-sky-600 text-xs font-bold hover:underline w-full text-center py-1">عرض كل التعليقات</button>
+                <div class="flex gap-2 mt-2">
+                    <input type="text" id="comm_${postId}" placeholder="أضف تعليقاً..." class="flex-1 bg-gray-100 rounded-lg px-3 py-1.5 text-xs border border-gray-200 outline-none focus:ring-1 focus:ring-sky-400">
+                    <button onclick="engine.addComment('${postId}')" class="bg-sky-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold"><i class="fa-solid fa-paper-plane"></i></button>
+                </div>
+            </div>
+        </div>`;
     },
 
     activateProfile() {
