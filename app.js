@@ -193,7 +193,7 @@ window.engine = {
         await updateDoc(postRef, updateData);
     },
 
-    // ---------- المنشورات بشكل فيسبوكي محترف ----------
+    // ---------- المنشورات بشكل فيسبوكي محترف (الأزرار الجديدة) ----------
     listenToPosts() {
         const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
         onSnapshot(q, (snapshot) => {
@@ -204,40 +204,40 @@ window.engine = {
                 const p = doc.data();
                 const postId = doc.id;
                 return `
-                <div class="bg-white rounded-[2rem] p-5 mb-6 shadow-md border border-gray-100 hover:shadow-lg transition-shadow">
+                <div class="bg-white rounded-2xl p-5 mb-5 shadow-md border border-gray-100 hover:shadow-lg transition-shadow">
                     <!-- رأس المنشور -->
                     <div class="flex items-center gap-3 mb-4">
-                        <img src="${p.authorPhoto}" class="w-12 h-12 rounded-full border-2 border-sky-200 object-cover">
+                        <img src="${p.authorPhoto}" class="w-11 h-11 rounded-full border-2 border-sky-200 object-cover">
                         <div>
-                            <span class="font-extrabold text-gray-800 text-base block">${p.authorName}</span>
-                            <span class="text-xs text-gray-400">${new Date(p.createdAt?.toDate()).toLocaleString('ar-EG')}</span>
+                            <span class="font-extrabold text-gray-800 text-sm">${p.authorName}</span>
+                            <div class="text-xs text-gray-400">${new Date(p.createdAt?.toDate()).toLocaleString('ar-EG')}</div>
                         </div>
                     </div>
                     <!-- محتوى المنشور -->
-                    <p class="text-gray-700 text-sm leading-relaxed mb-6 whitespace-pre-wrap">${p.content}</p>
+                    <p class="text-gray-700 text-sm leading-relaxed mb-5 whitespace-pre-wrap">${p.content}</p>
                     <!-- أزرار التصويت -->
-                    <div class="flex gap-3 mb-5">
+                    <div class="flex gap-3 mb-4">
                         <button onclick="engine.handleVote('${postId}', 'support')" 
-                            class="flex-1 bg-gradient-to-r from-emerald-400 to-emerald-500 text-white font-bold py-3 rounded-xl shadow-md hover:shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 text-sm">
+                            class="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-sky-400 to-blue-500 text-white font-bold py-2.5 rounded-xl shadow hover:shadow-md active:scale-95 transition text-sm">
                             🦈 أؤيد <span class="bg-white/20 px-2 py-0.5 rounded-full text-xs">${p.supportCount || 0}</span>
                         </button>
                         <button onclick="engine.handleVote('${postId}', 'oppose')" 
-                            class="flex-1 bg-gradient-to-r from-rose-400 to-rose-500 text-white font-bold py-3 rounded-xl shadow-md hover:shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 text-sm">
-                            🦈 لا أؤيد <span class="bg-white/20 px-2 py-0.5 rounded-full text-xs">${p.opposeCount || 0}</span>
+                            class="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-amber-400 to-orange-400 text-white font-bold py-2.5 rounded-xl shadow hover:shadow-md active:scale-95 transition text-sm">
+                            🐬 لا أؤيد <span class="bg-white/20 px-2 py-0.5 rounded-full text-xs">${p.opposeCount || 0}</span>
                         </button>
                     </div>
                     <!-- قسم التعليقات -->
                     <div class="border-t border-gray-100 pt-4">
-                        <div id="comments_list_${postId}" class="space-y-3 mb-3"></div>
+                        <div id="comments_list_${postId}" class="space-y-2 mb-2"></div>
                         <button id="load_more_btn_${postId}" 
                             style="display: none;" 
                             onclick="engine.loadMoreComments('${postId}')" 
-                            class="text-sky-600 text-xs font-bold hover:underline w-full text-center py-2">
-                            عرض المزيد من التعليقات
+                            class="text-sky-600 text-xs font-bold hover:underline w-full text-center py-1">
+                            عرض كل التعليقات
                         </button>
                         <div class="flex gap-2 mt-2">
                             <input type="text" id="comm_${postId}" placeholder="أضف تعليقاً..." 
-                                class="flex-1 bg-gray-50 rounded-xl px-4 py-3 text-xs border border-gray-200 outline-none focus:ring-2 focus:ring-sky-400 transition">
+                                class="flex-1 bg-gray-100 rounded-xl px-4 py-2 text-xs border border-gray-200 outline-none focus:ring-2 focus:ring-sky-400 transition">
                             <button onclick="engine.addComment('${postId}')" 
                                 class="bg-sky-500 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-sky-600 active:scale-95 transition">
                                 <i class="fa-solid fa-paper-plane"></i>
@@ -264,7 +264,7 @@ window.engine = {
             // عرض أول ٣ تعليقات فقط
             const visible = allComments.slice(0, 3);
             list.innerHTML = visible.map(c => `
-                <div class="bg-gray-50 p-3 rounded-xl text-xs">
+                <div class="bg-gray-50 p-2 rounded-lg text-xs">
                     <b class="text-sky-600">${c.userName}:</b> ${c.text}
                 </div>
             `).join('');
@@ -287,7 +287,7 @@ window.engine = {
         if (!list || !loadBtn) return;
 
         list.innerHTML = all.map(c => `
-            <div class="bg-gray-50 p-3 rounded-xl text-xs">
+            <div class="bg-gray-50 p-2 rounded-lg text-xs">
                 <b class="text-sky-600">${c.userName}:</b> ${c.text}
             </div>
         `).join('');
