@@ -2,7 +2,7 @@
     <!-- هيدر الصفحة -->
     <div class="bg-sky-500 rounded-[2rem] p-6 text-white mb-6 shadow-lg shadow-sky-200">
         <h2 class="text-2xl font-black mb-1">🗺️ رحلة المليونير</h2>
-        <p class="text-xs opacity-80 font-bold">كل خلية تمثل مرحلة من رحلتك نحو الهدف</p>
+        <p class="text-xs opacity-80 font-bold">كل خطوة تقربك من هدفك – القرش 🦈 بينط للمراحل اللي فاتت</p>
     </div>
 
     <!-- إعدادات الهدف -->
@@ -27,9 +27,9 @@
         </div>
     </div>
 
-    <!-- لوحة اللعبة -->
+    <!-- المسار الأفقي الملتف (Snake) -->
     <div class="bg-white rounded-2xl p-4 shadow-md border border-gray-100 overflow-x-auto">
-        <div id="boardContainer" class="snake-board mx-auto" style="min-width: 420px;"></div>
+        <div id="snakePath" class="snake-path"></div>
     </div>
 
     <!-- تفاصيل المرحلة عند النقر -->
@@ -37,53 +37,61 @@
 </div>
 
 <script>
-    // تحميل بيانات المحرك مباشرة
-    function loadEngineData() {
-        if (window.engine) {
-            const assetsTotal = window.engine._allPosts ? 0 : window.engine.cash + window.engine.assets.reduce((s, a) => s + a.val, 0);
-            // لكن الأسهل: لو engine عنده دالة sync يمدينا ناخد القيمة من الـ DOM
-            const totalEl = document.getElementById('totalValAssets');
-            if (totalEl) {
-                const val = parseFloat(totalEl.innerText.replace(/,/g, ''));
-                if (!isNaN(val)) document.getElementById('currentInput').value = Math.floor(val);
+    // توليد قائمة المعالم المالية بطريقة ذكية
+    function generateMilestones(goal) {
+        const milestones = [0];
+        let current = 0;
+        const steps = [250, 500, 1000, 2000, 3000, 5000, 10000, 15000, 25000, 50000, 100000, 250000, 500000, 1000000, 2500000, 5000000, 10000000];
+        for (let step of steps) {
+            while (current + step <= goal) {
+                current += step;
+                milestones.push(current);
+                if (current >= goal) break;
             }
+            if (current >= goal) break;
         }
-        buildRoadmap();
+        // إضافة الهدف إذا لم يكن موجودًا
+        if (milestones[milestones.length - 1] !== goal) {
+            milestones.push(goal);
+        }
+        return milestones;
     }
 
     function buildRoadmap() {
         const goal = parseFloat(document.getElementById('goalInput').value);
-        let current = parseFloat(document.getElementById('currentInput').value);
-        if (isNaN(goal) || isNaN(current) || goal <= 0) {
+        let currentWealth = parseFloat(document.getElementById('currentInput').value);
+        if (isNaN(goal) || isNaN(currentWealth) || goal <= 0) {
             alert("من فضلك أدخل أرقام صحيحة");
             return;
         }
-        if (current >= goal) {
-            // إذا تخطى الهدف، نعرض كل الخلايا مكتملة
-            current = goal;
-        }
 
-        const stages = 100;
-        const start = 0; // نبدأ من الصفر دائمًا عشان الخريطة تكون موحدة
-        const step = (goal - start) / (stages - 1);
-
-        const container = document.getElementById('boardContainer');
+        const milestones = generateMilestones(goal);
+        const container = document.getElementById('snakePath');
         let html = '';
-        for (let row = 0; row < 10; row++) {
-            html += '<div class="board-row">';
-            for (let col = 0; col < 10; col++) {
-                const stageIndex = row % 2 === 0 ? row * 10 + col : row * 10 + (9 - col);
-                const targetAmount = Math.round(start + step * stageIndex);
-                const completed = current >= targetAmount;
-                const percent = ((stageIndex + 1) / stages * 100).toFixed(0);
-                // تحديد ما إذا كانت هذه هي المرحلة الحالية (أول خلية غير مكتملة)
-                const isCurrent = (completed === false && (stageIndex === 0 || current >= Math.round(start + step * (stageIndex - 1))));
+        const colsPerRow = 6; // عدد الأعمدة في كل صف
+        const totalRows = Math.ceil(milestones.length / colsPerRow);
+
+        for (let row = 0; row < totalRows; row++) {
+            html += '<div class="snake-row">';
+            for (let col = 0; col < colsPerRow; col++) {
+                // المسار متعرج: الصفوف الزوجية من اليسار لليمين، الفردية من اليمين لليسار
+                const index = row % 2 === 0 ? row * colsPerRow + col : row * colsPerRow + (colsPerRow - 1 - col);
+                if (index >= milestones.length) {
+                    html += '<div class="snake-cell empty"></div>';
+                    continue;
+                }
+                const amount = milestones[index];
+                const completed = currentWealth >= amount;
+                const isCurrent = (completed === true && (index === milestones.length - 1 || currentWealth < milestones[index + 1]));
+                const isNext = (!completed && (index === 0 || currentWealth >= milestones[index - 1]));
+
                 html += `
-                    <div class="board-cell ${completed ? 'completed' : ''} ${isCurrent && !completed ? 'current' : ''}" 
-                         onclick="showStageInfo(${stageIndex+1}, ${targetAmount}, ${current >= targetAmount})"
-                         title="المرحلة ${stageIndex+1} – ${targetAmount.toLocaleString()} ج.م">
-                        <span class="stage-num">${stageIndex+1}</span>
-                        <span class="stage-amount">${targetAmount.toLocaleString()}</span>
+                    <div class="snake-cell ${completed ? 'completed' : ''} ${isCurrent ? 'current' : ''} ${isNext ? 'next' : ''}"
+                         onclick="showStageInfo(${index+1}, ${amount}, ${completed})"
+                         title="المرحلة ${index+1} – ${amount.toLocaleString()} ج.م">
+                        <span class="stage-num">${index+1}</span>
+                        <span class="stage-amount">${amount >= 1000 ? (amount/1000)+'k' : amount}</span>
+                        ${isCurrent ? '<span class="shark-icon">🦈</span>' : ''}
                     </div>`;
             }
             html += '</div>';
@@ -95,15 +103,16 @@
     function showStageInfo(num, amount, completed) {
         const tip = document.getElementById('stageTooltip');
         tip.classList.remove('hidden');
-        const remaining = parseFloat(document.getElementById('goalInput').value) - amount;
+        const goal = parseFloat(document.getElementById('goalInput').value);
+        const remaining = goal - amount;
         tip.innerHTML = `
             <div class="flex items-center gap-2 mb-1">
                 <span class="text-lg">🏁</span>
                 <span class="font-extrabold text-gray-800">المرحلة ${num}</span>
-                <span class="text-xs ${completed ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'} px-2 py-0.5 rounded-full">${completed ? 'مكتملة' : 'قيد التقدم'}</span>
+                <span class="text-xs ${completed ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'} px-2 py-0.5 rounded-full">${completed ? '✅ مكتملة' : '⏳ قيد التقدم'}</span>
             </div>
             <p class="text-gray-600 text-xs">الهدف: <b>${amount.toLocaleString()} ج.م</b></p>
-            ${!completed ? `<p class="text-gray-500 text-xs">المتبقي: <b>${remaining.toLocaleString()} ج.م</b></p>` : ''}
+            ${!completed ? `<p class="text-gray-500 text-xs">المتبقي للوصول: <b>${remaining.toLocaleString()} ج.م</b></p>` : ''}
         `;
         tip.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
@@ -112,66 +121,87 @@
         document.getElementById('stageTooltip').classList.add('hidden');
     }
 
-    // بناء أولي مع تحميل البيانات
-    window.addEventListener('load', () => {
-        loadEngineData();
-    });
+    function loadEngineData() {
+        if (window.engine) {
+            const assetsTotal = window.engine.assets ? window.engine.assets.reduce((s, a) => s + a.val, 0) : 0;
+            const cash = window.engine.cash || 0;
+            const total = cash + assetsTotal;
+            document.getElementById('currentInput').value = Math.floor(total);
+            if (window.engine.goal) {
+                document.getElementById('goalInput').value = window.engine.goal;
+            }
+        }
+        buildRoadmap();
+    }
 
-    // إذا تم استدعاء الصفحة ديناميكيًا، نضمن التنفيذ
+    window.addEventListener('load', loadEngineData);
     if (document.readyState === 'complete') loadEngineData();
 </script>
 
 <style>
-    .snake-board {
+    .snake-path {
         display: flex;
         flex-direction: column;
-        gap: 6px;
+        gap: 8px;
+        min-width: 480px;
     }
-    .board-row {
+    .snake-row {
         display: flex;
-        gap: 6px;
+        gap: 8px;
+        justify-content: center;
     }
-    .board-cell {
-        width: 48px;
-        height: 58px;
-        background: #e5e7eb;
-        border-radius: 10px;
-        font-size: 10px;
+    .snake-cell {
+        width: 60px;
+        height: 60px;
+        background: #f1f5f9;
+        border-radius: 16px;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        color: #6b7280;
+        color: #94a3b8;
+        font-weight: 700;
+        position: relative;
         transition: all 0.3s;
         cursor: pointer;
-        position: relative;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        box-shadow: 0 2px 6px rgba(0,0,0,0.03);
     }
-    .board-cell.completed {
+    .snake-cell.empty { background: transparent; box-shadow: none; cursor: default; }
+    .snake-cell.completed {
         background: linear-gradient(135deg, #0ea5e9, #0284c7);
         color: white;
         transform: scale(1.02);
-        box-shadow: 0 0 16px rgba(14,165,233,0.4);
-        font-weight: 700;
+        box-shadow: 0 0 14px rgba(14,165,233,0.4);
     }
-    .board-cell.current {
-        animation: pulse 1.5s infinite;
-        border: 2px solid #f59e0b;
+    .snake-cell.current {
+        animation: pulse 1.2s infinite;
+        border: 2px solid #facc15;
+        transform: scale(1.08);
+    }
+    .snake-cell.next {
+        background: #e0f2fe;
+        color: #0284c7;
+        border: 1px dashed #0ea5e9;
     }
     @keyframes pulse {
         0% { transform: scale(1); }
-        50% { transform: scale(1.08); }
+        50% { transform: scale(1.1); }
         100% { transform: scale(1); }
     }
     .stage-num {
+        font-size: 18px;
         font-weight: 800;
-        font-size: 13px;
         line-height: 1;
     }
     .stage-amount {
-        font-size: 8px;
-        white-space: nowrap;
+        font-size: 10px;
+        font-weight: 600;
         margin-top: 2px;
-        opacity: 0.9;
     }
+    .shark-icon {
+        position: absolute;
+        bottom: -16px;
+        font-size: 22px;
+    }
+    .snake-cell:not(.completed) .shark-icon { display: none; }
 </style>
