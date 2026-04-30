@@ -236,10 +236,12 @@ closeStory() {
 
 openStoryPlayer(index) {
     this._storyIndex = index;
+
     const player = document.getElementById('storyPlayer');
     if (player) {
-        player.classList.remove('hidden');
-        player.style.setProperty('display', 'flex', 'important');
+        player.style.opacity = '1';
+        player.style.pointerEvents = 'auto';
+
         this.showCurrentStory();
     }
 },
