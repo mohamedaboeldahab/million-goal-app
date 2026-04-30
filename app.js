@@ -222,6 +222,14 @@ renderStories() {
 },
 
 // دالة فتح مشغل القصص الثابت
+closeStory() {
+    const player = document.getElementById('storyPlayer');
+    if (player) {
+        player.style.setProperty('display', 'none', 'important');
+        player.classList.add('hidden');
+    }
+},
+
 openStoryPlayer(startIndex = 0) {
     this._activeBites = this.getActiveBites();
     if (this._activeBites.length === 0) return;
@@ -229,13 +237,12 @@ openStoryPlayer(startIndex = 0) {
     this._storyIndex = startIndex;
     const player = document.getElementById('storyPlayer');
     if (player) {
-        // أزل الكلاس hidden أولاً ثم ضع display flex
+        // إجبار المتصفح على إظهار العنصر فوق كل شيء
         player.classList.remove('hidden');
-        player.style.display = 'flex'; 
+        player.style.setProperty('display', 'flex', 'important');
         this.showCurrentStory();
     }
 },
-
     showCurrentStory() {
         const player = document.getElementById('storyPlayer');
         if (!player || player.classList.contains('hidden')) return;
