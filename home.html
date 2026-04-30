@@ -33,33 +33,3 @@
 
 <!-- قائمة المنشورات -->
 <div id="feedList"></div>
-
-<script>
-    // تحديث صورة المستخدم في صندوق النشر
-    (async function() {
-        if (window.auth && window.engine) {
-            const img = document.getElementById('creatorAvatar');
-            if (img) {
-                const profile = await window.engine.getOrCreateUserProfile();
-                img.src = profile.photoURL || window.auth.currentUser?.photoURL || '';
-            }
-        }
-    })();
-
-    // تأكد من أن اللمس على القصص يعمل (كخطة بديلة لـ onclick)
-    (function() {
-        const storiesRow = document.getElementById('storiesRow');
-        if (!storiesRow) return;
-
-        storiesRow.addEventListener('touchstart', function(e) {
-            const storyDiv = e.target.closest('[data-story-index]');
-            if (storyDiv) {
-                e.preventDefault();
-                const index = parseInt(storyDiv.getAttribute('data-story-index'));
-                if (!isNaN(index) && window.engine) {
-                    window.engine.openStoryPlayer(index);
-                }
-            }
-        }, { passive: false });
-    })();
-</script>
