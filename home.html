@@ -1,5 +1,4 @@
 <!-- شريط الستوريز (العضّات) -->
-<!-- إضافة overflow-x-auto مع -webkit-overflow-scrolling لسلاسة التمرير على آيفون -->
 <div id="storiesRow" class="flex gap-3 overflow-x-auto pb-3 mb-4 no-scrollbar" style="-webkit-overflow-scrolling: touch;"></div>
 
 <div class="bg-white rounded-2xl p-4 shadow-md mb-4 border border-gray-100">
@@ -34,13 +33,11 @@
 <div id="feedList"></div>
 
 <script>
-    // تنفيذ التهيئة فور تحميل الصفحة
     (async function() {
         if (window.engine) {
             await engine.updateCreatorAvatar();
             engine.activateCharCounter();
             engine.updateTypeButtons();
-            // إعادة تشغيل مستمع المنشورات لضمان التحديث
             engine.listenToPosts();
         }
     })();
