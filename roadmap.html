@@ -1,7 +1,121 @@
 <div class="p-4">
-    <div class="bg-sky-500 rounded-[2rem] p-8 text-white mb-8 shadow-lg shadow-sky-200">
-        <h2 class="text-2xl font-black mb-2">رحلة القروش 🚀</h2>
-        <p class="text-xs opacity-80 font-bold">تطور مشروعك يعتمد على تقييم المجتمع لك</p>
+    <div class="bg-sky-500 rounded-[2rem] p-6 text-white mb-6 shadow-lg shadow-sky-200">
+        <h2 class="text-2xl font-black mb-2">🗺️ رحلة المليونير</h2>
+        <p class="text-xs opacity-80 font-bold">كل خطوة تقربك من هدفك – اضغط على الخلايا عشان تشوف التفاصيل</p>
     </div>
-    <div id="roadmapSteps" class="px-4"></div>
+
+    <!-- إعدادات الهدف -->
+    <div class="bg-white rounded-2xl p-4 shadow mb-6 border border-gray-100">
+        <div class="grid grid-cols-2 gap-3">
+            <div>
+                <label class="text-xs font-bold text-gray-500 block mb-1">الهدف (ج.م)</label>
+                <input type="number" id="goalInput" value="1000000" class="w-full bg-gray-50 border rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-sky-400">
+            </div>
+            <div>
+                <label class="text-xs font-bold text-gray-500 block mb-1">ثروتي الحالية (ج.م)</label>
+                <input type="number" id="currentInput" value="0" class="w-full bg-gray-50 border rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-sky-400">
+            </div>
+            <div class="col-span-2">
+                <button onclick="buildRoadmap()" class="w-full bg-sky-500 text-white font-bold py-2.5 rounded-xl shadow hover:bg-sky-600 active:scale-95 transition">
+                    🔁 بناء الخريطة
+                </button>
+            </div>
+        </div>
+        <p class="text-xs text-gray-400 mt-2">أدخل هدفك المالي ومجموع ثروتك الحالية (كاش + أصول).</p>
+    </div>
+
+    <!-- لوحة اللعبة -->
+    <div id="gameBoard" class="bg-white p-4 rounded-2xl shadow-md border border-gray-100 overflow-x-auto">
+        <div id="boardContainer" class="snake-board"></div>
+    </div>
 </div>
+
+<script>
+    function buildRoadmap() {
+        const goal = parseFloat(document.getElementById('goalInput').value);
+        const current = parseFloat(document.getElementById('currentInput').value);
+        if (isNaN(goal) || isNaN(current) || goal <= 0) {
+            alert("من فضلك أدخل أرقام صحيحة");
+            return;
+        }
+        if (current >= goal) {
+            alert("أنت فعلاً وصلت لهدفك أو تخطيته!");
+        }
+
+        const stages = 100;
+        const start = current < goal ? current : 0; // لو تخطى الهدف نبدأ من 0
+        const step = (goal - start) / (stages - 1);
+
+        const container = document.getElementById('boardContainer');
+        let html = '';
+        for (let row = 0; row < 10; row++) {
+            html += '<div class="board-row">';
+            for (let col = 0; col < 10; col++) {
+                // مسار متعرج (Snake)
+                const stageIndex = row % 2 === 0 ? row * 10 + col : row * 10 + (9 - col);
+                const targetAmount = Math.round(start + step * stageIndex);
+                const completed = current >= targetAmount;
+                const percent = ((stageIndex + 1) / stages * 100).toFixed(0);
+                html += `
+                    <div class="board-cell ${completed ? 'completed' : ''}" 
+                         title="المرحلة ${stageIndex+1} – ${targetAmount.toLocaleString()} ج.م">
+                        <span class="stage-num">${stageIndex+1}</span>
+                        <span class="stage-amount">${targetAmount.toLocaleString()}</span>
+                    </div>`;
+            }
+            html += '</div>';
+        }
+        container.innerHTML = html;
+    }
+
+    // بناء أولي عند تحميل الصفحة
+    if (document.readyState === 'complete') {
+        buildRoadmap();
+    } else {
+        window.addEventListener('load', buildRoadmap);
+    }
+</script>
+
+<style>
+    .snake-board {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+    }
+    .board-row {
+        display: flex;
+        gap: 3px;
+    }
+    .board-cell {
+        width: 35px;
+        height: 45px;
+        background: #e5e7eb;
+        border-radius: 6px;
+        font-size: 9px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: #6b7280;
+        transition: all 0.3s;
+        cursor: default;
+        position: relative;
+    }
+    .board-cell.completed {
+        background: #0ea5e9;
+        color: white;
+        transform: scale(1.05);
+        box-shadow: 0 0 12px #0ea5e9;
+    }
+    .stage-num {
+        font-weight: 800;
+        font-size: 11px;
+        line-height: 1;
+    }
+    .stage-amount {
+        font-size: 7px;
+        white-space: nowrap;
+        margin-top: 1px;
+        opacity: 0.9;
+    }
+</style>
