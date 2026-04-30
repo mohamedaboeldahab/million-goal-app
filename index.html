@@ -128,16 +128,21 @@
         <div id="searchOverlayContent" class="flex-1 overflow-y-auto p-4"></div>
     </div>
 
-    <!-- ========== مشغل القصص الثابت (لضمان عمل اللمس) ========== -->
-    <div id="storyPlayer" class="fixed inset-0 z-50 flex-col items-center justify-center hidden" style="background: linear-gradient(135deg, #0f172a, #1e3a5f);">
-        <button id="closeStoryBtn" class="absolute top-4 right-4 text-white text-3xl z-10">&times;</button>
-        <div id="storyContent" class="flex-1 flex flex-col items-center justify-center text-white p-6"></div>
-        <div class="flex justify-between w-full mt-4 px-6">
-            <button id="prevStoryBtn" class="text-white text-2xl bg-white/20 rounded-full w-10 h-10 flex items-center justify-center">&larr;</button>
-            <button id="nextStoryBtn" class="text-white text-2xl bg-white/20 rounded-full w-10 h-10 flex items-center justify-center">&rarr;</button>
-        </div>
+<!-- مشغل القصص (Story Player) -->
+<div id="storyPlayer" class="fixed inset-0 bg-black z-[100] hidden flex-col items-center justify-center p-4">
+    <div class="absolute top-6 right-6 text-white text-3xl cursor-pointer" onclick="document.getElementById('storyPlayer').classList.add('hidden')">
+        <i class="fa-solid fa-xmark"></i>
+    </div>
+    
+    <div id="storyContent" class="flex flex-col items-center text-white text-center">
+        <!-- المحتوى سيظهر هنا عبر JS -->
     </div>
 
+    <div class="flex gap-10 mt-10 w-full justify-center">
+        <button onclick="engine.prevStory()" class="text-white bg-white/20 p-4 rounded-full"><i class="fa-solid fa-chevron-right"></i></button>
+        <button onclick="engine.nextStory()" class="text-white bg-white/20 p-4 rounded-full"><i class="fa-solid fa-chevron-left"></i></button>
+    </div>
+</div>
     <!-- السكريبتات -->
     <script>
         // تحديث الروابط النشطة
