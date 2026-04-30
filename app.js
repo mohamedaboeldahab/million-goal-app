@@ -208,13 +208,15 @@ renderStories() {
 // دالة فتح مشغل القصص الثابت
 openStoryPlayer(startIndex = 0) {
     this._activeBites = this.getActiveBites();
-    if (this._activeBites.length === 0) return;
-
+    if (this._activeBites.length === 0) {
+        this.showToast('لا توجد عضّات حتى الآن ⚠️');
+        return;
+    }
     this._storyIndex = startIndex;
     const player = document.getElementById('storyPlayer');
     if (player) {
-        player.classList.add('flex');
         player.classList.remove('hidden');
+        player.classList.add('flex');
         this.showCurrentStory();
     }
 },
