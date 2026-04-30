@@ -213,6 +213,7 @@ openStoryPlayer(startIndex = 0) {
         this.showToast('لا توجد عضّات حتى الآن ⚠️');
         return;
     }
+
     this._storyIndex = startIndex;
     const player = document.getElementById('storyPlayer');
     if (player) {
