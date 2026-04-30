@@ -46,31 +46,25 @@
         }
     })();
 
-    // 2. راقب ظهور القصص الجديدة واربط النقرات
+    // 2. تفويض الأحداث للقصص (يدعم touchstart و click)
     (function() {
         const storiesRow = document.getElementById('storiesRow');
         if (!storiesRow) return;
 
-        // مستمع دائم لأي عنصر يتم إضافته داخل الحاوية
-        storiesRow.addEventListener('click', function(e) {
+        function handleStoryTap(e) {
             const storyDiv = e.target.closest('[data-story-index]');
             if (storyDiv) {
+                e.preventDefault(); // منع أي سلوك افتراضي
                 const index = parseInt(storyDiv.getAttribute('data-story-index'));
                 if (!isNaN(index) && window.engine) {
                     window.engine.openStoryPlayer(index);
                 }
             }
-        });
+        }
 
-        // استخدم MutationObserver للتأكد من أنه عند إدراج القصص، نعيد ربط الأحداث
-        const observer = new MutationObserver((mutations) => {
-            mutations.forEach((mutation) => {
-                if (mutation.type === 'childList') {
-                    // لا حاجة لإعادة ربط لأن المستمع على الحاوية يكفي
-                    // لكن يمكننا التأكد من أن البيانات المرئية محدثة
-                }
-            });
-        });
-        observer.observe(storiesRow, { childList: true, subtree: true });
+        // دعم اللمس (للموبايل)
+        storiesRow.addEventListener('touchstart', handleStoryTap, { passive: false });
+        // دعم النقر (للكمبيوتر)
+        storiesRow.addEventListener('click', handleStoryTap);
     })();
 </script>
