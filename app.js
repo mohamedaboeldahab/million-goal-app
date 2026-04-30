@@ -255,8 +255,8 @@ openStoryPlayer(index) {
 
     const player = document.getElementById('storyPlayer');
     if (player) {
-        player.style.opacity = '1';
-        player.style.pointerEvents = 'auto';
+        player.classList.remove('hidden');
+        player.style.setProperty('display', 'flex', 'important'); // أهم سطر
 
         this.showCurrentStory();
     }
