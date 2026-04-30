@@ -307,47 +307,107 @@ window.engine = {
     },
 
     activateProfile() {
+        // ========== التبويبات ==========
+        const tabs = document.querySelectorAll('.tab-btn');
+        tabs.forEach(btn => {
+            btn.addEventListener('click', () => {
+                tabs.forEach(b => { b.classList.remove('active','bg-gray-100'); b.classList.add('text-gray-500'); });
+                btn.classList.add('active','bg-gray-100');
+                btn.classList.remove('text-gray-500');
+                const target = btn.dataset.tab;
+                document.getElementById('tab-posts').classList.toggle('hidden', target !== 'posts');
+                document.getElementById('tab-about').classList.toggle('hidden', target !== 'about');
+            });
+        });
+
+        // ========== تحميل بيانات البروفايل ==========
         const avatarImg = document.getElementById('profileAvatar');
         const nameEl = document.getElementById('profileName');
+        const emailEl = document.getElementById('profileEmail');
+        const bioEl = document.getElementById('profileBio');
+        const aboutEl = document.getElementById('aboutBio');
+
         if (avatarImg && nameEl) {
             this.getOrCreateUserProfile().then(profile => {
-                avatarImg.src = profile.photoURL || auth.currentUser.photoURL || '';
-                nameEl.textContent = profile.displayName || auth.currentUser.displayName || 'مستخدم';
+                const u = auth.currentUser;
+                avatarImg.src = profile.photoURL || u.photoURL || '';
+                nameEl.textContent = profile.displayName || u.displayName || 'مستخدم';
+                const bio = profile.bio || '🦈 مؤسس في Shark Hub';
+                if (bioEl) bioEl.textContent = bio;
+                if (aboutEl) aboutEl.textContent = bio;
+                if (emailEl) emailEl.textContent = u.email || '';
             });
         }
+
+        // ========== تحرير الملف الشخصي ==========
         const editBtn = document.getElementById('editProfileBtn');
         const saveBtn = document.getElementById('saveProfileBtn');
         if (editBtn && saveBtn) {
-            editBtn.onclick = () => {
-                nameEl.contentEditable = 'true';
-                const bioEl = document.getElementById('profileBio');
-                if (bioEl) bioEl.contentEditable = 'true';
+            editBtn.addEventListener('click', () => {
+                if (nameEl) {
+                    nameEl.contentEditable = 'true';
+                    nameEl.classList.add('bg-yellow-50','px-2','rounded','outline-none');
+                }
+                if (bioEl) {
+                    bioEl.contentEditable = 'true';
+                    bioEl.classList.add('bg-yellow-50','px-2','rounded','outline-none');
+                }
                 editBtn.classList.add('hidden');
                 saveBtn.classList.remove('hidden');
-            };
-            saveBtn.onclick = async () => {
-                nameEl.contentEditable = 'false';
-                const bioEl = document.getElementById('profileBio');
-                if (bioEl) bioEl.contentEditable = 'false';
+            });
+
+            saveBtn.addEventListener('click', async () => {
+                if (nameEl) {
+                    nameEl.contentEditable = 'false';
+                    nameEl.classList.remove('bg-yellow-50','px-2','rounded','outline-none');
+                }
+                if (bioEl) {
+                    bioEl.contentEditable = 'false';
+                    bioEl.classList.remove('bg-yellow-50','px-2','rounded','outline-none');
+                }
                 editBtn.classList.remove('hidden');
                 saveBtn.classList.add('hidden');
-                const n = nameEl.textContent.trim();
+
+                const n = nameEl ? nameEl.textContent.trim() : '';
                 const b = bioEl ? bioEl.textContent.trim() : '';
-                await this.updateUserProfile({ displayName: n, bio: b });
-            };
+                let ok = false;
+                try {
+                    await this.updateUserProfile({ displayName: n, bio: b });
+                    ok = true;
+                    if (aboutEl) aboutEl.textContent = b;
+                } catch(e) {}
+                this.showToast(ok ? 'تم حفظ البيانات ☁️' : 'تم حفظ البيانات محلياً ⚠️');
+            });
         }
-        document.getElementById('avatarOverlay')?.addEventListener('click', () => document.getElementById('avatarFileInput').click());
-        document.getElementById('avatarFileInput')?.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = async () => {
-                const dataUrl = reader.result;
-                avatarImg.src = dataUrl;
-                await this.updateUserProfile({ photoURL: dataUrl });
-            };
-            reader.readAsDataURL(file);
-        });
+
+        // ========== تغيير الصورة ==========
+        const overlay = document.getElementById('avatarOverlay');
+        const fileInput = document.getElementById('avatarFileInput');
+        if (overlay && fileInput) {
+            overlay.addEventListener('click', () => fileInput.click());
+            fileInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = async () => {
+                    const dataUrl = reader.result;
+                    if (avatarImg) avatarImg.src = dataUrl;
+                    let ok = false;
+                    try { await this.updateUserProfile({ photoURL: dataUrl }); ok = true; } catch(e) {}
+                    this.showToast(ok ? 'تم تغيير الصورة وحفظها ☁️' : 'تم تغيير الصورة (محلياً) ⚠️');
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+    },
+
+    // دالة مساعدة لعرض التنبيهات
+    showToast(message) {
+        const toast = document.createElement('div');
+        toast.className = 'fixed bottom-4 right-4 bg-gray-800 text-white px-4 py-2 rounded-lg text-sm z-50 shadow-lg animate-pulse';
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 2500);
     },
 
     async getOrCreateUserProfile() {
