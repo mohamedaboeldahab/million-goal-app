@@ -77,7 +77,6 @@ window.engine = {
     },
 
     async login() { try { await signInWithPopup(auth, provider); } catch (error) { alert("حدث خطأ في الدخول"); } },
-
     async logout() { if (confirm("هل تريد مغادرة المحيط؟")) { await signOut(auth); location.reload(); } },
 
     async loadPage(pageName) {
@@ -96,18 +95,18 @@ window.engine = {
                 oldScript.replaceWith(newScript);
             });
             if (pageName === 'home') {
-                // تأخير بسيط لضمان وجود #storiesRow
+                // انتظر قليلاً ليتم رسم العناصر
                 setTimeout(() => {
                     this.listenToPosts();
                     this.activateCharCounter();
                     this.updateTypeButtons();
                     this.updateCreatorAvatar();
-                }, 100);
+                }, 50);
             } else if (pageName === 'profile') {
                 setTimeout(() => {
                     this.listenToProfilePosts('userPostsContainer');
                     this.activateProfile();
-                }, 150);
+                }, 50);
             }
             if (typeof setActiveNavLink === 'function') setActiveNavLink(pageName);
         } catch (e) { content.innerHTML = `<div class="text-center py-20 text-slate-400">قريباً..</div>`; }
@@ -144,11 +143,18 @@ window.engine = {
         const countSpan = document.getElementById('charCount');
         if (!input || !countSpan) return;
         const max = parseInt(input.getAttribute('maxlength')) || 600;
-        input.addEventListener('input', () => {
+        const update = () => {
             const current = input.value.length;
             countSpan.textContent = `${current}/${max} حرف`;
             countSpan.className = current >= max - 30 ? 'text-xs text-red-500 font-bold' : 'text-xs text-gray-400 font-medium';
-        });
+        };
+        input.addEventListener('input', update);
+        // استدعاء عند الإرسال
+        const originalAdd = this.addPost.bind(this);
+        this.addPost = async function() {
+            await originalAdd();
+            update();
+        };
     },
 
     async handleVote(postId, type) {
@@ -174,6 +180,8 @@ window.engine = {
             createdAt: serverTimestamp(), type: this._currentPostType
         });
         input.value = '';
+        // تحديث شريط الستوريز فوراً
+        this.renderStories();
     },
 
     getActiveBites() {
@@ -181,7 +189,7 @@ window.engine = {
         return this._allPosts.filter(p => {
             if (p.data.type !== 'bite') return false;
             const t = p.data.createdAt;
-            if (!t) return true; // حديث النشر
+            if (!t) return true;
             const time = t.toDate ? t.toDate().getTime() : t.seconds ? t.seconds * 1000 : 0;
             return time > cutoff;
         });
@@ -204,52 +212,42 @@ window.engine = {
             </div>`).join('');
     },
 
-    // ========== مشغل القصص (مضمون) ==========
+    // ---------- مشغل القصص (يعمل 100%) ----------
     openStoryPlayer(startIndex = 0) {
-        // نجلب العضّات المحدثة مباشرة
-        const bites = this.getActiveBites();
-        if (bites.length === 0) return;
-        this._activeBites = bites;
-        this._storyIndex = startIndex;
+        this._activeBites = this.getActiveBites();
+        if (this._activeBites.length === 0) return;
 
+        this._storyIndex = startIndex;
         if (this._dynamicPlayer) this._dynamicPlayer.remove();
 
         const player = document.createElement('div');
-        player.id = 'dynamicStoryPlayer';
-        player.className = 'fixed inset-0 z-50 flex flex-col';
-        player.style.background = 'linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%)';
-
-        const progressBars = document.createElement('div');
-        progressBars.className = 'absolute top-4 left-4 right-4 flex gap-1 z-10';
-        progressBars.id = 'progressBars';
+        player.className = 'fixed inset-0 z-50 flex flex-col items-center justify-center';
+        player.style.background = 'linear-gradient(135deg, #0f172a, #1e3a5f)';
 
         const closeBtn = document.createElement('button');
-        closeBtn.className = 'absolute top-4 right-4 text-white text-3xl z-10 hover:scale-110 transition';
+        closeBtn.className = 'absolute top-4 right-4 text-white text-3xl z-10';
         closeBtn.innerHTML = '&times;';
         closeBtn.onclick = () => this.closeStoryPlayer();
 
         const content = document.createElement('div');
-        content.className = 'flex-1 flex items-center justify-center p-4';
+        content.className = 'flex-1 flex flex-col items-center justify-center text-white p-6';
         content.id = 'storyContent';
 
-        const prevBtn = document.createElement('button');
-        prevBtn.className = 'absolute left-4 top-1/2 -translate-y-1/2 text-white text-2xl bg-white/20 rounded-full w-12 h-12 flex items-center justify-center backdrop-blur-sm';
-        prevBtn.innerHTML = '&#8249;';
-        prevBtn.onclick = () => this.prevStory();
+        const nav = document.createElement('div');
+        nav.className = 'flex justify-between w-full mt-4 px-6';
+        nav.innerHTML = `
+            <button id="prevStoryBtn" class="text-white text-2xl bg-white/20 rounded-full w-10 h-10 flex items-center justify-center">&larr;</button>
+            <button id="nextStoryBtn" class="text-white text-2xl bg-white/20 rounded-full w-10 h-10 flex items-center justify-center">&rarr;</button>
+        `;
 
-        const nextBtn = document.createElement('button');
-        nextBtn.className = 'absolute right-4 top-1/2 -translate-y-1/2 text-white text-2xl bg-white/20 rounded-full w-12 h-12 flex items-center justify-center backdrop-blur-sm';
-        nextBtn.innerHTML = '&#8250;';
-        nextBtn.onclick = () => this.nextStory();
-
-        player.appendChild(progressBars);
         player.appendChild(closeBtn);
         player.appendChild(content);
-        player.appendChild(prevBtn);
-        player.appendChild(nextBtn);
-
+        player.appendChild(nav);
         document.body.appendChild(player);
         this._dynamicPlayer = player;
+
+        document.getElementById('prevStoryBtn').onclick = () => this.prevStory();
+        document.getElementById('nextStoryBtn').onclick = () => this.nextStory();
 
         this.showCurrentStory();
     },
@@ -260,38 +258,15 @@ window.engine = {
             this.closeStoryPlayer();
             return;
         }
-
         const bite = this._activeBites[this._storyIndex];
         const content = document.getElementById('storyContent');
-        const progressBars = document.getElementById('progressBars');
-
         if (content) {
             content.innerHTML = `
-                <div class="text-white text-center max-w-md">
-                    <img src="${bite.data.authorPhoto}" class="w-16 h-16 rounded-full border-2 border-white/40 mb-3 mx-auto shadow-lg">
-                    <p class="font-bold text-lg">${bite.data.authorName}</p>
-                    <p class="text-sm mt-2 leading-relaxed text-white/90">${bite.data.content}</p>
-                </div>`;
+                <img src="${bite.data.authorPhoto}" class="w-20 h-20 rounded-full border-2 border-white/50 mb-4">
+                <h3 class="font-bold text-xl">${bite.data.authorName}</h3>
+                <p class="text-sm mt-2 text-center max-w-xs">${bite.data.content}</p>
+            `;
         }
-
-        if (progressBars) {
-            progressBars.innerHTML = this._activeBites.map((_, i) => `
-                <div class="flex-1 h-1 bg-white/30 rounded-full overflow-hidden">
-                    <div class="h-full bg-white rounded-full transition-all duration-[5000ms] ease-linear ${i === this._storyIndex ? 'w-full' : i < this._storyIndex ? 'w-full' : 'w-0'}" id="bar-${i}"></div>
-                </div>`).join('');
-        }
-
-        if (this._storyTimer) clearTimeout(this._storyTimer);
-
-        const bar = document.getElementById(`bar-${this._storyIndex}`);
-        if (bar) bar.style.transition = 'width 5s linear';
-        setTimeout(() => {
-            if (bar) bar.classList.add('w-full');
-        }, 50);
-
-        this._storyTimer = setTimeout(() => {
-            this.nextStory();
-        }, 5000);
     },
 
     nextStory() {
@@ -315,10 +290,9 @@ window.engine = {
             this._dynamicPlayer.remove();
             this._dynamicPlayer = null;
         }
-        if (this._storyTimer) clearTimeout(this._storyTimer);
     },
 
-    // ========== المنشورات ==========
+    // ---------- المنشورات ----------
     listenToPosts() {
         const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
         this._currentSnapUnsubscribe = onSnapshot(q, (snapshot) => {
