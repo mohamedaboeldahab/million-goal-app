@@ -33,3 +33,16 @@
 
 <!-- قائمة المنشورات -->
 <div id="feedList"></div>
+
+<script>
+    // هذا السكربت الصغير يضمن بقاء صورة الأفاتار فقط
+    (function() {
+        async function updateAvatar() {
+            const img = document.getElementById('creatorAvatar');
+            if (!img || !window.auth?.currentUser) return;
+            const profile = await window.engine.getOrCreateUserProfile();
+            img.src = profile.photoURL || auth.currentUser.photoURL || '';
+        }
+        updateAvatar();
+    })();
+</script>
