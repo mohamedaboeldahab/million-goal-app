@@ -28,8 +28,8 @@ const provider = new GoogleAuthProvider();
 window.engine = {
     _allComments: {},
     _allPosts: [],
-    _visibleCount: 10,           // عدد المنشورات المعروضة حاليًا
-    _currentSnapUnsubscribe: null, // لإلغاء الاشتراك عند الحاجة
+    _visibleCount: 10,
+    _currentSnapUnsubscribe: null,
 
     async init() {
         try { await setPersistence(auth, browserLocalPersistence); } catch (e) { console.error("Persistence error", e); }
@@ -130,13 +130,10 @@ window.engine = {
     // ---------- المنشورات مع تحميل تدريجي ----------
     listenToPosts() {
         const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
-        // إلغاء أي اشتراك سابق
         if (this._currentSnapUnsubscribe) this._currentSnapUnsubscribe();
 
         this._currentSnapUnsubscribe = onSnapshot(q, (snapshot) => {
-            // تخزين جميع المنشورات
             this._allPosts = snapshot.docs.map(doc => ({ id: doc.id, data: doc.data() }));
-            // إعادة تعيين العداد الظاهر إذا كان أكبر من العدد الكلي
             if (this._visibleCount > this._allPosts.length) {
                 this._visibleCount = this._allPosts.length;
             }
@@ -162,29 +159,35 @@ window.engine = {
                 </div>
                 <p class="text-gray-700 text-sm leading-relaxed mb-4 whitespace-pre-wrap">${p.content}</p>
                 <div class="flex gap-2 mb-3">
-                    <button onclick="engine.handleVote('${postId}', 'support')" class="flex-1 flex items-center justify-center gap-1.5 bg-gradient-to-r from-sky-400 to-blue-500 text-white font-bold py-2 rounded-lg shadow text-xs">
-                        🦈 أؤيد <span class="bg-white/20 px-1.5 py-0.5 rounded-full text-xs">${p.supportCount || 0}</span>
+                    <button onclick="engine.handleVote('${postId}', 'support')" 
+                        class="flex-1 flex items-center justify-center gap-1.5 bg-gradient-to-r from-sky-400 to-blue-500 text-white font-bold py-2 rounded-lg shadow text-xs">
+                        🦈 أؤيد <span class="bg-white/40 px-2 py-0.5 rounded-full text-sm font-extrabold">${p.supportCount || 0}</span>
                     </button>
-                    <button onclick="engine.handleVote('${postId}', 'oppose')" class="flex-1 flex items-center justify-center gap-1.5 bg-gradient-to-r from-amber-400 to-orange-400 text-white font-bold py-2 rounded-lg shadow text-xs">
-                        🐟 لا أؤيد <span class="bg-white/20 px-1.5 py-0.5 rounded-full text-xs">${p.opposeCount || 0}</span>
+                    <button onclick="engine.handleVote('${postId}', 'oppose')" 
+                        class="flex-1 flex items-center justify-center gap-1.5 bg-gradient-to-r from-amber-400 to-orange-400 text-white font-bold py-2 rounded-lg shadow text-xs">
+                        🐟 لا أؤيد <span class="bg-white/40 px-2 py-0.5 rounded-full text-sm font-extrabold">${p.opposeCount || 0}</span>
                     </button>
                 </div>
                 <div class="border-t border-gray-100 pt-3">
                     <div id="comments_list_${postId}" class="space-y-2 mb-2"></div>
-                    <button id="load_more_btn_${postId}" style="display:none;" onclick="engine.loadMoreComments('${postId}')" class="text-sky-600 text-xs font-bold hover:underline w-full text-center py-1">عرض كل التعليقات</button>
+                    <button id="load_more_btn_${postId}" style="display:none;" 
+                        onclick="engine.loadMoreComments('${postId}')" 
+                        class="text-sky-600 text-xs font-bold hover:underline w-full text-center py-1">عرض كل التعليقات</button>
                     <div class="flex gap-2 mt-2">
-                        <input type="text" id="comm_${postId}" placeholder="أضف تعليقاً..." class="flex-1 bg-gray-100 rounded-lg px-3 py-1.5 text-xs border border-gray-200 outline-none focus:ring-1 focus:ring-sky-400">
-                        <button onclick="engine.addComment('${postId}')" class="bg-sky-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold"><i class="fa-solid fa-paper-plane"></i></button>
+                        <input type="text" id="comm_${postId}" placeholder="أضف تعليقاً..." 
+                            class="flex-1 bg-gray-100 rounded-lg px-3 py-1.5 text-xs border border-gray-200 outline-none focus:ring-1 focus:ring-sky-400">
+                        <button onclick="engine.addComment('${postId}')" 
+                            class="bg-sky-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold">
+                            <i class="fa-solid fa-paper-plane"></i>
+                        </button>
                     </div>
                 </div>
             </div>`;
         }).join('');
 
-        // إزالة زر التحميل القديم إن وجد
         const oldBtn = document.getElementById('loadMorePostsBtn');
         if (oldBtn) oldBtn.remove();
 
-        // زر "تحميل المزيد من المنشورات"
         if (this._allPosts.length > this._visibleCount) {
             const loadMoreBtn = document.createElement('div');
             loadMoreBtn.id = 'loadMorePostsBtn';
@@ -200,7 +203,6 @@ window.engine = {
             feed.parentNode.appendChild(loadMoreBtn);
         }
 
-        // تفعيل مستمعات التعليقات للمنشورات الظاهرة
         postsToShow.forEach(({ id }) => this.listenToComments(id));
     },
 
