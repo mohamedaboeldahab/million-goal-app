@@ -28,42 +28,43 @@
 @keyframes moveWave { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
 </style>
 
-<!-- ========== معلومات البروفايل (RTL – الصورة على اليمين دائمًا) ========== -->
+<!-- ========== معلومات البروفايل (RTL – الصورة فوق والاسم تحتها) ========== -->
 <div dir="rtl" class="bg-white rounded-t-3xl shadow-xl -mt-8 sm:-mt-10 px-4 pb-6 pt-4 relative">
-    <!-- صف الصورة والبيانات: أفقي دائمًا -->
-    <div class="flex flex-row items-start gap-3 sm:gap-4">
-        <!-- الصورة (على اليمين) – مقاس أصغر على الجوال -->
-        <div class="w-24 h-24 sm:w-32 sm:h-32 rounded-2xl border-4 border-white shadow-lg overflow-hidden bg-white group flex-shrink-0 relative -mt-16 sm:-mt-20">
+    <!-- الصورة والاسم في عمود -->
+    <div class="flex flex-col items-start">
+        <!-- الصورة (على اليمين) -->
+        <div class="w-28 h-28 sm:w-32 sm:h-32 rounded-2xl border-4 border-white shadow-lg overflow-hidden bg-white group relative -mt-16 sm:-mt-20">
             <img id="profileAvatar" class="w-full h-full object-cover" src="" alt="صورتي">
             <div id="avatarOverlay" class="absolute inset-0 bg-black/30 hidden group-hover:flex items-center justify-center text-white cursor-pointer text-2xl">
                 <i class="fa-solid fa-camera"></i>
             </div>
             <input type="file" id="avatarFileInput" accept="image/*" class="hidden">
         </div>
+        <!-- الاسم مع إيموجي القرش -->
+        <div class="mt-2 flex items-center gap-2">
+            <h1 id="profileName" class="text-2xl sm:text-3xl font-black text-gray-800" contenteditable="false">جار التحميل...</h1>
+            <span class="text-2xl">🦈</span>
+            <span class="bg-sky-500 text-white text-xs px-2 py-0.5 rounded-full font-bold">
+                <i class="fa-solid fa-shield-check"></i> موثّق
+            </span>
+        </div>
+    </div>
 
-        <!-- البيانات (على اليسار) -->
-        <div class="flex-1 text-right mt-2 sm:mt-0">
-            <div class="flex items-center justify-start gap-2">
-                <h1 id="profileName" class="text-xl sm:text-3xl font-black text-gray-800" contenteditable="false">جار التحميل...</h1>
-                <span class="bg-sky-500 text-white text-xs px-2 py-0.5 rounded-full flex items-center gap-1 font-bold whitespace-nowrap">
-                    <i class="fa-solid fa-shield-check"></i> موثّق
-                </span>
-            </div>
-            <p id="profileEmail" class="text-xs sm:text-sm text-gray-500"></p>
-            <p id="profileBio" class="text-xs sm:text-sm text-gray-600 mt-1 max-w-md" contenteditable="false"></p>
+    <!-- البريد والبايو والأزرار -->
+    <div class="mt-3 text-right">
+        <p id="profileEmail" class="text-sm text-gray-500"></p>
+        <p id="profileBio" class="text-sm text-gray-600 mt-1 max-w-md" contenteditable="false"></p>
 
-            <!-- أزرار التحكم -->
-            <div class="flex justify-start gap-2 mt-3 flex-wrap">
-                <button id="editProfileBtn" class="bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-2 px-4 sm:px-5 rounded-lg text-xs sm:text-sm transition flex items-center gap-1">
-                    <i class="fa-solid fa-pen-to-square"></i> تعديل
-                </button>
-                <button id="saveProfileBtn" class="bg-sky-500 hover:bg-sky-600 text-white font-bold py-2 px-4 sm:px-5 rounded-lg text-xs sm:text-sm transition hidden flex items-center gap-1">
-                    <i class="fa-solid fa-check"></i> حفظ
-                </button>
-                <button onclick="engine.logout()" class="bg-white border border-red-200 text-red-500 hover:bg-red-50 font-bold py-2 px-4 sm:px-5 rounded-lg text-xs sm:text-sm transition flex items-center gap-1 shadow-sm">
-                    <i class="fa-solid fa-right-from-bracket"></i> خروج
-                </button>
-            </div>
+        <div class="flex justify-start gap-2 mt-3 flex-wrap">
+            <button id="editProfileBtn" class="bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-2 px-5 rounded-lg text-sm transition flex items-center gap-1">
+                <i class="fa-solid fa-pen-to-square"></i> تعديل
+            </button>
+            <button id="saveProfileBtn" class="bg-sky-500 hover:bg-sky-600 text-white font-bold py-2 px-5 rounded-lg text-sm transition hidden flex items-center gap-1">
+                <i class="fa-solid fa-check"></i> حفظ
+            </button>
+            <button onclick="engine.logout()" class="bg-white border border-red-200 text-red-500 hover:bg-red-50 font-bold py-2 px-5 rounded-lg text-sm transition flex items-center gap-1 shadow-sm">
+                <i class="fa-solid fa-right-from-bracket"></i> خروج
+            </button>
         </div>
     </div>
 
