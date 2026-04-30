@@ -1,4 +1,3 @@
-<!-- home.html - متوافق مع app.js الحالي -->
 <div class="bg-white rounded-2xl p-5 shadow-md mb-6 border border-gray-100">
     <div class="flex items-start gap-3">
         <img id="creatorAvatar" src="" class="w-11 h-11 rounded-full border-2 border-sky-200 object-cover flex-shrink-0">
@@ -20,85 +19,16 @@
 <div id="feedList"></div>
 
 <script>
-(function() {
-    // انتظار تحميل engine ثم تطبيق التعديلات
-    function waitForEngine(cb) {
-        if (window.engine && window.engine.listenToPosts) cb();
-        else setTimeout(() => waitForEngine(cb), 100);
-    }
-
-    // تحديث صورة الأفاتار في صندوق الكتابة
-    function updateAvatar() {
-        const img = document.getElementById('creatorAvatar');
-        if (!img || !window.auth?.currentUser) return;
-        window.engine.getOrCreateUserProfile().then(profile => {
-            img.src = profile.photoURL || auth.currentUser.photoURL || '';
-        });
-    }
-
-    function upgradeUI() {
-        const engine = window.engine;
-        // إعادة تعريف عرض المنشورات بالشكل الجديد
-        engine.listenToPosts = function() {
-            const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
-            onSnapshot(q, (snapshot) => {
-                const feed = document.getElementById('feedList');
-                if (!feed) return;
-
-                feed.innerHTML = snapshot.docs.map(doc => {
-                    const p = doc.data();
-                    const postId = doc.id;
-                    return `
-                    <div class="bg-white rounded-2xl p-5 mb-5 shadow-md border border-gray-100 hover:shadow-lg transition-shadow">
-                        <!-- رأس المنشور -->
-                        <div class="flex items-center gap-3 mb-4">
-                            <img src="${p.authorPhoto}" class="w-11 h-11 rounded-full border-2 border-sky-200 object-cover flex-shrink-0">
-                            <div class="flex-1">
-                                <span class="font-extrabold text-gray-800 text-sm">${p.authorName}</span>
-                                <div class="text-xs text-gray-400">${new Date(p.createdAt?.toDate()).toLocaleString('ar-EG')}</div>
-                            </div>
-                        </div>
-                        <!-- محتوى المنشور -->
-                        <p class="text-gray-700 text-sm leading-relaxed mb-5 whitespace-pre-wrap">${p.content}</p>
-                        <!-- أزرار التفاعل -->
-                        <div class="flex gap-3 mb-4">
-                            <button onclick="engine.handleVote('${postId}', 'support')" 
-                                class="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-sky-400 to-blue-500 text-white font-bold py-2.5 rounded-xl shadow hover:shadow-md active:scale-95 transition text-sm">
-                                🦈 أؤيد <span class="bg-white/20 px-2 py-0.5 rounded-full text-xs">${p.supportCount || 0}</span>
-                            </button>
-                            <button onclick="engine.handleVote('${postId}', 'oppose')" 
-                                class="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-amber-400 to-orange-400 text-white font-bold py-2.5 rounded-xl shadow hover:shadow-md active:scale-95 transition text-sm">
-                                🐬 لا أؤيد <span class="bg-white/20 px-2 py-0.5 rounded-full text-xs">${p.opposeCount || 0}</span>
-                            </button>
-                        </div>
-                        <!-- التعليقات -->
-                        <div class="border-t border-gray-100 pt-4">
-                            <div id="comments_list_${postId}" class="space-y-2 mb-2"></div>
-                            <button id="load_more_btn_${postId}" style="display:none;" onclick="engine.loadMoreComments('${postId}')"
-                                class="text-sky-600 text-xs font-bold hover:underline w-full text-center py-1">عرض كل التعليقات</button>
-                            <div class="flex gap-2 mt-2">
-                                <input type="text" id="comm_${postId}" placeholder="أضف تعليقاً..." 
-                                    class="flex-1 bg-gray-100 rounded-xl px-4 py-2 text-xs border border-gray-200 outline-none focus:ring-2 focus:ring-sky-400 transition">
-                                <button onclick="engine.addComment('${postId}')" 
-                                    class="bg-sky-500 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-sky-600 active:scale-95 transition">
-                                    <i class="fa-solid fa-paper-plane"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>`;
-                }).join('');
-
-                snapshot.docs.forEach(d => engine.listenToComments(d.id));
+    // تحديث صورة المستخدم فقط
+    (function() {
+        function updateAvatar() {
+            const img = document.getElementById('creatorAvatar');
+            if (!img || !window.auth?.currentUser) return;
+            window.engine.getOrCreateUserProfile().then(profile => {
+                img.src = profile.photoURL || auth.currentUser.photoURL || '';
             });
-        };
-
-        // بدء الاستماع وتحديث الصورة
-        engine.listenToPosts();
-        updateAvatar();
-    }
-
-    // بدء التشغيل بعد تجهيز المحرك
-    waitForEngine(upgradeUI);
-    window.addEventListener('load', updateAvatar);
-})();
+        }
+        if (document.readyState === 'complete') updateAvatar();
+        else window.addEventListener('load', updateAvatar);
+    })();
 </script>
