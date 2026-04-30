@@ -39,7 +39,7 @@ window.engine = {
     async init() {
         try { await setPersistence(auth, browserLocalPersistence); } catch (e) { console.error("Persistence error", e); }
 
-        // تنظيف دوري للعضّات القديمة
+        // تنظيف العضّات القديمة كل 10 دقائق
         setInterval(() => this.deleteExpiredBites(), 600000);
         this.deleteExpiredBites();
 
@@ -198,13 +198,14 @@ window.engine = {
         input.value = '';
     },
 
-    // الحصول على العضّات النشطة (آخر 24 ساعة) – مع معالجة أمان
+    // ---------- الإصلاح: العضّات تظهر فوراً ----------
     getActiveBites() {
         const cutoff = Date.now() - 24 * 60 * 60 * 1000;
         return this._allPosts.filter(p => {
             if (p.data.type !== 'bite') return false;
             const t = p.data.createdAt;
-            if (!t) return false; // لم يكتمل بعد
+            // إذا كان الطابع الزمني فارغاً (لم يكتمل بعد) فهي حديثة النشر – أظهرها
+            if (!t) return true;
             const time = t.toDate ? t.toDate().getTime() : t.seconds ? t.seconds * 1000 : 0;
             return time > cutoff;
         });
@@ -342,7 +343,7 @@ window.engine = {
         if (this._storyTimer) clearTimeout(this._storyTimer);
     },
 
-    // ---------- المنشورات ----------
+    // ---------- المنشورات العادية ----------
     listenToPosts() {
         const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
         if (this._currentSnapUnsubscribe) this._currentSnapUnsubscribe();
@@ -366,7 +367,6 @@ window.engine = {
 
         feed.innerHTML = postsToShow.map(({ id, data: p }) => {
             const postId = id;
-            // ضمان صحة التاريخ
             let dateStr = '';
             try {
                 const date = p.createdAt ? (p.createdAt.toDate ? p.createdAt.toDate() : new Date(p.createdAt.seconds * 1000)) : new Date();
@@ -431,7 +431,6 @@ window.engine = {
         postsToShow.forEach(({ id }) => this.listenToComments(id));
     },
 
-    // ---------- التعليقات ----------
     listenToComments(postId) {
         const q = query(collection(db, `posts/${postId}/comments`), orderBy("createdAt", "asc"));
         onSnapshot(q, (snap) => {
