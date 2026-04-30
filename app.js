@@ -101,8 +101,11 @@ window.engine = {
                 this.updateTypeButtons();
                 this.updateCreatorAvatar();
             } else if (pageName === 'profile') {
-                this.listenToProfilePosts('userPostsContainer');
-                this.activateProfile();
+                // تأخير صغير لضمان رسم الـ DOM
+                setTimeout(() => {
+                    this.listenToProfilePosts('userPostsContainer');
+                    this.activateProfile();
+                }, 150);
             }
             if (typeof setActiveNavLink === 'function') setActiveNavLink(pageName);
         } catch (e) { content.innerHTML = `<div class="text-center py-20 text-slate-400">قريباً..</div>`; }
@@ -308,10 +311,9 @@ window.engine = {
 
     activateProfile() {
         // ========== التبويبات ==========
-        const tabs = document.querySelectorAll('.tab-btn');
-        tabs.forEach(btn => {
+        document.querySelectorAll('.tab-btn').forEach(btn => {
             btn.addEventListener('click', () => {
-                tabs.forEach(b => { b.classList.remove('active','bg-gray-100'); b.classList.add('text-gray-500'); });
+                document.querySelectorAll('.tab-btn').forEach(b => { b.classList.remove('active','bg-gray-100'); b.classList.add('text-gray-500'); });
                 btn.classList.add('active','bg-gray-100');
                 btn.classList.remove('text-gray-500');
                 const target = btn.dataset.tab;
@@ -320,13 +322,13 @@ window.engine = {
             });
         });
 
-        // ========== تحميل بيانات البروفايل ==========
         const avatarImg = document.getElementById('profileAvatar');
         const nameEl = document.getElementById('profileName');
         const emailEl = document.getElementById('profileEmail');
         const bioEl = document.getElementById('profileBio');
         const aboutEl = document.getElementById('aboutBio');
 
+        // تحميل البيانات
         if (avatarImg && nameEl) {
             this.getOrCreateUserProfile().then(profile => {
                 const u = auth.currentUser;
@@ -339,11 +341,11 @@ window.engine = {
             });
         }
 
-        // ========== تحرير الملف الشخصي ==========
+        // تحرير الملف الشخصي
         const editBtn = document.getElementById('editProfileBtn');
         const saveBtn = document.getElementById('saveProfileBtn');
         if (editBtn && saveBtn) {
-            editBtn.addEventListener('click', () => {
+            editBtn.onclick = () => {
                 if (nameEl) {
                     nameEl.contentEditable = 'true';
                     nameEl.classList.add('bg-yellow-50','px-2','rounded','outline-none');
@@ -354,9 +356,9 @@ window.engine = {
                 }
                 editBtn.classList.add('hidden');
                 saveBtn.classList.remove('hidden');
-            });
+            };
 
-            saveBtn.addEventListener('click', async () => {
+            saveBtn.onclick = async () => {
                 if (nameEl) {
                     nameEl.contentEditable = 'false';
                     nameEl.classList.remove('bg-yellow-50','px-2','rounded','outline-none');
@@ -377,31 +379,26 @@ window.engine = {
                     if (aboutEl) aboutEl.textContent = b;
                 } catch(e) {}
                 this.showToast(ok ? 'تم حفظ البيانات ☁️' : 'تم حفظ البيانات محلياً ⚠️');
-            });
+            };
         }
 
-        // ========== تغيير الصورة ==========
-        const overlay = document.getElementById('avatarOverlay');
-        const fileInput = document.getElementById('avatarFileInput');
-        if (overlay && fileInput) {
-            overlay.addEventListener('click', () => fileInput.click());
-            fileInput.addEventListener('change', (e) => {
-                const file = e.target.files[0];
-                if (!file) return;
-                const reader = new FileReader();
-                reader.onload = async () => {
-                    const dataUrl = reader.result;
-                    if (avatarImg) avatarImg.src = dataUrl;
-                    let ok = false;
-                    try { await this.updateUserProfile({ photoURL: dataUrl }); ok = true; } catch(e) {}
-                    this.showToast(ok ? 'تم تغيير الصورة وحفظها ☁️' : 'تم تغيير الصورة (محلياً) ⚠️');
-                };
-                reader.readAsDataURL(file);
-            });
-        }
+        // تغيير الصورة
+        document.getElementById('avatarOverlay')?.addEventListener('click', () => document.getElementById('avatarFileInput').click());
+        document.getElementById('avatarFileInput')?.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = async () => {
+                const dataUrl = reader.result;
+                if (avatarImg) avatarImg.src = dataUrl;
+                let ok = false;
+                try { await this.updateUserProfile({ photoURL: dataUrl }); ok = true; } catch(e) {}
+                this.showToast(ok ? 'تم تغيير الصورة وحفظها ☁️' : 'تم تغيير الصورة (محلياً) ⚠️');
+            };
+            reader.readAsDataURL(file);
+        });
     },
 
-    // دالة مساعدة لعرض التنبيهات
     showToast(message) {
         const toast = document.createElement('div');
         toast.className = 'fixed bottom-4 right-4 bg-gray-800 text-white px-4 py-2 rounded-lg text-sm z-50 shadow-lg animate-pulse';
