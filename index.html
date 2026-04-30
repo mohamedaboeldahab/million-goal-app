@@ -119,10 +119,5 @@
 
     <!-- تحميل ملفات الجافاسكريبت بترتيب سليم -->
     <script type="module" src="app.js"></script>
-    <script>
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/sw.js').catch(err => console.error(err));
-        }
-    </script>
 </body>
 </html>
