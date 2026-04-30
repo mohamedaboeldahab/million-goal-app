@@ -243,9 +243,17 @@ openStoryPlayer(index) {
 
     const player = document.getElementById('storyPlayer');
     if (player) {
-        player.classList.remove('hidden'); // 🔥 أهم سطر
-        player.style.opacity = '1';
-        player.style.pointerEvents = 'auto';
+        player.classList.remove('hidden');
+
+        // 🔥 force show
+        player.style.display = 'flex';
+        player.style.position = 'fixed';
+        player.style.top = '0';
+        player.style.left = '0';
+        player.style.width = '100%';
+        player.style.height = '100%';
+        player.style.zIndex = '999999'; // 🔥 مهم جدًا
+        player.style.background = 'black';
 
         this.showCurrentStory();
     }
