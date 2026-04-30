@@ -1,9 +1,9 @@
-<!-- home.html - Millionaire Future | FB Pro -->
+<!-- home.html - متوافق مع app.js الحالي -->
 <div class="bg-white rounded-2xl p-5 shadow-md mb-6 border border-gray-100">
     <div class="flex items-start gap-3">
         <img id="creatorAvatar" src="" class="w-11 h-11 rounded-full border-2 border-sky-200 object-cover flex-shrink-0">
         <div class="flex-1">
-            <textarea id="postInput" placeholder="ما هي فكرة مشروعك الجديدة؟" maxlength="300"
+            <textarea id="postInput" placeholder="شاركنا بفكرة مشروعك..." maxlength="300"
                 class="w-full bg-gray-50 p-3 outline-none border border-gray-200 rounded-xl text-sm resize-none focus:ring-2 focus:ring-sky-500 transition"
                 rows="3"></textarea>
             <div class="flex items-center justify-between mt-3 gap-3">
@@ -21,13 +21,13 @@
 
 <script>
 (function() {
-    // انتظار تحميل engine
+    // انتظار تحميل engine ثم تطبيق التعديلات
     function waitForEngine(cb) {
         if (window.engine && window.engine.listenToPosts) cb();
         else setTimeout(() => waitForEngine(cb), 100);
     }
 
-    // تحديث صورة الأفاتار
+    // تحديث صورة الأفاتار في صندوق الكتابة
     function updateAvatar() {
         const img = document.getElementById('creatorAvatar');
         if (!img || !window.auth?.currentUser) return;
@@ -36,14 +36,10 @@
         });
     }
 
-    // إعادة تعريف عرض المنشورات بشكل جديد
     function upgradeUI() {
-        if (!window.engine) return;
-
-        // حفظ الدالة الأصلية
-        const originalListen = window.engine.listenToPosts.bind(window.engine);
-
-        window.engine.listenToPosts = function() {
+        const engine = window.engine;
+        // إعادة تعريف عرض المنشورات بالشكل الجديد
+        engine.listenToPosts = function() {
             const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
             onSnapshot(q, (snapshot) => {
                 const feed = document.getElementById('feedList');
@@ -62,9 +58,9 @@
                                 <div class="text-xs text-gray-400">${new Date(p.createdAt?.toDate()).toLocaleString('ar-EG')}</div>
                             </div>
                         </div>
-                        <!-- محتوى -->
+                        <!-- محتوى المنشور -->
                         <p class="text-gray-700 text-sm leading-relaxed mb-5 whitespace-pre-wrap">${p.content}</p>
-                        <!-- أزرار تفاعلية -->
+                        <!-- أزرار التفاعل -->
                         <div class="flex gap-3 mb-4">
                             <button onclick="engine.handleVote('${postId}', 'support')" 
                                 class="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-sky-400 to-blue-500 text-white font-bold py-2.5 rounded-xl shadow hover:shadow-md active:scale-95 transition text-sm">
@@ -75,7 +71,7 @@
                                 🐬 لا أؤيد <span class="bg-white/20 px-2 py-0.5 rounded-full text-xs">${p.opposeCount || 0}</span>
                             </button>
                         </div>
-                        <!-- تعليقات -->
+                        <!-- التعليقات -->
                         <div class="border-t border-gray-100 pt-4">
                             <div id="comments_list_${postId}" class="space-y-2 mb-2"></div>
                             <button id="load_more_btn_${postId}" style="display:none;" onclick="engine.loadMoreComments('${postId}')"
@@ -96,73 +92,12 @@
             });
         };
 
-        // تعريف loadMoreComments إذا لم تكن موجودة
-        if (!window.engine.loadMoreComments) {
-            window.engine.loadMoreComments = function(postId) {
-                const list = document.getElementById(`comments_list_${postId}`);
-                const btn = document.getElementById(`load_more_btn_${postId}`);
-                const all = window.engine._allComments[postId] || [];
-                if (!list || !btn) return;
-                list.innerHTML = all.map(c => `
-                    <div class="bg-gray-50 p-2 rounded-lg text-xs">
-                        <b class="text-sky-600">${c.userName}:</b> ${c.text}
-                    </div>
-                `).join('');
-                btn.style.display = 'none';
-            };
-        }
-
-        // تعديل listenToComments لعرض أول ٣ فقط
-        const origListenToComments = window.engine.listenToComments.bind(window.engine);
-        window.engine.listenToComments = function(postId) {
-            const q = query(collection(db, `posts/${postId}/comments`), orderBy("createdAt", "asc"));
-            onSnapshot(q, (snap) => {
-                const all = snap.docs.map(d => d.data());
-                if (!window.engine._allComments) window.engine._allComments = {};
-                window.engine._allComments[postId] = all;
-                const list = document.getElementById(`comments_list_${postId}`);
-                const btn = document.getElementById(`load_more_btn_${postId}`);
-                if (!list) return;
-
-                const visible = all.slice(0, 3);
-                list.innerHTML = visible.map(c => `
-                    <div class="bg-gray-50 p-2 rounded-lg text-xs">
-                        <b class="text-sky-600">${c.userName}:</b> ${c.text}
-                    </div>
-                `).join('');
-
-                if (all.length > 3 && btn) {
-                    btn.style.display = 'block';
-                    btn.textContent = `عرض كل التعليقات (${all.length})`;
-                } else if (btn) {
-                    btn.style.display = 'none';
-                }
-            });
-        };
-
-        // تحديث عداد الأحرف
-        window.engine.activateCharCounter = function() {
-            const input = document.getElementById('postInput');
-            const countSpan = document.getElementById('charCount');
-            if (!input || !countSpan) return;
-            const max = parseInt(input.getAttribute('maxlength')) || 300;
-            const update = () => {
-                const current = input.value.length;
-                countSpan.textContent = `${current}/${max} حرف`;
-                countSpan.className = current >= max - 30
-                    ? 'text-xs text-red-500 font-bold'
-                    : 'text-xs text-gray-400 font-medium';
-            };
-            input.addEventListener('input', update);
-            update();
-        };
-
-        // بدء الاستماع
-        window.engine.listenToPosts();
+        // بدء الاستماع وتحديث الصورة
+        engine.listenToPosts();
         updateAvatar();
     }
 
-    // بدء التحديث
+    // بدء التشغيل بعد تجهيز المحرك
     waitForEngine(upgradeUI);
     window.addEventListener('load', updateAvatar);
 })();
