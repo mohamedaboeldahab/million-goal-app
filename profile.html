@@ -1,5 +1,5 @@
 <!-- ========== غلاف محيطي ========== -->
-<div class="relative h-60 sm:h-72 bg-gradient-to-b from-cyan-400 via-sky-500 to-blue-600 overflow-hidden z-0">
+<div class="relative h-60 sm:h-72 bg-gradient-to-b from-cyan-400 via-sky-500 to-blue-600 overflow-hidden">
     <div class="absolute inset-0 opacity-30">
         <div class="bubble w-4 h-4 bg-white rounded-full absolute top-8 left-10 animate-ping"></div>
         <div class="bubble w-6 h-6 bg-white rounded-full absolute top-16 right-16 animate-bounce"></div>
@@ -28,11 +28,9 @@
 @keyframes moveWave { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
 </style>
 
-<!-- ========== معلومات البروفايل (تتداخل مع الغلاف) ========== -->
+<!-- ========== معلومات البروفايل (RTL) ========== -->
 <div dir="rtl" class="bg-white rounded-t-3xl shadow-xl -mt-12 sm:-mt-14 px-4 pb-6 pt-6 relative z-10">
-    <!-- الصورة والاسم في عمود -->
     <div class="flex flex-col items-start">
-        <!-- الصورة (على اليمين) -->
         <div class="w-28 h-28 sm:w-32 sm:h-32 rounded-2xl border-4 border-white shadow-lg overflow-hidden bg-white group relative -mt-16 sm:-mt-20">
             <img id="profileAvatar" class="w-full h-full object-cover" src="" alt="صورتي">
             <div id="avatarOverlay" class="absolute inset-0 bg-black/30 hidden group-hover:flex items-center justify-center text-white cursor-pointer text-2xl">
@@ -40,41 +38,25 @@
             </div>
             <input type="file" id="avatarFileInput" accept="image/*" class="hidden">
         </div>
-        <!-- الاسم مع إيموجي القرش -->
         <div class="mt-2 flex items-center gap-2">
-            <h1 id="profileName" class="text-2xl sm:text-3xl font-black text-gray-800" contenteditable="false">جار التحميل...</h1>
+            <h1 id="profileName" class="text-2xl sm:text-3xl font-black text-gray-800">جار التحميل...</h1>
             <span class="text-2xl">🦈</span>
-            <span class="bg-sky-500 text-white text-xs px-2 py-0.5 rounded-full font-bold">
-                <i class="fa-solid fa-shield-check"></i> موثّق
-            </span>
+            <span class="bg-sky-500 text-white text-xs px-2 py-0.5 rounded-full font-bold"><i class="fa-solid fa-shield-check"></i> موثّق</span>
         </div>
     </div>
-
-    <!-- البريد والبايو والأزرار -->
     <div class="mt-3 text-right">
         <p id="profileEmail" class="text-sm text-gray-500"></p>
-        <p id="profileBio" class="text-sm text-gray-600 mt-1 max-w-md" contenteditable="false"></p>
-
+        <p id="profileBio" class="text-sm text-gray-600 mt-1 max-w-md"></p>
         <div class="flex justify-start gap-2 mt-3 flex-wrap">
-            <button id="editProfileBtn" class="bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-2 px-5 rounded-lg text-sm transition flex items-center gap-1">
-                <i class="fa-solid fa-pen-to-square"></i> تعديل
-            </button>
-            <button id="saveProfileBtn" class="bg-sky-500 hover:bg-sky-600 text-white font-bold py-2 px-5 rounded-lg text-sm transition hidden flex items-center gap-1">
-                <i class="fa-solid fa-check"></i> حفظ
-            </button>
-            <button onclick="engine.logout()" class="bg-white border border-red-200 text-red-500 hover:bg-red-50 font-bold py-2 px-5 rounded-lg text-sm transition flex items-center gap-1 shadow-sm">
-                <i class="fa-solid fa-right-from-bracket"></i> خروج
-            </button>
+            <button id="editProfileBtn" class="bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-2 px-5 rounded-lg text-sm"><i class="fa-solid fa-pen-to-square"></i> تعديل</button>
+            <button id="saveProfileBtn" class="bg-sky-500 hover:bg-sky-600 text-white font-bold py-2 px-5 rounded-lg text-sm hidden"><i class="fa-solid fa-check"></i> حفظ</button>
+            <button onclick="engine.logout()" class="bg-white border border-red-200 text-red-500 hover:bg-red-50 font-bold py-2 px-5 rounded-lg text-sm"><i class="fa-solid fa-right-from-bracket"></i> خروج</button>
         </div>
     </div>
-
-    <!-- تبويبات -->
     <div class="flex gap-1 mt-6 border-b pb-2 overflow-x-auto justify-start">
         <button class="tab-btn active font-bold text-sm px-4 py-2 rounded-lg bg-gray-100" data-tab="posts">📄 المنشورات</button>
         <button class="tab-btn font-bold text-sm px-4 py-2 rounded-lg text-gray-500 hover:bg-gray-100" data-tab="about">ℹ️ عني</button>
     </div>
-
-    <!-- محتوى التبويبات -->
     <div class="mt-4">
         <div id="tab-posts">
             <div id="userPostsContainer" class="space-y-3">
