@@ -161,5 +161,12 @@
         }
     </script>
     <script type="module" src="app.js"></script>
+       <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js')
+                .then(() => console.log('SW registered'))
+                .catch(err => console.error('SW registration failed:', err));
+        }
+    </script>
 </body>
 </html>
