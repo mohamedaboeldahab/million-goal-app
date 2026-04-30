@@ -517,5 +517,5 @@ openStoryPlayer(startIndex = 0) {
         input.value = '';
     }
 };
-
+window.engine = engine;
 engine.init();
