@@ -44,7 +44,7 @@ window.db = db;
 const provider = new GoogleAuthProvider();
 
 window.engine = {
-    _allComments: {}, // تخزين جميع التعليقات لكل منشور
+    _allComments: {},
 
     async init() {
         try {
@@ -193,7 +193,7 @@ window.engine = {
         await updateDoc(postRef, updateData);
     },
 
-    // ---------- المنشورات بشكل فيسبوكي محترف (الأزرار الجديدة) ----------
+    // ---------- المنشورات (نسخة كبيرة وواضحة) ----------
     listenToPosts() {
         const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
         onSnapshot(q, (snapshot) => {
@@ -204,43 +204,43 @@ window.engine = {
                 const p = doc.data();
                 const postId = doc.id;
                 return `
-                <div class="bg-white rounded-2xl p-5 mb-5 shadow-md border border-gray-100 hover:shadow-lg transition-shadow">
+                <div class="bg-white rounded-3xl p-6 mb-8 shadow-md border border-gray-100 hover:shadow-2xl transition-shadow">
                     <!-- رأس المنشور -->
-                    <div class="flex items-center gap-3 mb-4">
-                        <img src="${p.authorPhoto}" class="w-11 h-11 rounded-full border-2 border-sky-200 object-cover">
+                    <div class="flex items-center gap-4 mb-6">
+                        <img src="${p.authorPhoto}" class="w-16 h-16 rounded-full border-4 border-sky-200 object-cover shadow-sm">
                         <div>
-                            <span class="font-extrabold text-gray-800 text-sm">${p.authorName}</span>
-                            <div class="text-xs text-gray-400">${new Date(p.createdAt?.toDate()).toLocaleString('ar-EG')}</div>
+                            <span class="font-extrabold text-gray-800 text-xl block leading-tight">${p.authorName}</span>
+                            <div class="text-base text-gray-400 font-medium mt-0.5">${new Date(p.createdAt?.toDate()).toLocaleString('ar-EG', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>
                         </div>
                     </div>
                     <!-- محتوى المنشور -->
-                    <p class="text-gray-700 text-sm leading-relaxed mb-5 whitespace-pre-wrap">${p.content}</p>
+                    <p class="text-gray-700 text-lg leading-loose mb-8 whitespace-pre-wrap font-medium">${p.content}</p>
                     <!-- أزرار التصويت -->
-                    <div class="flex gap-3 mb-4">
+                    <div class="flex gap-5 mb-6">
                         <button onclick="engine.handleVote('${postId}', 'support')" 
-                            class="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-sky-400 to-blue-500 text-white font-bold py-2.5 rounded-xl shadow hover:shadow-md active:scale-95 transition text-sm">
-                            🦈 أؤيد <span class="bg-white/20 px-2 py-0.5 rounded-full text-xs">${p.supportCount || 0}</span>
+                            class="flex-1 flex items-center justify-center gap-4 bg-gradient-to-r from-sky-400 to-blue-500 text-white font-black py-4 rounded-2xl shadow-lg hover:shadow-xl active:scale-95 transition text-xl">
+                            🦈 <span class="text-2xl">أؤيد</span> <span class="bg-white/30 px-4 py-1.5 rounded-full text-2xl font-black">${p.supportCount || 0}</span>
                         </button>
                         <button onclick="engine.handleVote('${postId}', 'oppose')" 
-                            class="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-amber-400 to-orange-400 text-white font-bold py-2.5 rounded-xl shadow hover:shadow-md active:scale-95 transition text-sm">
-                            🐬 لا أؤيد <span class="bg-white/20 px-2 py-0.5 rounded-full text-xs">${p.opposeCount || 0}</span>
+                            class="flex-1 flex items-center justify-center gap-4 bg-gradient-to-r from-amber-400 to-orange-400 text-white font-black py-4 rounded-2xl shadow-lg hover:shadow-xl active:scale-95 transition text-xl">
+                            🐟 <span class="text-2xl">لا أؤيد</span> <span class="bg-white/30 px-4 py-1.5 rounded-full text-2xl font-black">${p.opposeCount || 0}</span>
                         </button>
                     </div>
                     <!-- قسم التعليقات -->
-                    <div class="border-t border-gray-100 pt-4">
-                        <div id="comments_list_${postId}" class="space-y-2 mb-2"></div>
+                    <div class="border-t-2 border-gray-100 pt-6">
+                        <div id="comments_list_${postId}" class="space-y-4 mb-4"></div>
                         <button id="load_more_btn_${postId}" 
                             style="display: none;" 
                             onclick="engine.loadMoreComments('${postId}')" 
-                            class="text-sky-600 text-xs font-bold hover:underline w-full text-center py-1">
+                            class="text-sky-600 text-sm font-bold hover:underline w-full text-center py-2">
                             عرض كل التعليقات
                         </button>
-                        <div class="flex gap-2 mt-2">
+                        <div class="flex gap-3 mt-3">
                             <input type="text" id="comm_${postId}" placeholder="أضف تعليقاً..." 
-                                class="flex-1 bg-gray-100 rounded-xl px-4 py-2 text-xs border border-gray-200 outline-none focus:ring-2 focus:ring-sky-400 transition">
+                                class="flex-1 bg-gray-100 rounded-2xl px-5 py-4 text-base border border-gray-200 outline-none focus:ring-2 focus:ring-sky-400 transition placeholder:text-gray-400">
                             <button onclick="engine.addComment('${postId}')" 
-                                class="bg-sky-500 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-sky-600 active:scale-95 transition">
-                                <i class="fa-solid fa-paper-plane"></i>
+                                class="bg-sky-500 text-white px-6 py-4 rounded-2xl text-base font-bold hover:bg-sky-600 active:scale-95 transition shadow-md">
+                                <i class="fa-solid fa-paper-plane text-lg"></i>
                             </button>
                         </div>
                     </div>
@@ -264,8 +264,8 @@ window.engine = {
             // عرض أول ٣ تعليقات فقط
             const visible = allComments.slice(0, 3);
             list.innerHTML = visible.map(c => `
-                <div class="bg-gray-50 p-2 rounded-lg text-xs">
-                    <b class="text-sky-600">${c.userName}:</b> ${c.text}
+                <div class="bg-gray-50 p-4 rounded-2xl text-base font-medium">
+                    <b class="text-sky-600 font-extrabold">${c.userName}:</b> ${c.text}
                 </div>
             `).join('');
 
@@ -287,8 +287,8 @@ window.engine = {
         if (!list || !loadBtn) return;
 
         list.innerHTML = all.map(c => `
-            <div class="bg-gray-50 p-2 rounded-lg text-xs">
-                <b class="text-sky-600">${c.userName}:</b> ${c.text}
+            <div class="bg-gray-50 p-4 rounded-2xl text-base font-medium">
+                <b class="text-sky-600 font-extrabold">${c.userName}:</b> ${c.text}
             </div>
         `).join('');
         loadBtn.style.display = 'none';
