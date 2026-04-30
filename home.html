@@ -2,7 +2,6 @@
 <div id="storiesRow" class="flex gap-3 overflow-x-auto pb-3 mb-4"></div>
 
 <div class="bg-white rounded-2xl p-4 shadow-md mb-4 border border-gray-100">
-    <!-- أزرار اختيار النوع -->
     <div class="flex gap-2 mb-3">
         <button id="typePostBtn" onclick="engine.setPostType('post')" 
             class="flex-1 py-2 rounded-lg font-bold text-sm bg-sky-500 text-white shadow">
@@ -13,7 +12,6 @@
             🦈 عضّة
         </button>
     </div>
-    <!-- حقل الكتابة -->
     <div class="flex items-start gap-3">
         <img id="creatorAvatar" src="" class="w-10 h-10 rounded-full border border-sky-200 object-cover">
         <div class="flex-1">
@@ -31,7 +29,6 @@
     </div>
 </div>
 
-<!-- قائمة المنشورات -->
 <div id="feedList"></div>
 
 <script>
@@ -46,20 +43,23 @@
         }
     })();
 
-    // ---------- ربط القصص باستخدام تفويض الحدث (click فقط) ----------
+    // ---------- ربط القصص بحدث pointerdown (يعمل على اللمس فوراً) ----------
     (function() {
         const storiesRow = document.getElementById('storiesRow');
         if (!storiesRow) return;
 
-        storiesRow.addEventListener('click', function(e) {
-            // نبحث عن أقرب عنصر يحمل data-story-index
+        // استخدام pointerdown لضمان استجابة فورية على الجوال
+        storiesRow.addEventListener('pointerdown', function(e) {
             const storyDiv = e.target.closest('[data-story-index]');
             if (storyDiv && window.engine) {
+                // منع السلوك الافتراضي (مثل التمرير) عند الضغط على قصة
+                e.preventDefault();
                 const index = parseInt(storyDiv.getAttribute('data-story-index'));
                 if (!isNaN(index)) {
                     window.engine.openStoryPlayer(index);
                 }
             }
+            // لا نمنع التمرير إذا لم نضغط على قصة
         });
     })();
 </script>
