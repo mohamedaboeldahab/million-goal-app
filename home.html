@@ -34,8 +34,20 @@
 <!-- قائمة المنشورات -->
 <div id="feedList"></div>
 
+<!-- مشغل القصص (Story Player) -->
+<div id="storyPlayer" class="fixed inset-0 z-50 bg-black hidden flex-col">
+    <div class="absolute top-4 left-4 right-4 flex gap-1 z-10" id="progressBars"></div>
+    <div class="absolute top-4 right-4 z-10">
+        <button onclick="engine.closeStoryPlayer()" class="text-white text-3xl">&times;</button>
+    </div>
+    <div class="flex-1 flex items-center justify-center p-4" id="storyContent"></div>
+    <div class="absolute bottom-4 left-0 right-0 flex justify-between px-4 z-10">
+        <button onclick="engine.prevStory()" class="text-white text-2xl bg-black/30 rounded-full w-12 h-12 flex items-center justify-center">&larr;</button>
+        <button onclick="engine.nextStory()" class="text-white text-2xl bg-black/30 rounded-full w-12 h-12 flex items-center justify-center">&rarr;</button>
+    </div>
+</div>
+
 <script>
-    // تحديث صورة الأفاتار
     (function() {
         function updateAvatar() {
             const img = document.getElementById('creatorAvatar');
