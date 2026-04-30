@@ -208,17 +208,16 @@ renderStories() {
     this._activeBites = this.getActiveBites();
     
     row.innerHTML = this._activeBites.map((bite, index) => `
-        <div class="flex flex-col items-center gap-1 flex-shrink-0 cursor-pointer" 
-             data-story-index="${index}">
-            <!-- أضفنا active:scale-95 لتعطي إيحاء بالضغط على الموبايل -->
-            <div class="w-16 h-16 rounded-full bg-gradient-to-tr from-sky-400 to-blue-500 p-0.5 shadow-md active:scale-95 transition-transform pointer-events-none">
-                <img src="${bite.data.authorPhoto}" class="w-full h-full rounded-full object-cover border-2 border-white">
-            </div>
-            <span class="text-[10px] font-bold text-gray-700 text-center leading-tight max-w-[64px] truncate pointer-events-none">
-                ${bite.data.authorName}
-            </span>
+    <div class="flex flex-col items-center gap-1 flex-shrink-0 cursor-pointer select-none touch-manipulation" 
+         data-story-index="${index}">
+        <div class="w-16 h-16 rounded-full bg-gradient-to-tr from-sky-400 to-blue-500 p-0.5 shadow-md pointer-events-none">
+            <img src="${bite.data.authorPhoto}" class="w-full h-full rounded-full object-cover border-2 border-white">
         </div>
-    `).join('');
+        <span class="text-[10px] font-bold text-gray-700 text-center leading-tight max-w-[64px] truncate pointer-events-none">
+            ${bite.data.authorName}
+        </span>
+    </div>
+`).join('');
 },
 
 // دالة فتح مشغل القصص الثابت
