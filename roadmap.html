@@ -1,49 +1,70 @@
 <div class="p-4">
+    <!-- هيدر الصفحة -->
     <div class="bg-sky-500 rounded-[2rem] p-6 text-white mb-6 shadow-lg shadow-sky-200">
-        <h2 class="text-2xl font-black mb-2">🗺️ رحلة المليونير</h2>
-        <p class="text-xs opacity-80 font-bold">كل خطوة تقربك من هدفك – اضغط على الخلايا عشان تشوف التفاصيل</p>
+        <h2 class="text-2xl font-black mb-1">🗺️ رحلة المليونير</h2>
+        <p class="text-xs opacity-80 font-bold">كل خلية تمثل مرحلة من رحلتك نحو الهدف</p>
     </div>
 
     <!-- إعدادات الهدف -->
     <div class="bg-white rounded-2xl p-4 shadow mb-6 border border-gray-100">
-        <div class="grid grid-cols-2 gap-3">
+        <div class="grid grid-cols-2 gap-3 mb-3">
             <div>
-                <label class="text-xs font-bold text-gray-500 block mb-1">الهدف (ج.م)</label>
+                <label class="text-xs font-bold text-gray-500 block mb-1">🎯 الهدف (ج.م)</label>
                 <input type="number" id="goalInput" value="1000000" class="w-full bg-gray-50 border rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-sky-400">
             </div>
             <div>
-                <label class="text-xs font-bold text-gray-500 block mb-1">ثروتي الحالية (ج.م)</label>
+                <label class="text-xs font-bold text-gray-500 block mb-1">💰 ثروتي الحالية</label>
                 <input type="number" id="currentInput" value="0" class="w-full bg-gray-50 border rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-sky-400">
             </div>
-            <div class="col-span-2">
-                <button onclick="buildRoadmap()" class="w-full bg-sky-500 text-white font-bold py-2.5 rounded-xl shadow hover:bg-sky-600 active:scale-95 transition">
-                    🔁 بناء الخريطة
-                </button>
-            </div>
         </div>
-        <p class="text-xs text-gray-400 mt-2">أدخل هدفك المالي ومجموع ثروتك الحالية (كاش + أصول).</p>
+        <div class="flex gap-2">
+            <button onclick="buildRoadmap()" class="flex-1 bg-sky-500 text-white font-bold py-2.5 rounded-xl shadow hover:bg-sky-600 active:scale-95 transition">
+                🔁 بناء الخريطة
+            </button>
+            <button onclick="loadEngineData()" class="bg-gray-100 text-gray-700 font-bold py-2.5 px-4 rounded-xl shadow hover:bg-gray-200 active:scale-95 transition text-sm">
+                📊 تحميل بياناتي
+            </button>
+        </div>
     </div>
 
     <!-- لوحة اللعبة -->
-    <div id="gameBoard" class="bg-white p-4 rounded-2xl shadow-md border border-gray-100 overflow-x-auto">
-        <div id="boardContainer" class="snake-board"></div>
+    <div class="bg-white rounded-2xl p-4 shadow-md border border-gray-100 overflow-x-auto">
+        <div id="boardContainer" class="snake-board mx-auto" style="min-width: 420px;"></div>
     </div>
+
+    <!-- تفاصيل المرحلة عند النقر -->
+    <div id="stageTooltip" class="bg-white border border-gray-200 rounded-xl p-3 shadow-lg mt-4 hidden text-sm"></div>
 </div>
 
 <script>
+    // تحميل بيانات المحرك مباشرة
+    function loadEngineData() {
+        if (window.engine) {
+            const assetsTotal = window.engine._allPosts ? 0 : window.engine.cash + window.engine.assets.reduce((s, a) => s + a.val, 0);
+            // لكن الأسهل: لو engine عنده دالة sync يمدينا ناخد القيمة من الـ DOM
+            const totalEl = document.getElementById('totalValAssets');
+            if (totalEl) {
+                const val = parseFloat(totalEl.innerText.replace(/,/g, ''));
+                if (!isNaN(val)) document.getElementById('currentInput').value = Math.floor(val);
+            }
+        }
+        buildRoadmap();
+    }
+
     function buildRoadmap() {
         const goal = parseFloat(document.getElementById('goalInput').value);
-        const current = parseFloat(document.getElementById('currentInput').value);
+        let current = parseFloat(document.getElementById('currentInput').value);
         if (isNaN(goal) || isNaN(current) || goal <= 0) {
             alert("من فضلك أدخل أرقام صحيحة");
             return;
         }
         if (current >= goal) {
-            alert("أنت فعلاً وصلت لهدفك أو تخطيته!");
+            // إذا تخطى الهدف، نعرض كل الخلايا مكتملة
+            current = goal;
         }
 
         const stages = 100;
-        const start = current < goal ? current : 0; // لو تخطى الهدف نبدأ من 0
+        const start = 0; // نبدأ من الصفر دائمًا عشان الخريطة تكون موحدة
         const step = (goal - start) / (stages - 1);
 
         const container = document.getElementById('boardContainer');
@@ -51,13 +72,15 @@
         for (let row = 0; row < 10; row++) {
             html += '<div class="board-row">';
             for (let col = 0; col < 10; col++) {
-                // مسار متعرج (Snake)
                 const stageIndex = row % 2 === 0 ? row * 10 + col : row * 10 + (9 - col);
                 const targetAmount = Math.round(start + step * stageIndex);
                 const completed = current >= targetAmount;
                 const percent = ((stageIndex + 1) / stages * 100).toFixed(0);
+                // تحديد ما إذا كانت هذه هي المرحلة الحالية (أول خلية غير مكتملة)
+                const isCurrent = (completed === false && (stageIndex === 0 || current >= Math.round(start + step * (stageIndex - 1))));
                 html += `
-                    <div class="board-cell ${completed ? 'completed' : ''}" 
+                    <div class="board-cell ${completed ? 'completed' : ''} ${isCurrent && !completed ? 'current' : ''}" 
+                         onclick="showStageInfo(${stageIndex+1}, ${targetAmount}, ${current >= targetAmount})"
                          title="المرحلة ${stageIndex+1} – ${targetAmount.toLocaleString()} ج.م">
                         <span class="stage-num">${stageIndex+1}</span>
                         <span class="stage-amount">${targetAmount.toLocaleString()}</span>
@@ -66,56 +89,89 @@
             html += '</div>';
         }
         container.innerHTML = html;
+        hideStageInfo();
     }
 
-    // بناء أولي عند تحميل الصفحة
-    if (document.readyState === 'complete') {
-        buildRoadmap();
-    } else {
-        window.addEventListener('load', buildRoadmap);
+    function showStageInfo(num, amount, completed) {
+        const tip = document.getElementById('stageTooltip');
+        tip.classList.remove('hidden');
+        const remaining = parseFloat(document.getElementById('goalInput').value) - amount;
+        tip.innerHTML = `
+            <div class="flex items-center gap-2 mb-1">
+                <span class="text-lg">🏁</span>
+                <span class="font-extrabold text-gray-800">المرحلة ${num}</span>
+                <span class="text-xs ${completed ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'} px-2 py-0.5 rounded-full">${completed ? 'مكتملة' : 'قيد التقدم'}</span>
+            </div>
+            <p class="text-gray-600 text-xs">الهدف: <b>${amount.toLocaleString()} ج.م</b></p>
+            ${!completed ? `<p class="text-gray-500 text-xs">المتبقي: <b>${remaining.toLocaleString()} ج.م</b></p>` : ''}
+        `;
+        tip.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
+
+    function hideStageInfo() {
+        document.getElementById('stageTooltip').classList.add('hidden');
+    }
+
+    // بناء أولي مع تحميل البيانات
+    window.addEventListener('load', () => {
+        loadEngineData();
+    });
+
+    // إذا تم استدعاء الصفحة ديناميكيًا، نضمن التنفيذ
+    if (document.readyState === 'complete') loadEngineData();
 </script>
 
 <style>
     .snake-board {
         display: flex;
         flex-direction: column;
-        gap: 3px;
+        gap: 6px;
     }
     .board-row {
         display: flex;
-        gap: 3px;
+        gap: 6px;
     }
     .board-cell {
-        width: 35px;
-        height: 45px;
+        width: 48px;
+        height: 58px;
         background: #e5e7eb;
-        border-radius: 6px;
-        font-size: 9px;
+        border-radius: 10px;
+        font-size: 10px;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
         color: #6b7280;
         transition: all 0.3s;
-        cursor: default;
+        cursor: pointer;
         position: relative;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     }
     .board-cell.completed {
-        background: #0ea5e9;
+        background: linear-gradient(135deg, #0ea5e9, #0284c7);
         color: white;
-        transform: scale(1.05);
-        box-shadow: 0 0 12px #0ea5e9;
+        transform: scale(1.02);
+        box-shadow: 0 0 16px rgba(14,165,233,0.4);
+        font-weight: 700;
+    }
+    .board-cell.current {
+        animation: pulse 1.5s infinite;
+        border: 2px solid #f59e0b;
+    }
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.08); }
+        100% { transform: scale(1); }
     }
     .stage-num {
         font-weight: 800;
-        font-size: 11px;
+        font-size: 13px;
         line-height: 1;
     }
     .stage-amount {
-        font-size: 7px;
+        font-size: 8px;
         white-space: nowrap;
-        margin-top: 1px;
+        margin-top: 2px;
         opacity: 0.9;
     }
 </style>
