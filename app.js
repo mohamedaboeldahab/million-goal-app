@@ -214,8 +214,7 @@ renderStories() {
 
     const html = this._activeBites.map((bite, index) => `
         <div class="flex flex-col items-center gap-1 flex-shrink-0" 
-             style="cursor: pointer !important; -webkit-tap-highlight-color: transparent; position: relative; z-index: 50;"
-             onclick="window.engine.openStoryPlayer(${index})">
+             style="cursor: pointer !important; -webkit-tap-highlight-color: transparent; position: relative; z-index: 50;">
             <div class="w-16 h-16 rounded-full bg-gradient-to-tr from-sky-400 to-blue-500 p-0.5 shadow-md pointer-events-none">
                 <img src="${bite.data.authorPhoto}" class="w-full h-full rounded-full object-cover border-2 border-white pointer-events-none">
             </div>
