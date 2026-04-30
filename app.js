@@ -205,7 +205,6 @@ window.engine = {
         player.id = 'dynamicStoryPlayer';
         player.className = 'fixed inset-0 z-50 flex flex-col';
         player.style.background = 'linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%)';
-        // … باقي عناصر المشغل …
         document.body.appendChild(player);
         this._dynamicPlayer = player;
         this.showCurrentStory();
@@ -217,11 +216,10 @@ window.engine = {
         const bite = this._activeBites[this._storyIndex];
         const content = document.getElementById('storyContent');
         content.innerHTML = `<div class="text-white text-center max-w-md"><img src="${bite.data.authorPhoto}" class="w-16 h-16 rounded-full border-2 border-white/40 mb-3 mx-auto shadow-lg"><p class="font-bold text-lg">${bite.data.authorName}</p><p class="text-sm mt-2 leading-relaxed text-white/90">${bite.data.content}</p></div>`;
-        // شرائط التقدم …
     },
 
-    nextStory() { /* … */ },
-    prevStory() { /* … */ },
+    nextStory() { /* ... */ },
+    prevStory() { /* ... */ },
     closeStoryPlayer() { if (this._dynamicPlayer) { this._dynamicPlayer.remove(); this._dynamicPlayer = null; } clearTimeout(this._storyTimer); },
 
     listenToPosts() {
@@ -240,7 +238,6 @@ window.engine = {
         const normalPosts = this._allPosts.filter(p => p.data.type !== 'bite');
         const postsToShow = normalPosts.slice(0, this._visibleCount);
         feed.innerHTML = postsToShow.map(({ id, data: p }) => this.postHTML(id, p)).join('');
-        // زر تحميل المزيد …
         postsToShow.forEach(({ id }) => this.listenToComments(id));
     },
 
@@ -295,7 +292,7 @@ window.engine = {
         btn.style.display = 'none';
     },
 
-    // ========== صفحة البروفايل ==========
+    // ---------- صفحة البروفايل (خفيفة وسريعة) ----------
     listenToProfilePosts(containerId) {
         const userId = auth.currentUser?.uid;
         if (!userId) return;
@@ -310,7 +307,6 @@ window.engine = {
     },
 
     activateProfile() {
-        // تحميل بيانات البروفايل
         const avatarImg = document.getElementById('profileAvatar');
         const nameEl = document.getElementById('profileName');
         if (avatarImg && nameEl) {
@@ -319,22 +315,27 @@ window.engine = {
                 nameEl.textContent = profile.displayName || auth.currentUser.displayName || 'مستخدم';
             });
         }
-        // ربط أزرار التحرير
         const editBtn = document.getElementById('editProfileBtn');
         const saveBtn = document.getElementById('saveProfileBtn');
         if (editBtn && saveBtn) {
             editBtn.onclick = () => {
-                nameEl.contentEditable = 'true'; document.getElementById('profileBio').contentEditable = 'true';
-                editBtn.classList.add('hidden'); saveBtn.classList.remove('hidden');
+                nameEl.contentEditable = 'true';
+                const bioEl = document.getElementById('profileBio');
+                if (bioEl) bioEl.contentEditable = 'true';
+                editBtn.classList.add('hidden');
+                saveBtn.classList.remove('hidden');
             };
             saveBtn.onclick = async () => {
-                nameEl.contentEditable = 'false'; document.getElementById('profileBio').contentEditable = 'false';
-                editBtn.classList.remove('hidden'); saveBtn.classList.add('hidden');
-                const n = nameEl.textContent.trim(), b = document.getElementById('profileBio').textContent.trim();
+                nameEl.contentEditable = 'false';
+                const bioEl = document.getElementById('profileBio');
+                if (bioEl) bioEl.contentEditable = 'false';
+                editBtn.classList.remove('hidden');
+                saveBtn.classList.add('hidden');
+                const n = nameEl.textContent.trim();
+                const b = bioEl ? bioEl.textContent.trim() : '';
                 await this.updateUserProfile({ displayName: n, bio: b });
             };
         }
-        // رفع صورة
         document.getElementById('avatarOverlay')?.addEventListener('click', () => document.getElementById('avatarFileInput').click());
         document.getElementById('avatarFileInput')?.addEventListener('change', (e) => {
             const file = e.target.files[0];
