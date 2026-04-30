@@ -237,14 +237,10 @@ closeStory() {
     }
 },
 
-openStoryPlayer(startIndex = 0) {
-    this._activeBites = this.getActiveBites();
-    if (this._activeBites.length === 0) return;
-
-    this._storyIndex = startIndex;
+openStoryPlayer(index) {
+    this._storyIndex = index;
     const player = document.getElementById('storyPlayer');
     if (player) {
-        // إجبار المتصفح على إظهار العنصر فوق كل شيء
         player.classList.remove('hidden');
         player.style.setProperty('display', 'flex', 'important');
         this.showCurrentStory();
