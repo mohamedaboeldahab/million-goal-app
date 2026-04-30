@@ -129,18 +129,22 @@
     </div>
 
 <!-- مشغل القصص (Story Player) -->
-<div id="storyPlayer" class="fixed inset-0 bg-black z-[100] hidden flex-col items-center justify-center p-4">
-    <div class="absolute top-6 right-6 text-white text-3xl cursor-pointer" onclick="document.getElementById('storyPlayer').classList.add('hidden')">
-        <i class="fa-solid fa-xmark"></i>
+<!-- في ملف index.html -->
+<div id="storyPlayer" 
+     class="fixed inset-0 bg-black z-[9999] hidden flex-col items-center justify-center pointer-events-auto" 
+     style="display: none; background-color: rgba(0,0,0,0.95) !important;">
+     
+    <!-- زر إغلاق كبير ليسهل ضغطه بالإصبع -->
+    <div class="absolute top-10 right-6 text-white p-4" onclick="engine.closeStory()">
+        <i class="fa-solid fa-xmark text-3xl"></i>
     </div>
     
-    <div id="storyContent" class="flex flex-col items-center text-white text-center">
-        <!-- المحتوى سيظهر هنا عبر JS -->
-    </div>
+    <div id="storyContent" class="w-full flex flex-col items-center text-white px-6"></div>
 
-    <div class="flex gap-10 mt-10 w-full justify-center">
-        <button onclick="engine.prevStory()" class="text-white bg-white/20 p-4 rounded-full"><i class="fa-solid fa-chevron-right"></i></button>
-        <button onclick="engine.nextStory()" class="text-white bg-white/20 p-4 rounded-full"><i class="fa-solid fa-chevron-left"></i></button>
+    <!-- أزرار تنقل واضحة -->
+    <div class="flex gap-10 mt-12 w-full justify-center">
+        <button onclick="engine.prevStory()" class="bg-white/20 p-6 rounded-full text-white"><i class="fa-solid fa-chevron-right text-2xl"></i></button>
+        <button onclick="engine.nextStory()" class="bg-white/20 p-6 rounded-full text-white"><i class="fa-solid fa-chevron-left text-2xl"></i></button>
     </div>
 </div>
     <!-- السكريبتات -->
