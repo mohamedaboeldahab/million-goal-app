@@ -2,55 +2,20 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Shark UP | مجتمع القروش</title>
     <link rel="manifest" href="manifest.json">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: 'Tajawal', sans-serif;
-            background-color: #f0f2f5;
-        }
-        #splash {
-            position: fixed; inset: 0; background: linear-gradient(135deg, #0f172a, #1e293b);
-            z-index: 200; display: flex; flex-direction: column; align-items: center; justify-content: center;
-        }
-        .post-action-btn {
-            flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px;
-            padding: 8px; border-radius: 8px; font-weight: 600; font-size: 14px; color: #65676b;
-            transition: background 0.2s;
-        }
-        .post-action-btn:hover { background-color: #f0f2f5; }
-        .nav-link {
-            display: flex; align-items: center; gap: 6px;
-            white-space: nowrap;
-            padding: 8px 16px;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 14px;
-            color: #ffffffcc;
-            transition: all 0.2s;
-        }
-        .nav-link.active {
-            color: white;
-            background-color: rgba(255,255,255,0.2);
-        }
-        .nav-link:hover {
-            background-color: rgba(255,255,255,0.15);
-            color: white;
-        }
-        @media (max-width: 768px) {
-            .nav-links-container {
-                overflow-x: auto;
-                -webkit-overflow-scrolling: touch;
-                scrollbar-width: none;
-                -ms-overflow-style: none;
-            }
-            .nav-links-container::-webkit-scrollbar { display: none; }
-            .nav-link { padding: 6px 12px; font-size: 12px; }
-        }
+        body { font-family: 'Tajawal', sans-serif; background-color: #f0f2f5; margin: 0; padding: 0; }
+        #splash { position: fixed; inset: 0; background: linear-gradient(135deg, #0f172a, #1e293b); z-index: 200; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .nav-link { display: flex; align-items: center; gap: 6px; white-space: nowrap; padding: 8px 16px; border-radius: 8px; font-weight: 600; font-size: 14px; color: #ffffffcc; transition: all 0.2s; }
+        .nav-link.active { color: white; background-color: rgba(255,255,255,0.2); }
+        .nav-links-container { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+        .nav-links-container::-webkit-scrollbar { display: none; }
+        #storyPlayer { position: fixed !important; inset: 0; background-color: black !important; z-index: 99999; display: none; flex-direction: column; align-items: center; justify-content: center; }
     </style>
 </head>
 <body>
@@ -61,9 +26,7 @@
             <i class="fa-solid fa-fish-fins text-5xl text-white"></i>
         </div>
         <h1 class="text-white text-3xl font-black tracking-widest mb-10">SHARK UP</h1>
-        <div id="authActions">
-            <div class="w-8 h-8 border-4 border-sky-500 border-t-transparent rounded-full animate-spin"></div>
-        </div>
+        <div id="authActions"><div class="w-8 h-8 border-4 border-sky-500 border-t-transparent rounded-full animate-spin"></div></div>
     </div>
 
     <!-- شريط التنقل العلوي -->
@@ -75,123 +38,81 @@
                 </div>
                 <span class="text-white font-black text-base sm:text-lg tracking-tight">SHARK UP</span>
             </div>
-
-            <!-- زر البحث الجديد -->
-            <button onclick="openSearchOverlay()" 
-                 class="flex items-center gap-2 bg-white/20 rounded-full px-3 sm:px-4 py-2 text-sm text-white/80 hover:bg-white/30 transition flex-1 max-w-[200px] sm:max-w-xs mx-2">
-                <i class="fa-solid fa-magnifying-glass text-xs sm:text-sm"></i>
-                <span class="truncate text-xs sm:text-sm">ابحث في Shark UP</span>
+            <button onclick="openSearchOverlay()" class="flex items-center gap-2 bg-white/20 rounded-full px-3 sm:px-4 py-2 text-white/80 hover:bg-white/30 transition flex-1 max-w-[200px] mx-2">
+                <i class="fa-solid fa-magnifying-glass text-xs"></i>
+                <span class="truncate text-xs">ابحث في Shark UP</span>
             </button>
-
-  <!-- صورة المستخدم (تفتح صفحة البروفايل) -->
-<button onclick="engine.loadPage('profile')" id="userBtn"
-    class="w-9 h-9 rounded-full bg-white/20 overflow-hidden border-2 border-white flex items-center justify-center flex-shrink-0">
-    <i class="fa-solid fa-user text-white"></i>
-</button>
-            
+            <button onclick="window.engine.loadPage('profile')" id="userBtn" class="w-9 h-9 rounded-full bg-white/20 overflow-hidden border-2 border-white flex items-center justify-center flex-shrink-0">
+                <i class="fa-solid fa-user text-white"></i>
+            </button>
         </div>
         <div class="nav-links-container flex gap-1 px-4 pb-3 pt-1">
-            <button onclick="engine.loadPage('home')" class="nav-link active" data-page="home">
-                <i class="fa-solid fa-house"></i> الرئيسية
-            </button>
-            <button onclick="engine.loadPage('assets')" class="nav-link" data-page="assets">
-                <i class="fa-solid fa-wallet"></i> المحفظة
-            </button>
-            <button onclick="engine.loadPage('roadmap')" class="nav-link" data-page="roadmap">
-                <i class="fa-solid fa-map"></i> الخريطة
-            </button>
-            <button onclick="engine.loadPage('courses')" class="nav-link" data-page="courses">
-                <i class="fa-solid fa-graduation-cap"></i> الأكاديمية
-            </button>
-            <button onclick="engine.loadPage('ai-chat')" class="nav-link" data-page="ai-chat">
-                <i class="fa-solid fa-robot"></i> المساعد
-            </button>
+            <button onclick="window.engine.loadPage('home')" class="nav-link active" data-page="home"><i class="fa-solid fa-house"></i> الرئيسية</button>
+            <button onclick="window.engine.loadPage('assets')" class="nav-link" data-page="assets"><i class="fa-solid fa-wallet"></i> المحفظة</button>
+            <button onclick="window.engine.loadPage('roadmap')" class="nav-link" data-page="roadmap"><i class="fa-solid fa-map"></i> الخريطة</button>
+            <button onclick="window.engine.loadPage('courses')" class="nav-link" data-page="courses"><i class="fa-solid fa-graduation-cap"></i> الأكاديمية</button>
+            <button onclick="window.engine.loadPage('ai-chat')" class="nav-link" data-page="ai-chat"><i class="fa-solid fa-robot"></i> المساعد</button>
         </div>
     </nav>
 
-    <!-- منطقة المحتوى الرئيسية -->
+    <!-- منطقة المحتوى -->
     <main id="app-content" class="max-w-2xl mx-auto px-4 pt-28 pb-10"></main>
 
-    <!-- زر المساعد الذكي العائم -->
-    <div onclick="engine.loadPage('ai-chat')" class="fixed bottom-6 left-6 w-14 h-14 bg-sky-500 rounded-2xl flex items-center justify-center text-white text-2xl shadow-lg cursor-pointer z-40 hover:scale-110 transition-transform">
+    <!-- زر المساعد العائم -->
+    <div onclick="window.engine.loadPage('ai-chat')" class="fixed bottom-6 left-6 w-14 h-14 bg-sky-500 rounded-2xl flex items-center justify-center text-white text-2xl shadow-lg cursor-pointer z-40 hover:scale-110 transition-transform">
         <i class="fa-solid fa-robot"></i>
     </div>
 
-    <!-- طبقة البحث الكاملة -->
+    <!-- طبقة البحث -->
     <div id="searchOverlay" class="fixed inset-0 z-[100] bg-white hidden flex-col">
         <div class="flex items-center gap-3 px-4 h-14 bg-sky-500 text-white">
-            <button onclick="closeSearchOverlay()" class="text-white text-xl">
-                <i class="fa-solid fa-arrow-right"></i>
-            </button>
+            <button onclick="closeSearchOverlay()" class="text-white text-xl"><i class="fa-solid fa-arrow-right"></i></button>
             <h2 class="font-bold text-lg">بحث</h2>
         </div>
         <div id="searchOverlayContent" class="flex-1 overflow-y-auto p-4"></div>
     </div>
 
-<!-- مشغل القصص (Story Player) -->
-<!-- في ملف index.html -->
-<!-- في ملف index.html قبل </body> -->
-<div id="storyPlayer" 
-     class="fixed inset-0 bg-black z-[99999]" 
-     style="display: none; flex-direction: column; align-items: center; justify-content: center; position: fixed !important;">
-    
-    <!-- زر إغلاق ضخم جداً -->
-    <div style="position: absolute; top: 40px; right: 20px; z-index: 100000; padding: 20px;" 
-         onclick="window.engine.closeStory()">
-        <i class="fa-solid fa-xmark text-white text-4xl"></i>
+    <!-- مشغل القصص (Story Player) الموحد والمحمي -->
+    <div id="storyPlayer">
+        <div style="position: absolute; top: 40px; right: 20px; z-index: 100001; padding: 20px;" onclick="window.engine.closeStory()">
+            <i class="fa-solid fa-xmark text-white text-4xl shadow-sm"></i>
+        </div>
+        <div id="storyContent" class="text-white text-center w-full px-4"></div>
+        <!-- مناطق لمس جانبية للتقليب -->
+        <div class="absolute inset-y-0 left-0 w-1/3 z-[100000]" onclick="window.engine.prevStory()"></div>
+        <div class="absolute inset-y-0 right-0 w-1/3 z-[100000]" onclick="window.engine.nextStory()"></div>
     </div>
 
-    <div id="storyContent" class="text-white text-center w-full px-4"></div>
-</div>
-    <!-- السكريبتات -->
     <script>
-        // تحديث الروابط النشطة
+        // دالة تحديد الصفحة النشطة
         function setActiveNavLink(pageName) {
             document.querySelectorAll('.nav-link').forEach(link => {
                 link.classList.toggle('active', link.dataset.page === pageName);
             });
         }
 
-        // فتح صفحة البحث كـ overlay
+        // دوال البحث
         async function openSearchOverlay() {
             const overlay = document.getElementById('searchOverlay');
-            const contentDiv = document.getElementById('searchOverlayContent');
-            if (!overlay || !contentDiv) return;
+            const content = document.getElementById('searchOverlayContent');
+            if (!overlay || !content) return;
+            overlay.classList.replace('hidden', 'flex');
             try {
-                const response = await fetch('search.html');
-                const html = await response.text();
-                contentDiv.innerHTML = html;
-            } catch (e) {
-                contentDiv.innerHTML = '<p class="text-gray-500 p-4">تعذر تحميل البحث</p>';
-            }
-            overlay.classList.remove('hidden');
-            overlay.classList.add('flex');
+                const res = await fetch('search.html');
+                content.innerHTML = await res.text();
+            } catch (e) { content.innerHTML = '<p class="p-4 text-center">خطأ في التحميل</p>'; }
         }
 
-        // إغلاق طبقة البحث
         function closeSearchOverlay() {
-            const overlay = document.getElementById('searchOverlay');
-            overlay.classList.add('hidden');
-            overlay.classList.remove('flex');
+            document.getElementById('searchOverlay').classList.replace('flex', 'hidden');
         }
-
-        // ربط أزرار مشغل القصص الثابت
-        document.getElementById('closeStoryBtn').addEventListener('click', () => {
-            document.getElementById('storyPlayer').classList.add('hidden');
-        });
-        document.getElementById('prevStoryBtn').addEventListener('click', () => {
-            if (window.engine) window.engine.prevStory();
-        });
-        document.getElementById('nextStoryBtn').addEventListener('click', () => {
-            if (window.engine) window.engine.nextStory();
-        });
     </script>
+
+    <!-- تحميل ملفات الجافاسكريبت بترتيب سليم -->
     <script type="module" src="app.js"></script>
     <script>
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/sw.js')
-                .then(() => console.log('SW registered'))
-                .catch(err => console.error('SW registration failed:', err));
+            navigator.serviceWorker.register('/sw.js').catch(err => console.error(err));
         }
     </script>
 </body>
