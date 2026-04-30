@@ -34,7 +34,7 @@ window.engine = {
     _activeBites: [],
     _storyIndex: 0,
     _storyTimer: null,
-    _dynamicPlayer: null,
+    // _dynamicPlayer لم يعد مطلوباً، المشغل ثابت في home.html
 
     async init() {
         try { await setPersistence(auth, browserLocalPersistence); } catch (e) { console.error("Persistence error", e); }
@@ -95,7 +95,6 @@ window.engine = {
                 oldScript.replaceWith(newScript);
             });
             if (pageName === 'home') {
-                // انتظر قليلاً ليتم رسم العناصر
                 setTimeout(() => {
                     this.listenToPosts();
                     this.activateCharCounter();
@@ -149,7 +148,6 @@ window.engine = {
             countSpan.className = current >= max - 30 ? 'text-xs text-red-500 font-bold' : 'text-xs text-gray-400 font-medium';
         };
         input.addEventListener('input', update);
-        // استدعاء عند الإرسال
         const originalAdd = this.addPost.bind(this);
         this.addPost = async function() {
             await originalAdd();
@@ -180,7 +178,6 @@ window.engine = {
             createdAt: serverTimestamp(), type: this._currentPostType
         });
         input.value = '';
-        // تحديث شريط الستوريز فوراً
         this.renderStories();
     },
 
@@ -195,69 +192,43 @@ window.engine = {
         });
     },
 
-renderStories() {
-    const row = document.getElementById('storiesRow');
-    if (!row) return;
-    this._activeBites = this.getActiveBites();
-    if (this._activeBites.length === 0) {
-        row.innerHTML = '';
-        return;
-    }
-    row.innerHTML = this._activeBites.map((bite, index) => `
-        <div class="flex flex-col items-center gap-1 flex-shrink-0 cursor-pointer" 
-             data-story-index="${index}">
-            <div class="w-16 h-16 rounded-full bg-gradient-to-tr from-sky-400 to-blue-500 p-0.5 shadow-md">
-                <img src="${bite.data.authorPhoto}" class="w-full h-full rounded-full object-cover border-2 border-white">
+    renderStories() {
+        const row = document.getElementById('storiesRow');
+        if (!row) return;
+        this._activeBites = this.getActiveBites();
+        if (this._activeBites.length === 0) {
+            row.innerHTML = '';
+            return;
+        }
+        row.innerHTML = this._activeBites.map((bite, index) => `
+            <div class="flex flex-col items-center gap-1 flex-shrink-0 cursor-pointer" 
+                 data-story-index="${index}">
+                <div class="w-16 h-16 rounded-full bg-gradient-to-tr from-sky-400 to-blue-500 p-0.5 shadow-md">
+                    <img src="${bite.data.authorPhoto}" class="w-full h-full rounded-full object-cover border-2 border-white">
+                </div>
+                <span class="text-[10px] font-bold text-gray-700 text-center leading-tight max-w-[64px] truncate">${bite.data.authorName}</span>
             </div>
-            <span class="text-[10px] font-bold text-gray-700 text-center leading-tight max-w-[64px] truncate">${bite.data.authorName}</span>
-        </div>
-    `).join('');
-},
+        `).join('');
+    },
 
-    // ---------- مشغل القصص (يعمل 100%) ----------
+    // ---------- مشغل القصص الثابت ----------
     openStoryPlayer(startIndex = 0) {
         this._activeBites = this.getActiveBites();
         if (this._activeBites.length === 0) return;
 
         this._storyIndex = startIndex;
-        if (this._dynamicPlayer) this._dynamicPlayer.remove();
-
-        const player = document.createElement('div');
-        player.className = 'fixed inset-0 z-50 flex flex-col items-center justify-center';
-        player.style.background = 'linear-gradient(135deg, #0f172a, #1e3a5f)';
-
-        const closeBtn = document.createElement('button');
-        closeBtn.className = 'absolute top-4 right-4 text-white text-3xl z-10';
-        closeBtn.innerHTML = '&times;';
-        closeBtn.onclick = () => this.closeStoryPlayer();
-
-        const content = document.createElement('div');
-        content.className = 'flex-1 flex flex-col items-center justify-center text-white p-6';
-        content.id = 'storyContent';
-
-        const nav = document.createElement('div');
-        nav.className = 'flex justify-between w-full mt-4 px-6';
-        nav.innerHTML = `
-            <button id="prevStoryBtn" class="text-white text-2xl bg-white/20 rounded-full w-10 h-10 flex items-center justify-center">&larr;</button>
-            <button id="nextStoryBtn" class="text-white text-2xl bg-white/20 rounded-full w-10 h-10 flex items-center justify-center">&rarr;</button>
-        `;
-
-        player.appendChild(closeBtn);
-        player.appendChild(content);
-        player.appendChild(nav);
-        document.body.appendChild(player);
-        this._dynamicPlayer = player;
-
-        document.getElementById('prevStoryBtn').onclick = () => this.prevStory();
-        document.getElementById('nextStoryBtn').onclick = () => this.nextStory();
-
-        this.showCurrentStory();
+        const player = document.getElementById('storyPlayer');
+        if (player) {
+            player.classList.remove('hidden');
+            this.showCurrentStory();
+        }
     },
 
     showCurrentStory() {
-        if (!this._dynamicPlayer) return;
+        const player = document.getElementById('storyPlayer');
+        if (!player || player.classList.contains('hidden')) return;
         if (this._storyIndex < 0 || this._storyIndex >= this._activeBites.length) {
-            this.closeStoryPlayer();
+            player.classList.add('hidden');
             return;
         }
         const bite = this._activeBites[this._storyIndex];
@@ -276,7 +247,7 @@ renderStories() {
             this._storyIndex++;
             this.showCurrentStory();
         } else {
-            this.closeStoryPlayer();
+            document.getElementById('storyPlayer').classList.add('hidden');
         }
     },
 
@@ -288,10 +259,8 @@ renderStories() {
     },
 
     closeStoryPlayer() {
-        if (this._dynamicPlayer) {
-            this._dynamicPlayer.remove();
-            this._dynamicPlayer = null;
-        }
+        const player = document.getElementById('storyPlayer');
+        if (player) player.classList.add('hidden');
     },
 
     // ---------- المنشورات ----------
