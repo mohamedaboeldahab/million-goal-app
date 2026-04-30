@@ -35,7 +35,7 @@
 <div id="feedList"></div>
 
 <script>
-    // تحديث صورة الأفاتار
+    // تحديث صورة المستخدم في صندوق النشر
     (async function() {
         if (window.auth && window.engine) {
             const img = document.getElementById('creatorAvatar');
@@ -46,12 +46,12 @@
         }
     })();
 
-    // تفويض الأحداث للقصص (يعمل على الموبايل والكمبيوتر)
+    // تأكد من أن اللمس على القصص يعمل (كخطة بديلة لـ onclick)
     (function() {
         const storiesRow = document.getElementById('storiesRow');
         if (!storiesRow) return;
 
-        function handleStoryTap(e) {
+        storiesRow.addEventListener('touchstart', function(e) {
             const storyDiv = e.target.closest('[data-story-index]');
             if (storyDiv) {
                 e.preventDefault();
@@ -60,9 +60,6 @@
                     window.engine.openStoryPlayer(index);
                 }
             }
-        }
-
-        storiesRow.addEventListener('touchstart', handleStoryTap, { passive: false });
-        storiesRow.addEventListener('click', handleStoryTap);
+        }, { passive: false });
     })();
 </script>
