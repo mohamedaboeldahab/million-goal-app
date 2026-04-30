@@ -37,7 +37,14 @@ window.engine = {
 
     async init() {
         try { await setPersistence(auth, browserLocalPersistence); } catch (e) { console.error("Persistence error", e); }
-
+// إصلاح مشكلة اللمس على الهاتف: تفويض حدث الضغط لشريط الستوريز
+    document.addEventListener('click', (e) => {
+        const storyElement = e.target.closest('[data-story-index]');
+        if (storyElement) {
+            const index = parseInt(storyElement.getAttribute('data-story-index'));
+            this.openStoryPlayer(index);
+        }
+    });
         setInterval(() => this.deleteExpiredBites(), 600000);
         this.deleteExpiredBites();
 
