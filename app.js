@@ -30,17 +30,17 @@ window.engine = {
     _allPosts: [],
     _visibleCount: 10,
     _currentSnapUnsubscribe: null,
-    _currentPostType: 'post',     // 'post' أو 'bite'
-    _activeBites: [],             // العضّات السارية
+    _currentPostType: 'post',
+    _activeBites: [],
     _storyIndex: 0,
     _storyTimer: null,
+    _dynamicPlayer: null,      // العنصر الديناميكي للمشغل
 
     async init() {
         try { await setPersistence(auth, browserLocalPersistence); } catch (e) { console.error("Persistence error", e); }
 
-        // حذف العضّات المنتهية تلقائياً كل 10 دقائق
+        // حذف العضّات المنتهية كل 10 دقائق
         setInterval(() => this.deleteExpiredBites(), 600000);
-        // تشغيل أولي للحذف عند البدء
         this.deleteExpiredBites();
 
         onAuthStateChanged(auth, (user) => {
@@ -166,7 +166,7 @@ window.engine = {
         await updateDoc(postRef, updateData);
     },
 
-    // ---------- نشر المنشور (بوست أو عضّة) ----------
+    // ---------- نشر المنشور ----------
     async addPost() {
         const input = document.getElementById('postInput');
         if (!input?.value.trim()) return;
@@ -190,13 +190,13 @@ window.engine = {
         input.value = '';
     },
 
-    // ---------- العضّات النشطة (آخر 24 ساعة) ----------
+    // ---------- العضّات النشطة ----------
     getActiveBites() {
         const cutoff = Date.now() - 24 * 60 * 60 * 1000;
         return this._allPosts.filter(p => p.data.type === 'bite' && p.data.createdAt?.toDate().getTime() > cutoff);
     },
 
-    // ---------- عرض شريط الستوريز ----------
+    // ---------- شريط الستوريز ----------
     renderStories() {
         const row = document.getElementById('storiesRow');
         if (!row) return;
@@ -217,19 +217,63 @@ window.engine = {
         `).join('');
     },
 
-    // ---------- مشغل القصص (Story Player) ----------
+    // ---------- مشغل القصص الجديد (بدون خلفية سوداء) ----------
     openStoryPlayer(startIndex = 0) {
         this._activeBites = this.getActiveBites();
         if (this._activeBites.length === 0) return;
 
         this._storyIndex = startIndex;
-        const player = document.getElementById('storyPlayer');
-        if (player) player.classList.remove('hidden');
+
+        // إزالة أي مشغل قديم
+        if (this._dynamicPlayer) this._dynamicPlayer.remove();
+
+        // إنشاء المشغل الديناميكي
+        const player = document.createElement('div');
+        player.id = 'dynamicStoryPlayer';
+        player.className = 'fixed inset-0 z-50 flex flex-col';
+        player.style.background = 'linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%)'; // تدرج أزرق غامق جذاب
+
+        // شريط التقدم
+        const progressBars = document.createElement('div');
+        progressBars.className = 'absolute top-4 left-4 right-4 flex gap-1 z-10';
+        progressBars.id = 'progressBars';
+
+        // زر الإغلاق
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'absolute top-4 right-4 text-white text-3xl z-10 hover:scale-110 transition';
+        closeBtn.innerHTML = '&times;';
+        closeBtn.onclick = () => this.closeStoryPlayer();
+
+        // منطقة المحتوى
+        const content = document.createElement('div');
+        content.className = 'flex-1 flex items-center justify-center p-4';
+        content.id = 'storyContent';
+
+        // أزرار التنقل
+        const prevBtn = document.createElement('button');
+        prevBtn.className = 'absolute left-4 top-1/2 -translate-y-1/2 text-white text-2xl bg-white/20 rounded-full w-12 h-12 flex items-center justify-center backdrop-blur-sm';
+        prevBtn.innerHTML = '&#8249;';
+        prevBtn.onclick = () => this.prevStory();
+
+        const nextBtn = document.createElement('button');
+        nextBtn.className = 'absolute right-4 top-1/2 -translate-y-1/2 text-white text-2xl bg-white/20 rounded-full w-12 h-12 flex items-center justify-center backdrop-blur-sm';
+        nextBtn.innerHTML = '&#8250;';
+        nextBtn.onclick = () => this.nextStory();
+
+        player.appendChild(progressBars);
+        player.appendChild(closeBtn);
+        player.appendChild(content);
+        player.appendChild(prevBtn);
+        player.appendChild(nextBtn);
+
+        document.body.appendChild(player);
+        this._dynamicPlayer = player;
 
         this.showCurrentStory();
     },
 
     showCurrentStory() {
+        if (!this._dynamicPlayer) return;
         if (this._storyIndex < 0 || this._storyIndex >= this._activeBites.length) {
             this.closeStoryPlayer();
             return;
@@ -241,9 +285,9 @@ window.engine = {
 
         content.innerHTML = `
             <div class="text-white text-center max-w-md">
-                <img src="${bite.data.authorPhoto}" class="w-16 h-16 rounded-full border-2 border-white mb-3 mx-auto">
+                <img src="${bite.data.authorPhoto}" class="w-16 h-16 rounded-full border-2 border-white/40 mb-3 mx-auto shadow-lg">
                 <p class="font-bold text-lg">${bite.data.authorName}</p>
-                <p class="text-sm mt-2 leading-relaxed">${bite.data.content}</p>
+                <p class="text-sm mt-2 leading-relaxed text-white/90">${bite.data.content}</p>
             </div>
         `;
 
@@ -283,8 +327,10 @@ window.engine = {
     },
 
     closeStoryPlayer() {
-        const player = document.getElementById('storyPlayer');
-        if (player) player.classList.add('hidden');
+        if (this._dynamicPlayer) {
+            this._dynamicPlayer.remove();
+            this._dynamicPlayer = null;
+        }
         if (this._storyTimer) clearTimeout(this._storyTimer);
     },
 
