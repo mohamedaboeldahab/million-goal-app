@@ -35,14 +35,30 @@
 <div id="feedList"></div>
 
 <script>
-    // هذا السكربت الصغير يضمن بقاء صورة الأفاتار فقط
+    // 1. تفويض الأحداث للقصص (يعمل على الجوال والكمبيوتر)
     (function() {
-        async function updateAvatar() {
-            const img = document.getElementById('creatorAvatar');
-            if (!img || !window.auth?.currentUser) return;
-            const profile = await window.engine.getOrCreateUserProfile();
-            img.src = profile.photoURL || auth.currentUser.photoURL || '';
+        const storiesRow = document.getElementById('storiesRow');
+        if (storiesRow) {
+            storiesRow.addEventListener('click', function(e) {
+                const storyDiv = e.target.closest('[data-story-index]');
+                if (storyDiv) {
+                    const index = parseInt(storyDiv.getAttribute('data-story-index'));
+                    if (!isNaN(index) && window.engine) {
+                        window.engine.openStoryPlayer(index);
+                    }
+                }
+            });
         }
-        updateAvatar();
+    })();
+
+    // 2. تحديث صورة الأفاتار في صندوق النشر
+    (async function() {
+        if (window.auth && window.engine) {
+            const img = document.getElementById('creatorAvatar');
+            if (img) {
+                const profile = await window.engine.getOrCreateUserProfile();
+                img.src = profile.photoURL || window.auth.currentUser?.photoURL || '';
+            }
+        }
     })();
 </script>
