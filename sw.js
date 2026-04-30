@@ -1,12 +1,23 @@
+const CACHE_NAME = 'shark-hub-v1';
+const ASSETS = [
+  '/',
+  '/index.html',
+  '/app.js',
+  '/home.html',
+  '/profile.html',
+  '/roadmap.html',
+  '/style.css',
+  '/manifest.json'
+];
+
 self.addEventListener('install', event => {
-  self.skipWaiting();
+  event.waitUntil(
+    caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS))
+  );
 });
 
-self.addEventListener('activate', event => {
-  event.waitUntil(clients.claim());
-});
-
-// ✅ هذا المستمع ضروري لاعتبار الموقع تطبيقاً قابلاً للتثبيت
 self.addEventListener('fetch', event => {
-  event.respondWith(fetch(event.request));
+  event.respondWith(
+    caches.match(event.request).then(cached => cached || fetch(event.request))
+  );
 });
