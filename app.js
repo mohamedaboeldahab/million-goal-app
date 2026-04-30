@@ -41,20 +41,15 @@ window.engine = {
 // اكتشاف نوع الحدث (لمس للموبايل أو ضغط للكمبيوتر)
     const clickEvent = 'ontouchstart' in window ? 'touchend' : 'click';
 
-    document.addEventListener(clickEvent, (e) => {
-        const storyElement = e.target.closest('[data-story-index]');
-        if (storyElement) {
-            // منع المتصفح من تنفيذ "الضغط" و "اللمس" معاً
-            if (e.cancelable) e.preventDefault(); 
-            
-            const index = parseInt(storyElement.getAttribute('data-story-index'));
-            console.log("Opening story index:", index); // للتأكد في Console الموبايل
-            this.openStoryPlayer(index);
-        }
-    }, { passive: false }); // ضروري جداً لعمل preventDefault على الموبايل
+document.addEventListener('pointerup', (e) => {
+    const storyElement = e.target.closest('[data-story-index]');
+    if (!storyElement) return;
 
-    setInterval(() => this.deleteExpiredBites(), 600000);
-    this.deleteExpiredBites();
+    const index = parseInt(storyElement.dataset.storyIndex);
+    console.log("فتح ستوري:", index);
+
+    window.engine.openStoryPlayer(index);
+});
         setInterval(() => this.deleteExpiredBites(), 600000);
         this.deleteExpiredBites();
 
