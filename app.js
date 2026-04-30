@@ -211,16 +211,13 @@ renderStories() {
 // دالة فتح مشغل القصص الثابت
 openStoryPlayer(startIndex = 0) {
     this._activeBites = this.getActiveBites();
-    if (this._activeBites.length === 0) {
-        this.showToast('لا توجد عضّات حتى الآن ⚠️');
-        return;
-    }
+    if (this._activeBites.length === 0) return;
 
     this._storyIndex = startIndex;
     const player = document.getElementById('storyPlayer');
     if (player) {
+        player.style.display = 'flex'; // استخدام style مباشرة أضمن
         player.classList.remove('hidden');
-        player.classList.add('flex');
         this.showCurrentStory();
     }
 },
