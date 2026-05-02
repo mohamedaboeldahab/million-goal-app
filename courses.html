@@ -6,7 +6,7 @@
   <title>الأكاديمية – Shark UP</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <!-- Firebase compat (يعمل بدون import) -->
+  <!-- Firebase compat -->
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
@@ -40,10 +40,10 @@
 
     <!-- تبويبات -->
     <div class="flex gap-2 bg-gray-100 p-1 rounded-full">
-      <button id="tabCourses" class="tab-btn flex-1 py-2 rounded-full font-bold text-sm active" onclick="switchTab('courses')">
+      <button id="tabCourses" class="tab-btn flex-1 py-2 rounded-full font-bold text-sm active" onclick="window.switchTab('courses')">
         📚 الكورسات
       </button>
-      <button id="tabArticles" class="tab-btn flex-1 py-2 rounded-full font-bold text-sm" onclick="switchTab('articles')">
+      <button id="tabArticles" class="tab-btn flex-1 py-2 rounded-full font-bold text-sm" onclick="window.switchTab('articles')">
         📝 المقالات
       </button>
     </div>
@@ -53,10 +53,10 @@
 
     <!-- أزرار النشر (للبائع) -->
     <div id="sellerPanel" class="hidden flex gap-2">
-      <button onclick="openAddCourseModal()" class="flex-1 bg-sky-500 text-white py-3 rounded-2xl font-bold shadow-lg hover:bg-sky-600 transition text-sm">
+      <button onclick="window.openAddCourseModal()" class="flex-1 bg-sky-500 text-white py-3 rounded-2xl font-bold shadow-lg hover:bg-sky-600 transition text-sm">
         <i class="fa-solid fa-plus-circle"></i> أضف كورس
       </button>
-      <button onclick="openAddArticleModal()" class="flex-1 bg-emerald-500 text-white py-3 rounded-2xl font-bold shadow-lg hover:bg-emerald-600 transition text-sm">
+      <button onclick="window.openAddArticleModal()" class="flex-1 bg-emerald-500 text-white py-3 rounded-2xl font-bold shadow-lg hover:bg-emerald-600 transition text-sm">
         <i class="fa-solid fa-pen-to-square"></i> اكتب مقال
       </button>
     </div>
@@ -65,7 +65,7 @@
     <div id="contentGrid" class="grid gap-4"></div>
 
     <!-- أيقونة وضع البائع -->
-    <button id="toggleSellerBtn" onclick="toggleSellerMode()"
+    <button id="toggleSellerBtn" onclick="window.toggleSellerMode()"
       class="fixed bottom-24 right-4 z-30 w-14 h-14 bg-gray-200 rounded-2xl flex items-center justify-center text-gray-600 text-xl shadow-lg hover:bg-gray-300 transition" title="وضع البائع">
       <i class="fa-solid fa-store"></i>
     </button>
@@ -85,13 +85,13 @@
       <div class="border-t pt-3">
         <h4 class="font-bold text-gray-700 mb-2">📖 أجزاء الكورس</h4>
         <div id="courseModulesContainer" class="space-y-2"></div>
-        <button onclick="addCourseModuleField()" class="text-sky-500 text-sm font-bold mt-2">
+        <button onclick="window.addCourseModuleField()" class="text-sky-500 text-sm font-bold mt-2">
           <i class="fa-solid fa-plus"></i> إضافة جزء
         </button>
       </div>
       <div class="flex gap-2 justify-end">
-        <button onclick="closeModal('courseModal')" class="px-5 py-2 bg-gray-200 rounded-xl font-semibold">إلغاء</button>
-        <button onclick="publishCourse()" class="px-5 py-2 bg-sky-500 text-white rounded-xl font-semibold shadow">نشر الكورس</button>
+        <button onclick="window.closeModal('courseModal')" class="px-5 py-2 bg-gray-200 rounded-xl font-semibold">إلغاء</button>
+        <button onclick="window.publishCourse()" class="px-5 py-2 bg-sky-500 text-white rounded-xl font-semibold shadow">نشر الكورس</button>
       </div>
     </div>
   </div>
@@ -107,8 +107,8 @@
         <div id="articleHashtagSelection" class="flex flex-wrap gap-2"></div>
       </div>
       <div class="flex gap-2 justify-end">
-        <button onclick="closeModal('articleModal')" class="px-5 py-2 bg-gray-200 rounded-xl font-semibold">إلغاء</button>
-        <button onclick="publishArticle()" class="px-5 py-2 bg-emerald-500 text-white rounded-xl font-semibold shadow">نشر المقال</button>
+        <button onclick="window.closeModal('articleModal')" class="px-5 py-2 bg-gray-200 rounded-xl font-semibold">إلغاء</button>
+        <button onclick="window.publishArticle()" class="px-5 py-2 bg-emerald-500 text-white rounded-xl font-semibold shadow">نشر المقال</button>
       </div>
     </div>
   </div>
@@ -117,7 +117,7 @@
   <div id="detailModal" class="modal">
     <div class="bg-white w-full max-w-md rounded-3xl p-6 mx-4 shadow-2xl max-h-[80vh] overflow-y-auto space-y-4">
       <div id="detailContent"></div>
-      <button onclick="closeModal('detailModal')" class="w-full bg-gray-200 py-2 rounded-xl font-bold mt-3">إغلاق</button>
+      <button onclick="window.closeModal('detailModal')" class="w-full bg-gray-200 py-2 rounded-xl font-bold mt-3">إغلاق</button>
     </div>
   </div>
 
@@ -427,15 +427,18 @@
       },
 
       async publishArticle() {
-        if (!auth.currentUser) { alert("سجل الدخول"); return; }
+        if (!auth.currentUser) { alert("يجب تسجيل الدخول أولاً"); return; }
         const title = document.getElementById('articleTitle').value.trim();
-        if (!title) { alert("العنوان مطلوب"); return; }
+        if (!title) { alert("عنوان المقال مطلوب"); return; }
         const content = document.getElementById('articleContent').value.trim();
+        if (!content) { alert("محتوى المقال لا يمكن أن يكون فارغاً"); return; }
         const hashtags = this.getSelectedHashtags('articleHashtagSelection');
         const user = auth.currentUser;
         try {
           await db.collection("academy_articles").add({
-            title, content, hashtags,
+            title,
+            content,
+            hashtags,
             authorId: user.uid,
             authorName: user.displayName || 'مستخدم',
             authorPhoto: user.photoURL || '',
@@ -443,7 +446,11 @@
           });
           this.closeModal('articleModal');
           this.loadData();
-        } catch (e) { alert('فشل النشر: ' + e.message); }
+          alert('تم نشر المقال بنجاح 🎉');
+        } catch (e) {
+          alert('فشل نشر المقال: ' + e.message);
+          console.error(e);
+        }
       },
 
       // ---------- عام ----------
@@ -474,7 +481,7 @@
       }
     };
 
-    // ========== تعريض الدوال عالميًا ==========
+    // ========== تعريض الدوال عالميًا بشكل آمن ==========
     window.switchTab = (tab) => academy.switchTab(tab);
     window.toggleSellerMode = () => academy.toggleSellerMode();
     window.filterByHashtag = (tag) => academy.filterByHashtag(tag);
