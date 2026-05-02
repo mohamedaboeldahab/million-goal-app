@@ -15,7 +15,10 @@
     .tab-btn.active { background: #0ea5e9; color: white; }
     .card-item { transition: all 0.2s ease; }
     .card-item:active { transform: scale(0.98); }
-    .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 1000; align-items: center; justify-content: center; padding: 1rem; }
+    .modal {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+      z-index: 1000; align-items: center; justify-content: center; padding: 1rem;
+    }
     .modal.active { display: flex; }
     .hashtag-btn { transition: all 0.2s; }
     .hashtag-btn.active { background: #0ea5e9; color: white; }
@@ -24,7 +27,7 @@
 </head>
 <body class="bg-gray-50 h-full overflow-y-auto">
 
-  <div id="academy-app" class="max-w-2xl mx-auto px-4 pt-6 pb-20 space-y-6">
+  <div id="academy-root" class="max-w-2xl mx-auto px-4 pt-6 pb-20 space-y-6">
     <!-- رأس الصفحة -->
     <div class="bg-gradient-to-br from-sky-500 to-blue-600 rounded-3xl p-6 text-white shadow-xl">
       <h2 class="text-2xl font-black mb-2">📚 أكاديمية Shark UP</h2>
@@ -37,14 +40,16 @@
 
     <!-- تبويبات -->
     <div class="flex gap-2 bg-gray-100 p-1 rounded-full">
-      <button id="tabCourses" class="tab-btn flex-1 py-2 rounded-full font-bold text-sm active" onclick="switchTab('courses')">📚 الكورسات</button>
-      <button id="tabArticles" class="tab-btn flex-1 py-2 rounded-full font-bold text-sm" onclick="switchTab('articles')">📝 المقالات</button>
+      <button id="tabCourses" class="tab-btn flex-1 py-2 rounded-full font-bold text-sm active" onclick="switchTab('courses')">
+        📚 الكورسات
+      </button>
+      <button id="tabArticles" class="tab-btn flex-1 py-2 rounded-full font-bold text-sm" onclick="switchTab('articles')">
+        📝 المقالات
+      </button>
     </div>
 
     <!-- شريط الهاشتاجات للفلترة -->
-    <div class="flex flex-wrap gap-2" id="filterHashtags">
-      <!-- يتم ملؤها ديناميكيًا -->
-    </div>
+    <div class="flex flex-wrap gap-2" id="filterHashtags"></div>
 
     <!-- أزرار النشر (للبائع) -->
     <div id="sellerPanel" class="hidden flex gap-2">
@@ -60,7 +65,8 @@
     <div id="contentGrid" class="grid gap-4"></div>
 
     <!-- أيقونة وضع البائع -->
-    <button id="toggleSellerBtn" onclick="toggleSellerMode()" class="fixed bottom-24 right-4 z-30 w-14 h-14 bg-gray-200 rounded-2xl flex items-center justify-center text-gray-600 text-xl shadow-lg hover:bg-gray-300 transition" title="وضع البائع">
+    <button id="toggleSellerBtn" onclick="toggleSellerMode()"
+      class="fixed bottom-24 right-4 z-30 w-14 h-14 bg-gray-200 rounded-2xl flex items-center justify-center text-gray-600 text-xl shadow-lg hover:bg-gray-300 transition" title="وضع البائع">
       <i class="fa-solid fa-store"></i>
     </button>
   </div>
@@ -79,7 +85,9 @@
       <div class="border-t pt-3">
         <h4 class="font-bold text-gray-700 mb-2">📖 أجزاء الكورس</h4>
         <div id="courseModulesContainer" class="space-y-2"></div>
-        <button onclick="addCourseModuleField()" class="text-sky-500 text-sm font-bold mt-2"><i class="fa-solid fa-plus"></i> إضافة جزء</button>
+        <button onclick="addCourseModuleField()" class="text-sky-500 text-sm font-bold mt-2">
+          <i class="fa-solid fa-plus"></i> إضافة جزء
+        </button>
       </div>
       <div class="flex gap-2 justify-end">
         <button onclick="closeModal('courseModal')" class="px-5 py-2 bg-gray-200 rounded-xl font-semibold">إلغاء</button>
@@ -124,7 +132,6 @@
       appId: "1:325577904362:web:8d85d4547bf22b1d8f4793"
     };
 
-    // إذا لم يسبق تهيئته من الصفحة الرئيسية
     if (!firebase.apps.length) {
       firebase.initializeApp(firebaseConfig);
     }
@@ -141,7 +148,7 @@
       articles: [],
       hashtags: ['بيزنس', 'استثمار', 'مشاريع', 'تسويق', 'عملات_رقمية', 'ريادة_أعمال'],
 
-      // تحميل البيانات
+      // ---------- تحميل البيانات ----------
       async loadData() {
         try {
           const courseSnap = await db.collection("academy_courses").orderBy("createdAt", "desc").get();
@@ -164,10 +171,12 @@
         document.getElementById('articlesCount').textContent = this.articles.length + ' مقال';
       },
 
+      // ---------- فلترة ----------
       renderFilterHashtags() {
         const container = document.getElementById('filterHashtags');
         if (!container) return;
         container.innerHTML = '';
+
         const allBtn = document.createElement('button');
         allBtn.className = 'hashtag-btn bg-sky-500 text-white px-3 py-1.5 rounded-full text-xs font-bold shadow active';
         allBtn.dataset.tag = 'all';
@@ -198,6 +207,7 @@
         this.renderContent();
       },
 
+      // ---------- عرض المحتوى ----------
       renderContent() {
         const grid = document.getElementById('contentGrid');
         if (!grid) return;
@@ -208,7 +218,10 @@
         }
 
         if (data.length === 0) {
-          grid.innerHTML = `<div class="text-center text-gray-400 py-10"><i class="fa-solid fa-book-open text-4xl mb-2"></i><p>لا توجد ${this.currentTab === 'courses' ? 'كورسات' : 'مقالات'} هنا</p></div>`;
+          grid.innerHTML = `<div class="text-center text-gray-400 py-10">
+            <i class="fa-solid fa-book-open text-4xl mb-2"></i>
+            <p>لا توجد ${this.currentTab === 'courses' ? 'كورسات' : 'مقالات'} هنا</p>
+          </div>`;
           return;
         }
 
@@ -268,6 +281,7 @@
           </div>`;
       },
 
+      // ---------- التفاصيل ----------
       showDetail(id) {
         const data = this.currentTab === 'courses' ? this.courses.find(c => c.id === id) : this.articles.find(a => a.id === id);
         if (!data) return;
@@ -306,6 +320,7 @@
         }
       },
 
+      // ---------- انضمام مجاني ----------
       async enrollFreeCourse(courseId) {
         if (!auth.currentUser) { alert("سجل الدخول أولاً"); return; }
         const course = this.courses.find(c => c.id === courseId);
@@ -324,7 +339,7 @@
         }
       },
 
-      // ---- دوال النشر ----
+      // ---------- أدوات الهاشتاج ----------
       createHashtagSelector(containerId, selected = []) {
         const container = document.getElementById(containerId);
         if (!container) return;
@@ -353,6 +368,7 @@
         return Array.from(container.querySelectorAll('.hashtag-select.bg-sky-500')).map(b => b.dataset.tag);
       },
 
+      // ---------- عمليات الكورس ----------
       openAddCourseModal() {
         document.getElementById('courseModal').style.display = 'flex';
         document.getElementById('courseTitle').value = '';
@@ -361,17 +377,6 @@
         document.getElementById('courseModulesContainer').innerHTML = '';
         this.createHashtagSelector('courseHashtagSelection');
         this.addCourseModuleField();
-      },
-
-      openAddArticleModal() {
-        document.getElementById('articleModal').style.display = 'flex';
-        document.getElementById('articleTitle').value = '';
-        document.getElementById('articleContent').value = '';
-        this.createHashtagSelector('articleHashtagSelection');
-      },
-
-      closeModal(id) {
-        document.getElementById(id).style.display = 'none';
       },
 
       addCourseModuleField() {
@@ -413,6 +418,14 @@
         } catch (e) { alert('فشل النشر: ' + e.message); }
       },
 
+      // ---------- عمليات المقال ----------
+      openAddArticleModal() {
+        document.getElementById('articleModal').style.display = 'flex';
+        document.getElementById('articleTitle').value = '';
+        document.getElementById('articleContent').value = '';
+        this.createHashtagSelector('articleHashtagSelection');
+      },
+
       async publishArticle() {
         if (!auth.currentUser) { alert("سجل الدخول"); return; }
         const title = document.getElementById('articleTitle').value.trim();
@@ -431,6 +444,11 @@
           this.closeModal('articleModal');
           this.loadData();
         } catch (e) { alert('فشل النشر: ' + e.message); }
+      },
+
+      // ---------- عام ----------
+      closeModal(id) {
+        document.getElementById(id).style.display = 'none';
       },
 
       switchTab(tab) {
@@ -467,7 +485,7 @@
     window.openAddArticleModal = () => academy.openAddArticleModal();
     window.publishArticle = () => academy.publishArticle();
 
-    // ========== بدء التحميل ==========
+    // ========== تشغيل الصفحة ==========
     academy.loadData();
   </script>
 </body>
