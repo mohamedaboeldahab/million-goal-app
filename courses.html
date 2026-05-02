@@ -4,110 +4,95 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>أكاديمية Shark UP</title>
+    
+    <!-- Scripts: Firebase must load FIRST -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap" rel="stylesheet">
     
-    <!-- Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-
     <style>
-        body { font-family: 'Tajawal', sans-serif; background: #f8fafc; }
+        body { font-family: 'Tajawal', sans-serif; background: #f8fafc; margin: 0; padding: 0; }
         .tab-btn.active { background: #0ea5e9; color: white; border-color: #0ea5e9; }
-        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 1000; align-items: center; justify-content: center; padding: 1rem; backdrop-filter: blur(4px); }
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 1000; align-items: center; justify-content: center; padding: 1rem; backdrop-filter: blur(5px); }
         .modal.active { display: flex; }
-        .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
     </style>
 </head>
-<body class="pb-20">
+<body class="pb-24">
 
     <div id="academy-root" class="max-w-2xl mx-auto px-4 pt-6 space-y-6">
-        <!-- Header -->
-        <div class="bg-gradient-to-br from-sky-500 to-blue-700 rounded-3xl p-6 text-white shadow-xl">
+        <!-- Header Card -->
+        <div class="bg-gradient-to-br from-sky-600 to-blue-800 rounded-3xl p-6 text-white shadow-xl">
             <h2 class="text-2xl font-black mb-1">📚 أكاديمية Shark UP</h2>
-            <p class="opacity-90 text-xs">تعلم مهارات البيزنس والاستثمار مجاناً</p>
-            <div class="mt-4 flex gap-3 text-[10px] font-bold">
-                <span class="bg-white/20 px-3 py-1 rounded-full" id="coursesCount">0 كورس</span>
-                <span class="bg-white/20 px-3 py-1 rounded-full" id="articlesCount">0 مقال</span>
+            <p class="opacity-90 text-[11px]">تعلم وشارك المعرفة في البيزنس والاستثمار</p>
+            <div class="mt-4 flex gap-3">
+                <span class="bg-white/20 px-3 py-1 rounded-full text-[10px] font-bold" id="coursesCount">0 كورس</span>
+                <span class="bg-white/20 px-3 py-1 rounded-full text-[10px] font-bold" id="articlesCount">0 مقال</span>
             </div>
         </div>
 
-        <!-- Tabs -->
-        <div class="flex gap-2 bg-white p-1.5 rounded-2xl shadow-sm border">
-            <button id="tabCourses" class="tab-btn flex-1 py-2.5 rounded-xl font-bold text-sm active transition-all" onclick="academy.switchTab('courses')">الكورسات</button>
-            <button id="tabArticles" class="tab-btn flex-1 py-2.5 rounded-xl font-bold text-sm transition-all" onclick="academy.switchTab('articles')">المقالات</button>
+        <!-- Tab Switcher -->
+        <div class="flex gap-2 bg-white p-1 rounded-2xl shadow-sm border">
+            <button id="tabCourses" class="tab-btn flex-1 py-3 rounded-xl font-bold text-sm active transition-all" onclick="academy.switchTab('courses')">الكورسات</button>
+            <button id="tabArticles" class="tab-btn flex-1 py-3 rounded-xl font-bold text-sm transition-all" onclick="academy.switchTab('articles')">المقالات</button>
         </div>
 
-        <!-- Hashtags Filter -->
-        <div class="flex flex-wrap gap-2 overflow-x-auto pb-2 no-scrollbar" id="filterHashtags"></div>
+        <!-- Filter Tags -->
+        <div class="flex gap-2 overflow-x-auto pb-2 no-scrollbar" id="filterHashtags"></div>
 
-        <!-- Seller Panel -->
-        <div id="sellerPanel" class="hidden grid grid-cols-2 gap-3">
-            <button onclick="academy.openModal('courseModal')" class="bg-sky-500 text-white p-4 rounded-2xl font-bold shadow-lg text-sm flex flex-col items-center gap-2">
-                <i class="fa-solid fa-video text-xl"></i> إنشاء كورس
-            </button>
-            <button onclick="academy.openModal('articleModal')" class="bg-emerald-500 text-white p-4 rounded-2xl font-bold shadow-lg text-sm flex flex-col items-center gap-2">
-                <i class="fa-solid fa-feather text-xl"></i> كتابة مقال
-            </button>
-        </div>
-
-        <!-- Content Grid -->
+        <!-- Content Area -->
         <div id="contentGrid" class="grid gap-4">
-            <div class="text-center py-20 text-gray-400">جاري تحميل المعرفة...</div>
+            <div class="text-center py-20 text-gray-400 text-sm">جاري جلب المحتوى...</div>
         </div>
     </div>
 
-    <!-- Floating Action Button -->
-    <button id="toggleSellerBtn" onclick="academy.toggleSellerMode()" class="fixed bottom-6 left-6 w-14 h-14 bg-white rounded-2xl flex items-center justify-center text-gray-500 shadow-2xl border-2 border-gray-100 transition-all active:scale-95">
-        <i class="fa-solid fa-briefcase"></i>
+    <!-- Seller Mode Floating Button -->
+    <button id="toggleSellerBtn" onclick="academy.toggleSellerMode()" class="fixed bottom-6 left-6 w-14 h-14 bg-white rounded-2xl flex items-center justify-center text-gray-500 shadow-2xl border border-gray-100 z-50">
+        <i class="fa-solid fa-store"></i>
     </button>
 
+    <!-- Seller Panel (Hidden by default) -->
+    <div id="sellerPanel" class="hidden fixed bottom-24 left-6 right-6 z-50 grid grid-cols-2 gap-3">
+        <button onclick="academy.openModal('courseModal')" class="bg-sky-500 text-white p-4 rounded-2xl font-bold shadow-lg text-xs flex flex-col items-center gap-2">
+            <i class="fa-solid fa-video text-lg"></i> إضافة كورس
+        </button>
+        <button onclick="academy.openModal('articleModal')" class="bg-emerald-500 text-white p-4 rounded-2xl font-bold shadow-lg text-xs flex flex-col items-center gap-2">
+            <i class="fa-solid fa-pen-nib text-lg"></i> إضافة مقال
+        </button>
+    </div>
+
     <!-- Modals -->
-    <!-- Add Course -->
+    <!-- Add Course Modal -->
     <div id="courseModal" class="modal">
-        <div class="bg-white w-full max-w-md rounded-3xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
-            <h3 class="text-xl font-bold text-gray-800">🎥 كورس جديد</h3>
-            <input id="courseTitle" class="w-full bg-gray-50 rounded-xl p-3 border focus:ring-2 ring-sky-500 outline-none" placeholder="عنوان الكورس">
-            <textarea id="courseDesc" rows="2" class="w-full bg-gray-50 rounded-xl p-3 border outline-none" placeholder="نبذة عن الكورس"></textarea>
-            
+        <div class="bg-white w-full max-w-md rounded-3xl p-6 space-y-4 max-h-[85vh] overflow-y-auto">
+            <h3 class="text-xl font-black">🎥 إنشاء كورس جديد</h3>
+            <input id="courseTitle" class="w-full bg-gray-50 rounded-xl p-3 border outline-none text-sm" placeholder="عنوان الكورس">
+            <textarea id="courseDesc" rows="2" class="w-full bg-gray-50 rounded-xl p-3 border outline-none text-sm" placeholder="وصف الكورس"></textarea>
             <div id="courseHashtags" class="flex flex-wrap gap-2"></div>
-            
-            <div class="border-t pt-4">
-                <h4 class="font-bold text-sm mb-3">📖 دروس الكورس</h4>
+            <div class="border-t pt-4 space-y-3">
+                <h4 class="font-bold text-xs">دروس الكورس:</h4>
                 <div id="modulesContainer" class="space-y-3"></div>
-                <button onclick="academy.addModuleRow()" class="text-sky-500 text-xs font-bold mt-2">+ إضافة درس</button>
+                <button onclick="academy.addModuleRow()" class="text-sky-500 text-[11px] font-bold">+ إضافة درس جديد</button>
             </div>
-
             <div class="flex gap-2 pt-4">
-                <button onclick="academy.closeModal('courseModal')" class="flex-1 py-3 bg-gray-100 rounded-xl font-bold">إلغاء</button>
-                <button onclick="academy.publishCourse()" class="flex-1 py-3 bg-sky-500 text-white rounded-xl font-bold">نشر</button>
+                <button onclick="academy.closeModal('courseModal')" class="flex-1 py-3 bg-gray-100 rounded-xl font-bold text-sm">إلغاء</button>
+                <button onclick="academy.publishCourse()" class="flex-1 py-3 bg-sky-600 text-white rounded-xl font-bold text-sm">نشر الآن</button>
             </div>
         </div>
     </div>
 
-    <!-- Add Article -->
-    <div id="articleModal" class="modal">
-        <div class="bg-white w-full max-w-md rounded-3xl p-6 space-y-4">
-            <h3 class="text-xl font-bold">📝 مقال جديد</h3>
-            <input id="articleTitle" class="w-full bg-gray-50 rounded-xl p-3 border outline-none" placeholder="عنوان المقال">
-            <textarea id="articleContent" rows="6" class="w-full bg-gray-50 rounded-xl p-3 border outline-none text-sm" placeholder="اكتب محتواك هنا..."></textarea>
-            <div id="articleHashtags" class="flex flex-wrap gap-2"></div>
-            <div class="flex gap-2">
-                <button onclick="academy.closeModal('articleModal')" class="flex-1 py-3 bg-gray-100 rounded-xl font-bold">إلغاء</button>
-                <button onclick="academy.publishArticle()" class="flex-1 py-3 bg-emerald-500 text-white rounded-xl font-bold">نشر</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Viewer Modal -->
+    <!-- Viewer Modal (For reading articles/courses) -->
     <div id="viewerModal" class="modal">
-        <div class="bg-white w-full max-w-md rounded-3xl p-6 max-h-[85vh] overflow-y-auto" id="viewerContent"></div>
+        <div class="bg-white w-full max-w-md rounded-3xl p-6 max-h-[80vh] overflow-y-auto" id="viewerContent"></div>
     </div>
 
+    <!-- Main Logic -->
     <script>
-        // تكوين فايربيز (استخدم بياناتك)
+        // 1. Initialize Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyB_2ms4K8EPbag7uab9gbDy8eePY6xwpxc",
             authDomain: "millionaireapp-be931.firebaseapp.com",
@@ -117,44 +102,50 @@
             appId: "1:325577904362:web:8d85d4547bf22b1d8f4793"
         };
 
-        firebase.initializeApp(firebaseConfig);
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
         const db = firebase.firestore();
         const auth = firebase.auth();
 
-        window.academy = {
+        // 2. Academy Object
+        var academy = {
             currentTab: 'courses',
             filter: 'all',
-            data: { courses: [], articles: [] },
-            tags: ['بيزنس', 'استثمار', 'تسويق', 'برمجة', 'ريادة'],
+            courses: [],
+            articles: [],
+            tags: ['بيزنس', 'استثمار', 'تسويق', 'برمجة', 'عملات_رقمية'],
 
-            async init() {
+            init() {
                 this.renderTagFilters();
                 this.loadData();
-                this.addModuleRow();
+                console.log("Academy Initialized");
             },
 
             async loadData() {
                 try {
                     const cSnap = await db.collection("academy_courses").orderBy("createdAt", "desc").get();
-                    this.data.courses = cSnap.docs.map(d => ({id: d.id, ...d.data()}));
+                    this.courses = cSnap.docs.map(d => ({id: d.id, ...d.data()}));
                     
                     const aSnap = await db.collection("academy_articles").orderBy("createdAt", "desc").get();
-                    this.data.articles = aSnap.docs.map(d => ({id: d.id, ...d.data()}));
+                    this.articles = aSnap.docs.map(d => ({id: d.id, ...d.data()}));
                     
-                    this.updateUI();
-                } catch (e) { console.error("Error:", e); }
+                    this.updateCounters();
+                    this.renderContent();
+                } catch (e) {
+                    console.error("Firebase Load Error:", e);
+                }
             },
 
-            updateUI() {
-                document.getElementById('coursesCount').innerText = `${this.data.courses.length} كورس`;
-                document.getElementById('articlesCount').innerText = `${this.data.articles.length} مقال`;
-                this.renderContent();
+            updateCounters() {
+                document.getElementById('coursesCount').innerText = `${this.courses.length} كورس`;
+                document.getElementById('articlesCount').innerText = `${this.articles.length} مقال`;
             },
 
             renderTagFilters() {
                 const container = document.getElementById('filterHashtags');
-                container.innerHTML = `<button onclick="academy.setFilter('all')" class="tag-btn bg-sky-500 text-white px-4 py-1.5 rounded-full text-xs font-bold shadow">الكل</button>` + 
-                this.tags.map(t => `<button onclick="academy.setFilter('${t}')" class="tag-btn bg-white text-gray-600 border px-4 py-1.5 rounded-full text-xs font-bold shadow-sm">#${t}</button>`).join('');
+                container.innerHTML = `<button onclick="academy.setFilter('all')" class="bg-sky-500 text-white px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap">الكل</button>` + 
+                this.tags.map(t => `<button onclick="academy.setFilter('${t}')" class="bg-white text-gray-500 border px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap">#${t}</button>`).join('');
             },
 
             setFilter(tag) {
@@ -164,12 +155,12 @@
 
             renderContent() {
                 const grid = document.getElementById('contentGrid');
-                let items = this.currentTab === 'courses' ? this.data.courses : this.data.articles;
+                let items = this.currentTab === 'courses' ? this.courses : this.articles;
                 
                 if(this.filter !== 'all') items = items.filter(i => (i.hashtags||[]).includes(this.filter));
 
-                if(!items.length) {
-                    grid.innerHTML = `<div class="text-center py-10 opacity-40">لا يوجد محتوى حالياً</div>`;
+                if(items.length === 0) {
+                    grid.innerHTML = `<div class="text-center py-10 text-gray-400">لا يوجد محتوى في هذا القسم</div>`;
                     return;
                 }
 
@@ -178,122 +169,83 @@
 
             courseCard(c) {
                 return `
-                <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex flex-col gap-2">
-                    <div class="flex justify-between items-start">
-                        <span class="text-[10px] bg-sky-50 text-sky-600 px-2 py-0.5 rounded-lg font-black italic">COURSE</span>
-                        <span class="text-emerald-500 text-[10px] font-bold">مجاني</span>
+                <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 space-y-2">
+                    <div class="flex justify-between items-center">
+                        <span class="text-[9px] bg-sky-100 text-sky-600 px-2 py-0.5 rounded font-bold">كورس</span>
+                        <span class="text-green-500 text-[10px] font-bold">مجاني</span>
                     </div>
-                    <h3 class="font-bold text-gray-800">${c.title}</h3>
-                    <p class="text-xs text-gray-500 line-clamp-2">${c.desc || ''}</p>
-                    <div class="flex items-center justify-between mt-2">
-                        <div class="flex gap-1">${(c.hashtags||[]).map(t => `<span class="text-[9px] text-sky-400">#${t}</span>`).join('')}</div>
-                        <button onclick="academy.viewCourse('${c.id}')" class="bg-sky-500 text-white px-5 py-2 rounded-xl text-xs font-bold shadow-md">ابدأ الآن</button>
-                    </div>
+                    <h3 class="font-bold text-gray-800 text-sm">${c.title}</h3>
+                    <p class="text-[11px] text-gray-500 line-clamp-2">${c.desc || ''}</p>
+                    <button onclick="academy.viewCourse('${c.id}')" class="w-full bg-sky-500 text-white py-2 rounded-xl text-xs font-bold mt-2">عرض التفاصيل</button>
                 </div>`;
             },
 
             articleCard(a) {
                 return `
-                <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 space-y-2">
-                    <h3 class="font-bold text-gray-800">${a.title}</h3>
-                    <p class="text-xs text-gray-500 line-clamp-2">${a.content}</p>
-                    <div class="flex justify-between items-center pt-2 border-t">
-                        <span class="text-[10px] text-gray-400">بواسطة: ${a.authorName || 'مبدع'}</span>
-                        <button onclick="academy.viewArticle('${a.id}')" class="text-emerald-600 text-xs font-bold">اقرأ المزيد ←</button>
-                    </div>
+                <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+                    <h3 class="font-bold text-gray-800 text-sm mb-1">${a.title}</h3>
+                    <p class="text-[11px] text-gray-500 line-clamp-2">${a.content}</p>
+                    <button onclick="academy.viewArticle('${a.id}')" class="text-sky-600 text-xs font-bold mt-2 flex items-center gap-1">اقرأ المقال <i class="fa-solid fa-arrow-left text-[10px]"></i></button>
                 </div>`;
             },
 
             viewCourse(id) {
-                const c = this.data.courses.find(x => x.id === id);
-                const content = `
-                    <h2 class="text-xl font-black mb-2">${c.title}</h2>
-                    <p class="text-sm text-gray-600 mb-6">${c.desc}</p>
+                const c = this.courses.find(x => x.id === id);
+                document.getElementById('viewerContent').innerHTML = `
+                    <h2 class="text-lg font-black mb-2">${c.title}</h2>
+                    <p class="text-xs text-gray-500 mb-6">${c.desc}</p>
                     <div class="space-y-4">
                         ${(c.modules||[]).map((m, i) => `
-                            <div class="bg-gray-50 p-4 rounded-2xl border-r-4 border-sky-500">
-                                <h4 class="font-bold text-sm mb-1">${i+1}. ${m.title}</h4>
-                                <p class="text-xs text-gray-500">${m.content}</p>
+                            <div class="bg-gray-50 p-4 rounded-xl border-r-4 border-sky-500">
+                                <h4 class="font-bold text-xs">درس ${i+1}: ${m.title}</h4>
+                                <p class="text-[11px] text-gray-600 mt-1">${m.content}</p>
                             </div>
                         `).join('')}
                     </div>
-                    <button onclick="academy.closeModal('viewerModal')" class="w-full mt-6 py-3 bg-gray-100 rounded-xl font-bold">إغلاق</button>
+                    <button onclick="academy.closeModal('viewerModal')" class="w-full mt-6 py-3 bg-gray-100 rounded-xl font-bold text-sm">إغلاق</button>
                 `;
-                document.getElementById('viewerContent').innerHTML = content;
-                this.openModal('viewerModal');
-            },
-
-            viewArticle(id) {
-                const a = this.data.articles.find(x => x.id === id);
-                const content = `
-                    <h2 class="text-xl font-black mb-4">${a.title}</h2>
-                    <div class="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">${a.content}</div>
-                    <button onclick="academy.closeModal('viewerModal')" class="w-full mt-8 py-3 bg-gray-100 rounded-xl font-bold">رجوع</button>
-                `;
-                document.getElementById('viewerContent').innerHTML = content;
                 this.openModal('viewerModal');
             },
 
             async publishCourse() {
-                const user = auth.currentUser;
-                if(!user) return alert("سجل دخولك أولاً");
-                
+                if(!auth.currentUser) return alert("يرجى تسجيل الدخول أولاً");
                 const title = document.getElementById('courseTitle').value;
-                const desc = document.getElementById('courseDesc').value;
                 const modules = [];
                 document.querySelectorAll('.module-row').forEach(row => {
-                    modules.push({
-                        title: row.querySelector('.m-title').value,
-                        content: row.querySelector('.m-body').value
-                    });
+                    modules.push({ title: row.querySelector('.m-t').value, content: row.querySelector('.m-c').value });
                 });
 
                 await db.collection("academy_courses").add({
-                    title, desc, modules, 
-                    authorId: user.uid,
+                    title, desc: document.getElementById('courseDesc').value,
+                    modules, authorId: auth.currentUser.uid,
                     hashtags: this.getSelectedTags('courseHashtags'),
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
-                
                 this.closeModal('courseModal');
-                this.loadData();
-            },
-
-            async publishArticle() {
-                const user = auth.currentUser;
-                if(!user) return alert("سجل دخولك أولاً");
-
-                await db.collection("academy_articles").add({
-                    title: document.getElementById('articleTitle').value,
-                    content: document.getElementById('articleContent').value,
-                    authorId: user.uid,
-                    authorName: user.displayName || "مستخدم",
-                    hashtags: this.getSelectedTags('articleHashtags'),
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
-
-                this.closeModal('articleModal');
                 this.loadData();
             },
 
             addModuleRow() {
                 const div = document.createElement('div');
-                div.className = 'module-row space-y-2 bg-gray-50 p-3 rounded-xl relative';
+                div.className = 'module-row space-y-2 bg-gray-50 p-3 rounded-xl relative border';
                 div.innerHTML = `
-                    <input class="m-title w-full bg-white border p-2 rounded-lg text-xs font-bold" placeholder="عنوان الدرس">
-                    <textarea class="m-body w-full bg-white border p-2 rounded-lg text-xs" placeholder="شرح الدرس أو رابط الفيديو"></textarea>
+                    <input class="m-t w-full bg-white border p-2 rounded-lg text-xs" placeholder="عنوان الدرس">
+                    <textarea class="m-c w-full bg-white border p-2 rounded-lg text-[11px]" placeholder="محتوى الدرس"></textarea>
                     <button onclick="this.parentElement.remove()" class="absolute -top-2 -left-2 bg-red-500 text-white w-5 h-5 rounded-full text-[10px]">✕</button>
                 `;
                 document.getElementById('modulesContainer').appendChild(div);
             },
 
-            openModal(id) {
-                document.getElementById(id).classList.add('active');
-                if(id === 'courseModal') this.renderTagSelection('courseHashtags');
-                if(id === 'articleModal') this.renderTagSelection('articleHashtags');
+            renderTagSelection(cid) {
+                document.getElementById(cid).innerHTML = this.tags.map(t => `
+                    <button onclick="this.classList.toggle('selected'); this.classList.toggle('bg-sky-500'); this.classList.toggle('text-white')" 
+                    class="border px-3 py-1 rounded-full text-[10px] text-gray-400" data-tag="${t}">#${t}</button>
+                `).join('');
             },
 
-            closeModal(id) { document.getElementById(id).classList.remove('active'); },
+            getSelectedTags(cid) {
+                return Array.from(document.getElementById(cid).querySelectorAll('.selected')).map(b => b.dataset.tag);
+            },
 
             switchTab(tab) {
                 this.currentTab = tab;
@@ -302,28 +254,27 @@
                 this.renderContent();
             },
 
-            renderTagSelection(containerId) {
-                const cont = document.getElementById(containerId);
-                cont.innerHTML = this.tags.map(t => `
-                    <button onclick="this.classList.toggle('selected'); this.classList.toggle('bg-sky-500'); this.classList.toggle('text-white')" 
-                    class="tag-select border px-3 py-1 rounded-full text-[10px] font-bold text-gray-500" data-tag="${t}">#${t}</button>
-                `).join('');
-            },
-
-            getSelectedTags(containerId) {
-                return Array.from(document.getElementById(containerId).querySelectorAll('.selected')).map(btn => btn.dataset.tag);
-            },
-
             toggleSellerMode() {
                 const panel = document.getElementById('sellerPanel');
                 panel.classList.toggle('hidden');
                 document.getElementById('toggleSellerBtn').classList.toggle('bg-sky-500');
                 document.getElementById('toggleSellerBtn').classList.toggle('text-white');
-            }
+            },
+
+            openModal(id) { 
+                document.getElementById(id).classList.add('active'); 
+                if(id==='courseModal') {
+                    this.renderTagSelection('courseHashtags');
+                    if(document.getElementById('modulesContainer').innerHTML==='') this.addModuleRow();
+                }
+            },
+            closeModal(id) { document.getElementById(id).classList.remove('active'); }
         };
 
-        // تشغيل التطبيق
-        academy.init();
+        // 3. Start Application
+        window.addEventListener('load', () => {
+            academy.init();
+        });
     </script>
 </body>
 </html>
