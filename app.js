@@ -30,9 +30,16 @@ window.engine = {
     _allPosts: [],
     _visibleCount: 10,
     _currentSnapUnsubscribe: null,
+    _currentPostType: 'post',
+    _activeBites: [],
+    _storyIndex: 0,
+    _observer: null,
 
     async init() {
         try { await setPersistence(auth, browserLocalPersistence); } catch (e) {}
+        setInterval(() => this.deleteExpiredBites(), 600000);
+        this.deleteExpiredBites();
+
         onAuthStateChanged(auth, (user) => {
             const splash = document.getElementById('splash');
             const nav = document.getElementById('main-nav');
@@ -88,7 +95,9 @@ window.engine = {
                 setTimeout(() => {
                     this.listenToPosts();
                     this.activateCharCounter();
+                    this.updateTypeButtons();
                     this.updateCreatorAvatar();
+                    this.watchStoriesContainer();
                 }, 50);
             } else if (pageName === 'profile') {
                 setTimeout(() => {
@@ -105,6 +114,29 @@ window.engine = {
         if (!img || !auth.currentUser) return;
         const profile = await this.getOrCreateUserProfile();
         img.src = (profile.photoURL || auth.currentUser.photoURL || '') + '?sz=50';
+    },
+
+    async deleteExpiredBites() {
+        try {
+            const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
+            const q = query(collection(db, "posts"), where("type", "==", "bite"), where("createdAt", "<=", cutoff));
+            const snap = await getDocs(q);
+            snap.forEach(async (docSnap) => { await deleteDoc(doc(db, "posts", docSnap.id)); });
+        } catch (e) {}
+    },
+
+    setPostType(type) { this._currentPostType = type; this.updateTypeButtons(); },
+
+    updateTypeButtons() {
+        const postBtn = document.getElementById('typePostBtn');
+        const biteBtn = document.getElementById('typeBiteBtn');
+        if (!postBtn || !biteBtn) return;
+        postBtn.className = this._currentPostType === 'post'
+            ? 'flex-1 py-2 rounded-lg font-bold text-sm bg-sky-500 text-white shadow'
+            : 'flex-1 py-2 rounded-lg font-bold text-sm bg-gray-200 text-gray-600 shadow';
+        biteBtn.className = this._currentPostType === 'bite'
+            ? 'flex-1 py-2 rounded-lg font-bold text-sm bg-sky-500 text-white shadow'
+            : 'flex-1 py-2 rounded-lg font-bold text-sm bg-gray-200 text-gray-600 shadow';
     },
 
     activateCharCounter() {
@@ -144,9 +176,106 @@ window.engine = {
             supportCount: 0,
             opposeCount: 0,
             voters: [],
-            createdAt: serverTimestamp()
+            createdAt: serverTimestamp(),
+            type: this._currentPostType
         });
         input.value = '';
+    },
+
+    getActiveBites() {
+        const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+        return this._allPosts.filter(p => {
+            if (p.data.type !== 'bite') return false;
+            const t = p.data.createdAt;
+            if (!t) return true;
+            const time = t.toDate ? t.toDate().getTime() : t.seconds ? t.seconds * 1000 : 0;
+            return time > cutoff;
+        });
+    },
+
+    renderStories() {
+        const row = document.getElementById('storiesRow');
+        if (!row) return;
+        this._activeBites = this.getActiveBites();
+        row.innerHTML = '';
+        if (this._activeBites.length === 0) return;
+        row.innerHTML = this._activeBites.map((bite, index) => `
+            <div class="flex flex-col items-center gap-1 flex-shrink-0 story-item" data-story-index="${index}" style="cursor:pointer; touch-action: manipulation;">
+                <div class="w-16 h-16 rounded-full bg-gradient-to-tr from-sky-400 to-blue-500 p-0.5 shadow-md">
+                    <img src="${bite.data.authorPhoto}" class="w-full h-full rounded-full object-cover border-2 border-white" loading="lazy">
+                </div>
+                <span class="text-[10px] font-bold text-gray-700 text-center truncate w-16">${bite.data.authorName}</span>
+            </div>
+        `).join('');
+    },
+
+    watchStoriesContainer() {
+        const row = document.getElementById('storiesRow');
+        if (!row || this._observer) return;
+        this._observer = new MutationObserver(() => {
+            document.querySelectorAll('.story-item').forEach(story => {
+                if (story.dataset.bound === 'true') return;
+                story.dataset.bound = 'true';
+                const index = parseInt(story.getAttribute('data-story-index'));
+                if (isNaN(index)) return;
+                const handler = (e) => {
+                    e.preventDefault();
+                    engine.openStoryPlayer(index);
+                };
+                story.addEventListener('pointerdown', handler);
+                story.addEventListener('click', handler);
+            });
+        });
+        this._observer.observe(row, { childList: true, subtree: true });
+    },
+
+    closeStory() {
+        const player = document.getElementById('storyPlayer');
+        if (player) player.classList.remove('active');
+    },
+
+    openStoryPlayer(index) {
+        this._activeBites = this.getActiveBites();
+        if (this._activeBites.length === 0 || index < 0 || index >= this._activeBites.length) return;
+        this._storyIndex = index;
+        const player = document.getElementById('storyPlayer');
+        if (player) {
+            player.classList.add('active');
+            this.showCurrentStory();
+        }
+    },
+
+    showCurrentStory() {
+        const player = document.getElementById('storyPlayer');
+        if (!player || !player.classList.contains('active')) return;
+        if (this._storyIndex < 0 || this._storyIndex >= this._activeBites.length) {
+            this.closeStory();
+            return;
+        }
+        const bite = this._activeBites[this._storyIndex];
+        const content = document.getElementById('storyContent');
+        if (content) {
+            content.innerHTML = `
+                <img src="${bite.data.authorPhoto}" class="w-20 h-20 rounded-full border-2 border-white/50 mb-4" loading="lazy">
+                <h3 class="font-bold text-xl">${bite.data.authorName}</h3>
+                <p class="text-sm mt-2 text-center max-w-xs">${bite.data.content}</p>`;
+        }
+    },
+
+    nextStory() {
+        if (this._storyIndex < this._activeBites.length - 1) {
+            this._storyIndex++;
+            this.showCurrentStory();
+        } else {
+            this.closeStory();
+        }
+    },
+
+    prevStory() {
+        if (this._storyIndex > 0) {
+            this._storyIndex--;
+            this.showCurrentStory();
+        }
     },
 
     listenToPosts() {
@@ -155,13 +284,15 @@ window.engine = {
             this._allPosts = snapshot.docs.map(doc => ({ id: doc.id, data: doc.data() }));
             if (this._visibleCount > this._allPosts.length) this._visibleCount = this._allPosts.length;
             this.renderVisiblePosts();
+            this.renderStories();
         });
     },
 
     renderVisiblePosts() {
         const feed = document.getElementById('feedList');
         if (!feed) return;
-        const postsToShow = this._allPosts.slice(0, this._visibleCount);
+        const normalPosts = this._allPosts.filter(p => p.data.type !== 'bite');
+        const postsToShow = normalPosts.slice(0, this._visibleCount);
         feed.innerHTML = postsToShow.map(({ id, data: p }) => {
             const postId = id;
             let dateStr = '';
@@ -193,14 +324,14 @@ window.engine = {
 
         const oldBtn = document.getElementById('loadMorePostsBtn');
         if (oldBtn) oldBtn.remove();
-        if (this._allPosts.length > this._visibleCount) {
+        if (normalPosts.length > this._visibleCount) {
             const loadMoreBtn = document.createElement('div');
             loadMoreBtn.id = 'loadMorePostsBtn';
             loadMoreBtn.className = 'text-center mt-4 mb-8';
-            const remaining = this._allPosts.length - this._visibleCount;
+            const remaining = normalPosts.length - this._visibleCount;
             loadMoreBtn.innerHTML = `<button class="bg-sky-500 text-white px-6 py-2 rounded-full font-bold text-sm shadow hover:bg-sky-600 active:scale-95 transition">تحميل المزيد (${remaining} منشور)</button>`;
             loadMoreBtn.onclick = () => {
-                this._visibleCount = Math.min(this._visibleCount + 10, this._allPosts.length);
+                this._visibleCount = Math.min(this._visibleCount + 10, normalPosts.length);
                 this.renderVisiblePosts();
             };
             feed.parentNode.appendChild(loadMoreBtn);
