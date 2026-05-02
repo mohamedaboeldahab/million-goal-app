@@ -5,276 +5,171 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>أكاديمية Shark UP</title>
     
-    <!-- Scripts: Firebase must load FIRST -->
+    <!-- 1. مكتبات Firebase الأساسية (نسخة Compat لضمان التوافق) -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     
+    <!-- 2. مكتبات التنسيق والأيقونات -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap" rel="stylesheet">
     
     <style>
-        body { font-family: 'Tajawal', sans-serif; background: #f8fafc; margin: 0; padding: 0; }
-        .tab-btn.active { background: #0ea5e9; color: white; border-color: #0ea5e9; }
-        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 1000; align-items: center; justify-content: center; padding: 1rem; backdrop-filter: blur(5px); }
+        body { 
+            font-family: 'Tajawal', sans-serif; 
+            background: #f8fafc; 
+            margin: 0; 
+            padding: 0; 
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        /* تأثيرات الأزرار والتبويب */
+        .tab-btn { transition: all 0.3s ease; border: 2px solid transparent; }
+        .tab-btn.active { 
+            background: #0ea5e9; 
+            color: white; 
+            border-color: #0ea5e9;
+            box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
+        }
+
+        /* تنسيق المودال (النافذة المنبثقة) */
+        .modal { 
+            display: none; 
+            position: fixed; 
+            inset: 0; 
+            background: rgba(15, 23, 42, 0.8); 
+            z-index: 1000; 
+            align-items: center; 
+            justify-content: center; 
+            padding: 1rem; 
+            backdrop-filter: blur(8px);
+            transition: all 0.3s ease;
+        }
         .modal.active { display: flex; }
+
+        /* إخفاء شريط التمرير */
         .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* حركات التحميل */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in { animation: fadeIn 0.4s ease forwards; }
     </style>
 </head>
 <body class="pb-24">
 
+    <!-- واجهة الأكاديمية الرئيسية -->
     <div id="academy-root" class="max-w-2xl mx-auto px-4 pt-6 space-y-6">
-        <!-- Header Card -->
-        <div class="bg-gradient-to-br from-sky-600 to-blue-800 rounded-3xl p-6 text-white shadow-xl">
-            <h2 class="text-2xl font-black mb-1">📚 أكاديمية Shark UP</h2>
-            <p class="opacity-90 text-[11px]">تعلم وشارك المعرفة في البيزنس والاستثمار</p>
-            <div class="mt-4 flex gap-3">
-                <span class="bg-white/20 px-3 py-1 rounded-full text-[10px] font-bold" id="coursesCount">0 كورس</span>
-                <span class="bg-white/20 px-3 py-1 rounded-full text-[10px] font-bold" id="articlesCount">0 مقال</span>
+        
+        <!-- كارت الترحيب والإحصائيات -->
+        <div class="bg-gradient-to-br from-sky-600 to-blue-800 rounded-[2rem] p-6 text-white shadow-2xl relative overflow-hidden">
+            <div class="relative z-10">
+                <h2 class="text-2xl font-black mb-1">📚 أكاديمية Shark UP</h2>
+                <p class="opacity-80 text-[11px] font-medium">طريقك لاحتراف البيزنس والاستثمار الذكي</p>
+                
+                <div class="mt-6 flex gap-3">
+                    <div class="bg-white/15 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/10">
+                        <span class="block text-[10px] opacity-70">الكورسات</span>
+                        <span class="text-sm font-bold" id="coursesCount">0</span>
+                    </div>
+                    <div class="bg-white/15 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/10">
+                        <span class="block text-[10px] opacity-70">المقالات</span>
+                        <span class="text-sm font-bold" id="articlesCount">0</span>
+                    </div>
+                </div>
             </div>
+            <!-- شكل ديكوري خلفي -->
+            <div class="absolute -right-10 -bottom-10 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
         </div>
 
-        <!-- Tab Switcher -->
-        <div class="flex gap-2 bg-white p-1 rounded-2xl shadow-sm border">
-            <button id="tabCourses" class="tab-btn flex-1 py-3 rounded-xl font-bold text-sm active transition-all" onclick="academy.switchTab('courses')">الكورسات</button>
-            <button id="tabArticles" class="tab-btn flex-1 py-3 rounded-xl font-bold text-sm transition-all" onclick="academy.switchTab('articles')">المقالات</button>
+        <!-- أزرار التنقل (تبديل الأقسام) -->
+        <div class="flex gap-2 bg-white p-1.5 rounded-2xl shadow-sm border border-gray-100">
+            <button id="tabCourses" class="tab-btn flex-1 py-3 rounded-xl font-bold text-sm active" onclick="academy.switchTab('courses')">
+                <i class="fa-solid fa-graduation-cap ml-1"></i> الكورسات
+            </button>
+            <button id="tabArticles" class="tab-btn flex-1 py-3 rounded-xl font-bold text-sm text-gray-500" onclick="academy.switchTab('articles')">
+                <i class="fa-solid fa-newspaper ml-1"></i> المقالات
+            </button>
         </div>
 
-        <!-- Filter Tags -->
-        <div class="flex gap-2 overflow-x-auto pb-2 no-scrollbar" id="filterHashtags"></div>
+        <!-- فلاتر الهاشتاجات -->
+        <div class="flex gap-2 overflow-x-auto pb-2 no-scrollbar" id="filterHashtags">
+            <!-- سيتم توليد الفلاتر بواسطة الجافا سكريبت -->
+        </div>
 
-        <!-- Content Area -->
-        <div id="contentGrid" class="grid gap-4">
-            <div class="text-center py-20 text-gray-400 text-sm">جاري جلب المحتوى...</div>
+        <!-- منطقة عرض المحتوى (الشبكة) -->
+        <div id="contentGrid" class="grid gap-4 min-h-[300px]">
+            <div class="flex flex-col items-center justify-center py-20 text-gray-400">
+                <i class="fa-solid fa-circle-notch animate-spin text-2xl mb-3"></i>
+                <p class="text-sm">جاري تحديث البيانات...</p>
+            </div>
         </div>
     </div>
 
-    <!-- Seller Mode Floating Button -->
-    <button id="toggleSellerBtn" onclick="academy.toggleSellerMode()" class="fixed bottom-6 left-6 w-14 h-14 bg-white rounded-2xl flex items-center justify-center text-gray-500 shadow-2xl border border-gray-100 z-50">
-        <i class="fa-solid fa-store"></i>
+    <!-- لوحة التحكم للبائع (تظهر عند الضغط على الزر العائم) -->
+    <div id="sellerPanel" class="hidden fixed bottom-24 left-6 right-6 z-50 grid grid-cols-2 gap-3 animate-fade-in">
+        <button onclick="academy.openModal('courseModal')" class="bg-sky-500 text-white p-5 rounded-[2rem] font-bold shadow-2xl flex flex-col items-center gap-2 border-4 border-white">
+            <i class="fa-solid fa-circle-plus text-xl"></i>
+            <span class="text-[10px]">كورس جديد</span>
+        </button>
+        <button onclick="academy.openModal('articleModal')" class="bg-emerald-500 text-white p-5 rounded-[2rem] font-bold shadow-2xl flex flex-col items-center gap-2 border-4 border-white">
+            <i class="fa-solid fa-pen-to-square text-xl"></i>
+            <span class="text-[10px]">مقال جديد</span>
+        </button>
+    </div>
+
+    <!-- الزر العائم (Seller Mode) -->
+    <button id="toggleSellerBtn" onclick="academy.toggleSellerMode()" class="fixed bottom-6 left-6 w-16 h-16 bg-white rounded-3xl flex items-center justify-center text-gray-400 shadow-[0_10px_30px_rgba(0,0,0,0.1)] border border-gray-50 z-50 transition-all active:scale-90">
+        <i class="fa-solid fa-plus text-2xl"></i>
     </button>
 
-    <!-- Seller Panel (Hidden by default) -->
-    <div id="sellerPanel" class="hidden fixed bottom-24 left-6 right-6 z-50 grid grid-cols-2 gap-3">
-        <button onclick="academy.openModal('courseModal')" class="bg-sky-500 text-white p-4 rounded-2xl font-bold shadow-lg text-xs flex flex-col items-center gap-2">
-            <i class="fa-solid fa-video text-lg"></i> إضافة كورس
-        </button>
-        <button onclick="academy.openModal('articleModal')" class="bg-emerald-500 text-white p-4 rounded-2xl font-bold shadow-lg text-xs flex flex-col items-center gap-2">
-            <i class="fa-solid fa-pen-nib text-lg"></i> إضافة مقال
-        </button>
-    </div>
-
-    <!-- Modals -->
-    <!-- Add Course Modal -->
+    <!-- مودال إضافة كورس جديد -->
     <div id="courseModal" class="modal">
-        <div class="bg-white w-full max-w-md rounded-3xl p-6 space-y-4 max-h-[85vh] overflow-y-auto">
-            <h3 class="text-xl font-black">🎥 إنشاء كورس جديد</h3>
-            <input id="courseTitle" class="w-full bg-gray-50 rounded-xl p-3 border outline-none text-sm" placeholder="عنوان الكورس">
-            <textarea id="courseDesc" rows="2" class="w-full bg-gray-50 rounded-xl p-3 border outline-none text-sm" placeholder="وصف الكورس"></textarea>
-            <div id="courseHashtags" class="flex flex-wrap gap-2"></div>
-            <div class="border-t pt-4 space-y-3">
-                <h4 class="font-bold text-xs">دروس الكورس:</h4>
-                <div id="modulesContainer" class="space-y-3"></div>
-                <button onclick="academy.addModuleRow()" class="text-sky-500 text-[11px] font-bold">+ إضافة درس جديد</button>
+        <div class="bg-white w-full max-w-md rounded-[2.5rem] p-8 space-y-4 max-h-[90vh] overflow-y-auto shadow-2xl border border-gray-100">
+            <div class="flex justify-between items-center mb-2">
+                <h3 class="text-xl font-black text-gray-800">🚀 كورس جديد</h3>
+                <button onclick="academy.closeModal('courseModal')" class="text-gray-400 hover:text-red-500"><i class="fa-solid fa-xmark text-xl"></i></button>
             </div>
-            <div class="flex gap-2 pt-4">
-                <button onclick="academy.closeModal('courseModal')" class="flex-1 py-3 bg-gray-100 rounded-xl font-bold text-sm">إلغاء</button>
-                <button onclick="academy.publishCourse()" class="flex-1 py-3 bg-sky-600 text-white rounded-xl font-bold text-sm">نشر الآن</button>
+            
+            <input id="courseTitle" class="w-full bg-gray-50 rounded-2xl p-4 border border-gray-100 outline-none text-sm focus:border-sky-500 transition-all" placeholder="عنوان الكورس التعليمي">
+            <textarea id="courseDesc" rows="2" class="w-full bg-gray-50 rounded-2xl p-4 border border-gray-100 outline-none text-sm focus:border-sky-500 transition-all" placeholder="وصف مختصر للمحتوى"></textarea>
+            
+            <div class="space-y-2">
+                <label class="text-[10px] font-bold text-gray-400 mr-2 uppercase">تصنيف الكورس (هاشتاج):</label>
+                <div id="courseHashtags" class="flex flex-wrap gap-2"></div>
+            </div>
+
+            <div class="border-t border-gray-100 pt-6 space-y-4">
+                <div class="flex justify-between items-center">
+                    <h4 class="font-bold text-xs text-sky-600 italic">محتوى الدروس:</h4>
+                    <button onclick="academy.addModuleRow()" class="bg-sky-50 text-sky-600 px-3 py-1 rounded-lg text-[10px] font-bold">+ إضافة درس</button>
+                </div>
+                <div id="modulesContainer" class="space-y-4">
+                    <!-- دروس الكورس تضاف هنا -->
+                </div>
+            </div>
+
+            <div class="flex gap-3 pt-6">
+                <button onclick="academy.publishCourse()" class="flex-[2] py-4 bg-sky-600 text-white rounded-2xl font-bold text-sm shadow-lg shadow-sky-200">نشر الكورس الآن</button>
             </div>
         </div>
     </div>
 
-    <!-- Viewer Modal (For reading articles/courses) -->
+    <!-- مودال عرض المحتوى (القارئ) -->
     <div id="viewerModal" class="modal">
-        <div class="bg-white w-full max-w-md rounded-3xl p-6 max-h-[80vh] overflow-y-auto" id="viewerContent"></div>
+        <div class="bg-white w-full max-w-md rounded-[2.5rem] p-8 max-h-[85vh] overflow-y-auto shadow-2xl relative">
+            <button onclick="academy.closeModal('viewerModal')" class="absolute top-6 left-6 text-gray-300 hover:text-red-500"><i class="fa-solid fa-circle-xmark text-2xl"></i></button>
+            <div id="viewerContent" class="pt-4">
+                <!-- المحتوى يظهر هنا ديناميكياً -->
+            </div>
+        </div>
     </div>
 
-    <!-- Main Logic -->
-    <script>
-        // 1. Initialize Firebase
-        const firebaseConfig = {
-            apiKey: "AIzaSyB_2ms4K8EPbag7uab9gbDy8eePY6xwpxc",
-            authDomain: "millionaireapp-be931.firebaseapp.com",
-            projectId: "millionaireapp-be931",
-            storageBucket: "millionaireapp-be931.firebasestorage.app",
-            messagingSenderId: "325577904362",
-            appId: "1:325577904362:web:8d85d4547bf22b1d8f4793"
-        };
-
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-        }
-        const db = firebase.firestore();
-        const auth = firebase.auth();
-
-        // 2. Academy Object
-        var academy = {
-            currentTab: 'courses',
-            filter: 'all',
-            courses: [],
-            articles: [],
-            tags: ['بيزنس', 'استثمار', 'تسويق', 'برمجة', 'عملات_رقمية'],
-
-            init() {
-                this.renderTagFilters();
-                this.loadData();
-                console.log("Academy Initialized");
-            },
-
-            async loadData() {
-                try {
-                    const cSnap = await db.collection("academy_courses").orderBy("createdAt", "desc").get();
-                    this.courses = cSnap.docs.map(d => ({id: d.id, ...d.data()}));
-                    
-                    const aSnap = await db.collection("academy_articles").orderBy("createdAt", "desc").get();
-                    this.articles = aSnap.docs.map(d => ({id: d.id, ...d.data()}));
-                    
-                    this.updateCounters();
-                    this.renderContent();
-                } catch (e) {
-                    console.error("Firebase Load Error:", e);
-                }
-            },
-
-            updateCounters() {
-                document.getElementById('coursesCount').innerText = `${this.courses.length} كورس`;
-                document.getElementById('articlesCount').innerText = `${this.articles.length} مقال`;
-            },
-
-            renderTagFilters() {
-                const container = document.getElementById('filterHashtags');
-                container.innerHTML = `<button onclick="academy.setFilter('all')" class="bg-sky-500 text-white px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap">الكل</button>` + 
-                this.tags.map(t => `<button onclick="academy.setFilter('${t}')" class="bg-white text-gray-500 border px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap">#${t}</button>`).join('');
-            },
-
-            setFilter(tag) {
-                this.filter = tag;
-                this.renderContent();
-            },
-
-            renderContent() {
-                const grid = document.getElementById('contentGrid');
-                let items = this.currentTab === 'courses' ? this.courses : this.articles;
-                
-                if(this.filter !== 'all') items = items.filter(i => (i.hashtags||[]).includes(this.filter));
-
-                if(items.length === 0) {
-                    grid.innerHTML = `<div class="text-center py-10 text-gray-400">لا يوجد محتوى في هذا القسم</div>`;
-                    return;
-                }
-
-                grid.innerHTML = items.map(item => this.currentTab === 'courses' ? this.courseCard(item) : this.articleCard(item)).join('');
-            },
-
-            courseCard(c) {
-                return `
-                <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 space-y-2">
-                    <div class="flex justify-between items-center">
-                        <span class="text-[9px] bg-sky-100 text-sky-600 px-2 py-0.5 rounded font-bold">كورس</span>
-                        <span class="text-green-500 text-[10px] font-bold">مجاني</span>
-                    </div>
-                    <h3 class="font-bold text-gray-800 text-sm">${c.title}</h3>
-                    <p class="text-[11px] text-gray-500 line-clamp-2">${c.desc || ''}</p>
-                    <button onclick="academy.viewCourse('${c.id}')" class="w-full bg-sky-500 text-white py-2 rounded-xl text-xs font-bold mt-2">عرض التفاصيل</button>
-                </div>`;
-            },
-
-            articleCard(a) {
-                return `
-                <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-                    <h3 class="font-bold text-gray-800 text-sm mb-1">${a.title}</h3>
-                    <p class="text-[11px] text-gray-500 line-clamp-2">${a.content}</p>
-                    <button onclick="academy.viewArticle('${a.id}')" class="text-sky-600 text-xs font-bold mt-2 flex items-center gap-1">اقرأ المقال <i class="fa-solid fa-arrow-left text-[10px]"></i></button>
-                </div>`;
-            },
-
-            viewCourse(id) {
-                const c = this.courses.find(x => x.id === id);
-                document.getElementById('viewerContent').innerHTML = `
-                    <h2 class="text-lg font-black mb-2">${c.title}</h2>
-                    <p class="text-xs text-gray-500 mb-6">${c.desc}</p>
-                    <div class="space-y-4">
-                        ${(c.modules||[]).map((m, i) => `
-                            <div class="bg-gray-50 p-4 rounded-xl border-r-4 border-sky-500">
-                                <h4 class="font-bold text-xs">درس ${i+1}: ${m.title}</h4>
-                                <p class="text-[11px] text-gray-600 mt-1">${m.content}</p>
-                            </div>
-                        `).join('')}
-                    </div>
-                    <button onclick="academy.closeModal('viewerModal')" class="w-full mt-6 py-3 bg-gray-100 rounded-xl font-bold text-sm">إغلاق</button>
-                `;
-                this.openModal('viewerModal');
-            },
-
-            async publishCourse() {
-                if(!auth.currentUser) return alert("يرجى تسجيل الدخول أولاً");
-                const title = document.getElementById('courseTitle').value;
-                const modules = [];
-                document.querySelectorAll('.module-row').forEach(row => {
-                    modules.push({ title: row.querySelector('.m-t').value, content: row.querySelector('.m-c').value });
-                });
-
-                await db.collection("academy_courses").add({
-                    title, desc: document.getElementById('courseDesc').value,
-                    modules, authorId: auth.currentUser.uid,
-                    hashtags: this.getSelectedTags('courseHashtags'),
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
-                this.closeModal('courseModal');
-                this.loadData();
-            },
-
-            addModuleRow() {
-                const div = document.createElement('div');
-                div.className = 'module-row space-y-2 bg-gray-50 p-3 rounded-xl relative border';
-                div.innerHTML = `
-                    <input class="m-t w-full bg-white border p-2 rounded-lg text-xs" placeholder="عنوان الدرس">
-                    <textarea class="m-c w-full bg-white border p-2 rounded-lg text-[11px]" placeholder="محتوى الدرس"></textarea>
-                    <button onclick="this.parentElement.remove()" class="absolute -top-2 -left-2 bg-red-500 text-white w-5 h-5 rounded-full text-[10px]">✕</button>
-                `;
-                document.getElementById('modulesContainer').appendChild(div);
-            },
-
-            renderTagSelection(cid) {
-                document.getElementById(cid).innerHTML = this.tags.map(t => `
-                    <button onclick="this.classList.toggle('selected'); this.classList.toggle('bg-sky-500'); this.classList.toggle('text-white')" 
-                    class="border px-3 py-1 rounded-full text-[10px] text-gray-400" data-tag="${t}">#${t}</button>
-                `).join('');
-            },
-
-            getSelectedTags(cid) {
-                return Array.from(document.getElementById(cid).querySelectorAll('.selected')).map(b => b.dataset.tag);
-            },
-
-            switchTab(tab) {
-                this.currentTab = tab;
-                document.getElementById('tabCourses').classList.toggle('active', tab==='courses');
-                document.getElementById('tabArticles').classList.toggle('active', tab==='articles');
-                this.renderContent();
-            },
-
-            toggleSellerMode() {
-                const panel = document.getElementById('sellerPanel');
-                panel.classList.toggle('hidden');
-                document.getElementById('toggleSellerBtn').classList.toggle('bg-sky-500');
-                document.getElementById('toggleSellerBtn').classList.toggle('text-white');
-            },
-
-            openModal(id) { 
-                document.getElementById(id).classList.add('active'); 
-                if(id==='courseModal') {
-                    this.renderTagSelection('courseHashtags');
-                    if(document.getElementById('modulesContainer').innerHTML==='') this.addModuleRow();
-                }
-            },
-            closeModal(id) { document.getElementById(id).classList.remove('active'); }
-        };
-
-        // 3. Start Application
-        window.addEventListener('load', () => {
-            academy.init();
-        });
-    </script>
+    <!-- 3. استدعاء ملف المنطق البرمجي (يجب أن يكون الاسم مطابقاً لملف الـ JS) -->
+    <script src="academy.js"></script>
 </body>
 </html>
