@@ -1,56 +1,69 @@
-// ========== ملف الذكاء الاصطناعي المستقل ==========
-// يتم تحميله فقط عند فتح صفحة ai-chat
-
+// ========== محرك الذكاء الاصطناعي المستقل ==========
 window.AIEngine = {
-    async saveApiKey() {
+    // حفظ المفتاح
+    saveApiKey() {
         const key = document.getElementById('apiKeyInput')?.value.trim();
         if (key) {
             localStorage.setItem('gemini_api_key', key);
             document.getElementById('apiKeySetup')?.classList.add('hidden');
-            window.engine?.showToast?.('✅ تم حفظ المفتاح بنجاح');
+            this.showToast('✅ تم حفظ المفتاح بنجاح');
         }
     },
 
+    // إرسال سؤال
     async askAI() {
         const input = document.getElementById('aiInput');
         const question = input?.value.trim();
         if (!question) return;
 
         // عرض سؤال المستخدم
-        const msgId = this.addAIMessage(question, 'user');
+        this.addAIMessage(question, 'user');
         input.value = '';
 
-        // كتابة مؤقتة
-        const typingId = this.addAIMessage('...', 'ai');
+        // رسالة "جارٍ الكتابة..."
+        const typingDiv = this.addAIMessage('...', 'ai');
 
         const apiKey = localStorage.getItem('gemini_api_key');
         if (!apiKey) {
             document.getElementById('apiKeySetup')?.classList.remove('hidden');
-            this.updateAIMessage(typingId, '⚠️ يرجى إدخال Gemini API Key للمتابعة.');
+            this.updateAIMessage(typingDiv, '⚠️ يرجى إدخال Gemini API Key للمتابعة.');
             return;
         }
 
         try {
-            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`, {
+            // استخدام أحدث نموذج Gemini 1.5 Flash (سريع ومجاني)
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     contents: [{
                         parts: [{
-                            text: `أنت مستشار مالي ذكي اسمه "Shark AI". أجب بالعربية فقط وبطريقة واضحة ومباشرة. سؤال المستخدم: ${question}`
+                            text: `أنت مستشار مالي ذكي اسمه Shark AI. أجب بالعربية فقط بإجابات واضحة ومفيدة. سؤال المستخدم: ${question}`
                         }]
                     }]
                 })
             });
 
             const data = await response.json();
+
+            // التحقق من وجود خطأ في المفتاح أو الحصة
+            if (data.error) {
+                throw new Error(data.error.message || 'خطأ غير معروف');
+            }
+
             const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || 'عذراً، لم أستطع فهم طلبك. حاول مرة أخرى.';
-            this.updateAIMessage(typingId, reply);
+            this.updateAIMessage(typingDiv, reply);
+
         } catch (error) {
-            this.updateAIMessage(typingId, '❌ حدث خطأ في الاتصال. تأكد من صحة المفتاح أو اتصالك بالإنترنت.');
+            console.error('❌ AI Error:', error);
+            let errorMsg = '❌ حدث خطأ في الاتصال.';
+            if (error.message.includes('API key')) errorMsg = '🔑 مفتاح API غير صالح. تأكد من صحته.';
+            else if (error.message.includes('quota')) errorMsg = '⏳ لقد تجاوزت الحد المسموح للاستخدام المجاني. حاول لاحقاً.';
+            this.updateAIMessage(typingDiv, errorMsg);
         }
     },
 
+    // إضافة رسالة
     addAIMessage(text, sender) {
         const box = document.getElementById('chatBox');
         if (!box) return null;
@@ -65,21 +78,33 @@ window.AIEngine = {
         return div;
     },
 
+    // تحديث رسالة (مؤشر الكتابة)
     updateAIMessage(element, newText) {
         if (element) {
             element.textContent = newText;
             const box = document.getElementById('chatBox');
             if (box) box.scrollTop = box.scrollHeight;
         }
+    },
+
+    // توست صغير (نسخة محلية)
+    showToast(msg) {
+        const t = document.createElement('div');
+        t.className = 'fixed bottom-20 left-4 bg-gray-800 text-white px-4 py-2 rounded-lg text-sm z-50 shadow';
+        t.textContent = msg;
+        document.body.appendChild(t);
+        setTimeout(() => t.remove(), 2000);
     }
 };
 
-// ربط الدوال بنفس أسماء engine لتتوافق مع الأزرار
+// ربط الدوال المطلوبة
 window.engine = window.engine || {};
 window.engine.saveApiKey = () => window.AIEngine.saveApiKey();
 window.engine.askAI = () => window.AIEngine.askAI();
 
-// عرض خانة المفتاح إذا لم يكن محفوظاً
-if (!localStorage.getItem('gemini_api_key')) {
-    document.getElementById('apiKeySetup')?.classList.remove('hidden');
-}
+// إظهار حقل API إذا كان غير موجود
+setTimeout(() => {
+    if (!localStorage.getItem('gemini_api_key')) {
+        document.getElementById('apiKeySetup')?.classList.remove('hidden');
+    }
+}, 500);
