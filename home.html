@@ -9,10 +9,19 @@
     <div class="flex items-start gap-3">
         <img id="creatorAvatar" src="" class="w-10 h-10 rounded-full border border-sky-200 object-cover">
         <div class="flex-1">
-            <textarea id="postInput" placeholder="ما الذي تفكر فيه؟" maxlength="600" class="w-full bg-gray-50 p-3 outline-none border border-gray-200 rounded-xl text-sm resize-none focus:ring-2 focus:ring-sky-500 transition" rows="3"></textarea>
+            <textarea id="postInput" placeholder="ما الذي تفكر فيه؟" maxlength="600"
+                class="w-full bg-gray-50 p-3 outline-none border border-gray-200 rounded-xl text-sm resize-none focus:ring-2 focus:ring-sky-500 transition"
+                rows="3"></textarea>
+
+            <!-- صف اختيار خلفية البوست (يتم ملؤه عبر engine) -->
+            <div id="bgPickerContainer" class="flex gap-2 mt-2 flex-wrap"></div>
+
             <div class="flex items-center justify-between mt-3 gap-3">
                 <span id="charCount" class="text-xs text-gray-400 font-medium">0 / 600</span>
-                <button onclick="engine.addPost()" class="flex items-center gap-2 bg-gradient-to-r from-sky-500 to-blue-600 text-white font-bold py-2.5 px-5 rounded-lg shadow-md active:scale-95 transition text-sm"><i class="fa-solid fa-paper-plane"></i> نشر</button>
+                <button onclick="engine.addPost()" 
+                    class="flex items-center gap-2 bg-gradient-to-r from-sky-500 to-blue-600 text-white font-bold py-2.5 px-5 rounded-lg shadow-md active:scale-95 transition text-sm">
+                    <i class="fa-solid fa-paper-plane"></i> نشر
+                </button>
             </div>
         </div>
     </div>
