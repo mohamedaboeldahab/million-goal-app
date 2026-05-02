@@ -47,8 +47,7 @@ const bgGradients = {
     gradient6: 'linear-gradient(135deg, #a18cd1, #fbc2eb)',
     gradient7: 'linear-gradient(135deg, #fccb90, #d57eeb)',
     gradient8: 'linear-gradient(135deg, #e0c3fc, #8ec5fc)',
-    gradient9: 'linear-gradient(135deg, #f093fb, #f5576c)',
-    gradient10: 'linear-gradient(135deg, #fddb92, #d1fdff)'
+    gradient9: 'linear-gradient(135deg, #f093fb, #f5576c)'
 };
 
 window.engine = {
