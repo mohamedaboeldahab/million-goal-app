@@ -6,11 +6,6 @@
 <title>Shark AI 🦈</title>
 
 <script src="https://cdn.tailwindcss.com"></script>
-
-<!-- Gemini -->
-<script src="https://unpkg.com/@google/generative-ai/dist/index.umd.js"></script>
-
-<!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 </head>
@@ -21,7 +16,7 @@
 
     <div class="bg-slate-900 p-5 text-white flex justify-between">
         <span>Shark AI 🦈</span>
-        <span class="text-xs text-sky-400">ALL-IN-ONE</span>
+        <span class="text-xs text-sky-400">WORKING ✅</span>
     </div>
 
     <!-- الشات -->
@@ -50,13 +45,40 @@
 
 <script>
 
-const API_KEY = "AIzaSyAUamuXa-gndq8CZw5DAXdqcxUuOwAsZz0";
+// ⚠️ حط مفتاحك هنا (للتجربة فقط)
+const API_KEY = "PUT_YOUR_API_KEY_HERE";
 
-// تشغيل Gemini
-const genAI = new window.GoogleGenerativeAI(API_KEY);
-const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+//////////////////////////////////////////////////
+// 🔥 Gemini بدون SDK
+//////////////////////////////////////////////////
 
-// شات
+async function askAI(text) {
+    const res = await fetch(
+        "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=" + API_KEY,
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                contents: [
+                    {
+                        parts: [{ text: text }]
+                    }
+                ]
+            })
+        }
+    );
+
+    const data = await res.json();
+
+    return data?.candidates?.[0]?.content?.parts?.[0]?.text || "❌ مفيش رد";
+}
+
+//////////////////////////////////////////////////
+// 💬 الشات
+//////////////////////////////////////////////////
+
 async function send(){
     const input = document.getElementById('msg');
     const text = input.value.trim();
@@ -68,13 +90,9 @@ async function send(){
     const loading = add('جاري التفكير...','ai');
 
     try{
-        const result = await model.generateContent(text);
-        const response = await result.response;
-        const reply = response.text();
-
+        const reply = await askAI(text);
         loading.innerText = reply;
 
-        // تحديث الشارت بناءً على طول الرد
         updateChart(reply.length);
 
     }catch(e){
@@ -82,7 +100,6 @@ async function send(){
     }
 }
 
-// إضافة رسالة
 function add(t,type){
     const box = document.getElementById('chatBox');
     const div = document.createElement('div');
@@ -98,7 +115,7 @@ function add(t,type){
 }
 
 //////////////////////////////////////////////////
-// Chart.js
+// 📊 Chart.js
 //////////////////////////////////////////////////
 
 const ctx = document.getElementById('myChart');
