@@ -472,39 +472,52 @@ window.engine = {
         postsToShow.forEach(({ id }) => this.listenToComments(id));
     },
 
-    postHTML(postId, p) {
-        let dateStr = '';
-        try { dateStr = p.createdAt?.toDate().toLocaleString('ar-EG'); } catch (e) { dateStr = '---'; }
-        const img = fixPhotoUrl(p.authorPhoto);
-        const bg = p.backgroundColor ? bgGradients[p.backgroundColor] : null;
-        const textColor = bg ? 'text-white' : 'text-gray-700';
-        const textSubColor = bg ? 'text-white/70' : 'text-gray-400';
-        const cardBg = bg ? `style="background: ${bg};"` : '';
+  postHTML(postId, p) {
+    let dateStr = '';
+    try { dateStr = p.createdAt?.toDate().toLocaleString('ar-EG'); } catch (e) { dateStr = '---'; }
+    const img = fixPhotoUrl(p.authorPhoto);
+    const bg = p.backgroundColor ? bgGradients[p.backgroundColor] : null;
 
-        return `
-        <div class="bg-white rounded-2xl p-4 mb-4 shadow-sm border border-gray-100" ${cardBg}>
-            <div class="flex items-center gap-3 mb-3">
-                <img src="${img}" class="w-10 h-10 rounded-full border border-sky-200 object-cover" loading="lazy" onerror="this.src='${DEFAULT_AVATAR}'">
-                <div>
-                    <span class="font-extrabold text-${bg ? 'white' : 'gray-800'} text-sm">${p.authorName || 'مستخدم'}</span>
-                    <div class="text-xs ${textSubColor}">${dateStr}</div>
-                </div>
-            </div>
-            <p class="${textColor} text-sm leading-relaxed mb-4 whitespace-pre-wrap">${p.content}</p>
-            <div class="flex gap-2 mb-3">
-                <button onclick="engine.handleVote('${postId}', 'support')" class="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-sky-400 to-blue-500 text-white font-bold py-2 rounded-xl shadow text-sm"><span class="text-base">🦈</span> أؤيد <span class="bg-white/40 px-2 py-0.5 rounded-full text-sm font-extrabold">${p.supportCount || 0}</span></button>
-                <button onclick="engine.handleVote('${postId}', 'oppose')" class="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-amber-400 to-orange-400 text-white font-bold py-2 rounded-xl shadow text-sm"><span class="text-base">🐟</span> لا أؤيد <span class="bg-white/40 px-2 py-0.5 rounded-full text-sm font-extrabold">${p.opposeCount || 0}</span></button>
-            </div>
-            <div class="border-t border-gray-100 pt-3">
-                <div id="comments_list_${postId}" class="space-y-2 mb-2"></div>
-                <button id="load_more_btn_${postId}" style="display:none;" onclick="engine.loadMoreComments('${postId}')" class="text-sky-600 text-xs font-bold hover:underline w-full text-center py-1">عرض كل التعليقات</button>
-                <div class="flex gap-2 mt-2">
-                    <input type="text" id="comm_${postId}" placeholder="أضف تعليقاً..." class="flex-1 bg-gray-100 rounded-lg px-3 py-1.5 text-xs border border-gray-200 outline-none focus:ring-1 focus:ring-sky-400">
-                    <button onclick="engine.addComment('${postId}')" class="bg-sky-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold"><i class="fa-solid fa-paper-plane"></i></button>
-                </div>
+    // بطاقة المنشور بيضاء بالكامل
+    let html = `
+    <div class="bg-white rounded-2xl p-4 mb-4 shadow-sm border border-gray-100">
+        <div class="flex items-center gap-3 mb-3">
+            <img src="${img}" class="w-10 h-10 rounded-full border border-sky-200 object-cover" loading="lazy" onerror="this.src='${DEFAULT_AVATAR}'">
+            <div>
+                <span class="font-extrabold text-gray-800 text-sm">${p.authorName || 'مستخدم'}</span>
+                <div class="text-xs text-gray-400">${dateStr}</div>
             </div>
         </div>`;
-    },
+
+    // إذا كان هناك خلفية، نحيط النص فقط بغطاء متدرج
+    if (bg) {
+        html += `
+        <div style="background: ${bg}; border-radius: 16px; padding: 16px; margin-bottom: 16px;">
+            <p class="text-white text-sm leading-relaxed whitespace-pre-wrap" style="text-shadow: 0 1px 2px rgba(0,0,0,0.3);">${p.content}</p>
+        </div>`;
+    } else {
+        html += `
+        <p class="text-gray-700 text-sm leading-relaxed mb-4 whitespace-pre-wrap">${p.content}</p>`;
+    }
+
+    // أزرار التصويت والتعليقات تبقى على الخلفية البيضاء
+    html += `
+        <div class="flex gap-2 mb-3">
+            <button onclick="engine.handleVote('${postId}', 'support')" class="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-sky-400 to-blue-500 text-white font-bold py-2 rounded-xl shadow text-sm"><span class="text-base">🦈</span> أؤيد <span class="bg-white/20 px-2 py-0.5 rounded-full text-sm font-extrabold">${p.supportCount || 0}</span></button>
+            <button onclick="engine.handleVote('${postId}', 'oppose')" class="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-amber-400 to-orange-400 text-white font-bold py-2 rounded-xl shadow text-sm"><span class="text-base">🐟</span> لا أؤيد <span class="bg-white/20 px-2 py-0.5 rounded-full text-sm font-extrabold">${p.opposeCount || 0}</span></button>
+        </div>
+        <div class="border-t border-gray-100 pt-3">
+            <div id="comments_list_${postId}" class="space-y-2 mb-2"></div>
+            <button id="load_more_btn_${postId}" style="display:none;" onclick="engine.loadMoreComments('${postId}')" class="text-sky-600 text-xs font-bold hover:underline w-full text-center py-1">عرض كل التعليقات</button>
+            <div class="flex gap-2 mt-2">
+                <input type="text" id="comm_${postId}" placeholder="أضف تعليقاً..." class="flex-1 bg-gray-100 rounded-lg px-3 py-1.5 text-xs border border-gray-200 outline-none focus:ring-1 focus:ring-sky-400">
+                <button onclick="engine.addComment('${postId}')" class="bg-sky-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold"><i class="fa-solid fa-paper-plane"></i></button>
+            </div>
+        </div>
+    </div>`;
+
+    return html;
+},
 
     listenToComments(postId) {
         const q = query(collection(db, `posts/${postId}/comments`), orderBy("createdAt", "asc"));
