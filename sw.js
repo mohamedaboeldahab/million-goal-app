@@ -1,4 +1,4 @@
-const CACHE = 'shark-fast-v3';
+const CACHE = 'shark-fast-v4';
 const ASSETS = [
   '/', '/index.html', '/app.js', '/home.html',
   '/profile.html', '/roadmap.html', '/assets.html',
