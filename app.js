@@ -168,7 +168,7 @@ window.engine = {
         const profile = await this.getOrCreateUserProfile();
         const displayName = profile.displayName || auth.currentUser.displayName;
         const photoURL = (profile.photoURL || auth.currentUser.photoURL || '') + '?sz=50';
-        await addDoc(collection(db, "posts"), {
+        const postData = {
             content: input.value,
             authorName: displayName,
             authorPhoto: photoURL,
@@ -178,7 +178,13 @@ window.engine = {
             voters: [],
             createdAt: serverTimestamp(),
             type: this._currentPostType
-        });
+        };
+        // إذا كانت قصة، أضف عداد مشاهدات وإعجابات
+        if (this._currentPostType === 'bite') {
+            postData.views = [];
+            postData.likedBy = [];
+        }
+        await addDoc(collection(db, "posts"), postData);
         input.value = '';
     },
 
@@ -201,12 +207,22 @@ window.engine = {
         if (this._activeBites.length === 0) return;
         row.innerHTML = this._activeBites.map((bite, index) => `
             <div class="flex flex-col items-center gap-1 flex-shrink-0 story-item" data-story-index="${index}" style="cursor:pointer; touch-action: manipulation;">
-                <div class="w-16 h-16 rounded-full bg-gradient-to-tr from-sky-400 to-blue-500 p-0.5 shadow-md">
-                    <img src="${bite.data.authorPhoto}" class="w-full h-full rounded-full object-cover border-2 border-white" loading="lazy">
+                <!-- دائرة القصة بتصميم فيسبوكي -->
+                <div class="w-16 h-16 rounded-full p-0.5 ${this.isStoryViewed(bite) ? 'bg-gray-300' : 'bg-gradient-to-tr from-sky-400 to-blue-500'}">
+                    <div class="w-full h-full rounded-full bg-white p-0.5">
+                        <img src="${bite.data.authorPhoto}" class="w-full h-full rounded-full object-cover" loading="lazy">
+                    </div>
                 </div>
                 <span class="text-[10px] font-bold text-gray-700 text-center truncate w-16">${bite.data.authorName}</span>
             </div>
         `).join('');
+    },
+
+    isStoryViewed(bite) {
+        const userId = auth.currentUser?.uid;
+        if (!userId) return false;
+        const views = bite.data.views || [];
+        return views.includes(userId);
     },
 
     watchStoriesContainer() {
@@ -229,14 +245,44 @@ window.engine = {
         this._observer.observe(row, { childList: true, subtree: true });
     },
 
+    async recordView(postId) {
+        const userId = auth.currentUser?.uid;
+        if (!userId) return;
+        const postRef = doc(db, "posts", postId);
+        const snap = await getDoc(postRef);
+        const data = snap.data();
+        if (data && data.type === 'bite') {
+            const views = data.views || [];
+            if (!views.includes(userId)) {
+                await updateDoc(postRef, { views: arrayUnion(userId) });
+            }
+        }
+    },
+
+    async toggleLike(postId) {
+        const userId = auth.currentUser?.uid;
+        if (!userId) return;
+        const postRef = doc(db, "posts", postId);
+        const snap = await getDoc(postRef);
+        const data = snap.data();
+        if (data && data.type === 'bite') {
+            const likedBy = data.likedBy || [];
+            if (likedBy.includes(userId)) {
+                // إلغاء الإعجاب
+                await updateDoc(postRef, { likedBy: arrayRemove(userId) });
+            } else {
+                await updateDoc(postRef, { likedBy: arrayUnion(userId) });
+            }
+        }
+    },
+
     closeStory() {
-        const player = document.getElementById('storyPlayer');
-        if (player) player.classList.remove('active');
+        document.getElementById('storyPlayer')?.classList.remove('active');
     },
 
     openStoryPlayer(index) {
         this._activeBites = this.getActiveBites();
-        if (this._activeBites.length === 0 || index < 0 || index >= this._activeBites.length) return;
+        if (!this._activeBites.length || index < 0 || index >= this._activeBites.length) return;
         this._storyIndex = index;
         const player = document.getElementById('storyPlayer');
         if (player) {
@@ -247,7 +293,7 @@ window.engine = {
 
     showCurrentStory() {
         const player = document.getElementById('storyPlayer');
-        if (!player || !player.classList.contains('active')) return;
+        if (!player?.classList.contains('active')) return;
         if (this._storyIndex < 0 || this._storyIndex >= this._activeBites.length) {
             this.closeStory();
             return;
@@ -258,8 +304,34 @@ window.engine = {
             content.innerHTML = `
                 <img src="${bite.data.authorPhoto}" class="w-20 h-20 rounded-full border-2 border-white/50 mb-4" loading="lazy">
                 <h3 class="font-bold text-xl">${bite.data.authorName}</h3>
-                <p class="text-sm mt-2 text-center max-w-xs">${bite.data.content}</p>`;
+                <p class="text-sm mt-2 text-center max-w-xs">${bite.data.content}</p>
+            `;
         }
+
+        // تحديث عداد المشاهدات والإعجابات
+        const viewsCount = (bite.data.views || []).length;
+        const likedBy = bite.data.likedBy || [];
+        const likesCount = likedBy.length;
+        const userId = auth.currentUser?.uid;
+        const isLiked = userId && likedBy.includes(userId);
+
+        const viewsSpan = document.getElementById('viewsCount');
+        if (viewsSpan) viewsSpan.textContent = `👁 ${viewsCount} مشاهد · ❤️ ${likesCount}`;
+
+        const likeBtn = document.getElementById('likeStoryBtn');
+        if (likeBtn) {
+            likeBtn.innerHTML = isLiked ? '<i class="fa-solid fa-heart text-red-500"></i>' : '<i class="fa-regular fa-heart"></i>';
+            likeBtn.onclick = async () => {
+                await this.toggleLike(bite.id);
+                // تحديث مؤقت للواجهة
+                likeBtn.innerHTML = isLiked ? '<i class="fa-regular fa-heart"></i>' : '<i class="fa-solid fa-heart text-red-500"></i>';
+                const newLikes = isLiked ? likesCount - 1 : likesCount + 1;
+                viewsSpan.textContent = `👁 ${viewsCount} مشاهد · ❤️ ${newLikes}`;
+            };
+        }
+
+        // تسجيل مشاهدة
+        this.recordView(bite.id);
     },
 
     nextStory() {
@@ -278,6 +350,7 @@ window.engine = {
         }
     },
 
+    // ---------- المنشورات (بدون تغيير) ----------
     listenToPosts() {
         const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
         this._currentSnapUnsubscribe = onSnapshot(q, (snapshot) => {
@@ -362,6 +435,7 @@ window.engine = {
         btn.style.display = 'none';
     },
 
+    // ========== صفحة البروفايل ==========
     listenToProfilePosts(containerId) {
         const userId = auth.currentUser?.uid;
         if (!userId) return;
@@ -511,4 +585,6 @@ window.engine = {
     }
 };
 
+// استيراد دالة arrayRemove (غير موجودة افتراضياً في Firebase، سنستخدم arrayRemove من Firestore)
+import { arrayRemove } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-firestore.js";
 window.engine.init();
