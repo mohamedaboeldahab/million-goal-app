@@ -1,10 +1,8 @@
-<!-- Shark UP Academy - Independent Version -->
-
 <div class="max-w-2xl mx-auto px-4 pt-6 space-y-6 pb-24">
     <!-- Header -->
     <div class="bg-gradient-to-br from-sky-600 to-blue-800 rounded-[2rem] p-6 text-white shadow-xl">
         <h2 class="text-xl font-black italic">SHARK UP ACADEMY</h2>
-        <p id="acadStatus" class="text-[9px] mt-2 py-1 px-3 bg-white/10 rounded-full w-fit">⏳ جاري الاتصال بالمحيط...</p>
+        <p id="acadStatus" class="text-[9px] mt-2 py-1 px-3 bg-white/10 rounded-full w-fit">⏳ جاري تهيئة المحيط...</p>
     </div>
 
     <!-- Tabs -->
@@ -13,7 +11,7 @@
         <button id="tabArticles" class="flex-1 py-3 rounded-xl font-bold text-xs text-gray-500" onclick="academy.switchTab('articles')">المقالات</button>
     </div>
 
-    <!-- Content -->
+    <!-- Content Grid -->
     <div id="academyGrid" class="grid gap-4 py-4 min-h-[150px]">
         <div class="flex justify-center py-10"><div class="w-6 h-6 border-2 border-sky-500 border-t-transparent rounded-full animate-spin"></div></div>
     </div>
@@ -24,64 +22,72 @@
     <i class="fa-solid fa-plus text-xl"></i>
 </button>
 
-<!-- Add Modal -->
+<!-- Modal -->
 <div id="acadModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-md z-[100] flex items-center justify-center p-6">
     <div class="bg-white w-full max-w-sm rounded-[2rem] p-8 space-y-4">
-        <h3 class="font-bold text-gray-800 text-lg text-right">نشر محتوى جديد</h3>
+        <h3 class="font-bold text-gray-800 text-lg text-right">نشر في الأكاديمية</h3>
         <input id="acadTitle" class="w-full bg-gray-100 border-none rounded-xl p-4 text-sm text-right" placeholder="العنوان">
-        <textarea id="acadDesc" class="w-full bg-gray-100 border-none rounded-xl p-4 text-sm text-right" rows="4" placeholder="التفاصيل..."></textarea>
-        <button id="acadBtnSave" onclick="academy.saveData()" class="w-full bg-sky-600 text-white py-4 rounded-xl font-bold shadow-lg">نشر الآن</button>
+        <textarea id="acadDesc" class="w-full bg-gray-100 border-none rounded-xl p-4 text-sm text-right" rows="4" placeholder="الوصف..."></textarea>
+        <button id="acadBtnSave" onclick="academy.saveData()" class="w-full bg-sky-600 text-white py-4 rounded-xl font-bold">نشر الآن</button>
         <button onclick="academy.closeModal()" class="w-full text-gray-400 text-xs">إلغاء</button>
     </div>
 </div>
 
-<script type="module">
-    // استيراد Firebase بشكل مستقل تماماً داخل هذه الصفحة فقط
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getFirestore, collection, addDoc, getDocs, query, orderBy, serverTimestamp } 
-    from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+<!-- تحميل Firebase بنظام Compat (العام) ليعمل داخل الـ WebView والـ Engine -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
-    // إعدادات الـ Firebase الخاصة بك
-const firebaseConfig = {
-    apiKey: "AIzaSyB_2ms4K8EPbag7uab9gbDy8eePY6xwpxc",
-    authDomain: "millionaireapp-be931.firebaseapp.com",
-    projectId: "millionaireapp-be931",
-    storageBucket: "millionaireapp-be931.firebasestorage.app",
-    messagingSenderId: "325577904362",
-    appId: "1:325577904362:web:8d85d4547bf22b1d8f4793"
-};
+<script>
+(function() {
+    // إعدادات الفايربيس (تأكد من وضع بياناتك هنا)
+    const firebaseConfig = {
+        apiKey: "AIzaSy...", 
+        authDomain: "sharkup-....firebaseapp.com",
+        projectId: "sharkup-...",
+        storageBucket: "sharkup-....appspot.com",
+        messagingSenderId: "...",
+        appId: "..."
+    };
 
-    // تشغيل الـ Firebase محلياً للصفحة
-    const localApp = initializeApp(firebaseConfig, "AcademyContext"); // اسم فريد لضمان عدم التضارب
-    const localDb = getFirestore(localApp);
+    // منع إعادة التعريف إذا تم تحميل الصفحة مرتين
+    let acadApp;
+    if (!firebase.apps.length) {
+        acadApp = firebase.initializeApp(firebaseConfig, "AcademyApp");
+    } else {
+        acadApp = firebase.app("AcademyApp") || firebase.initializeApp(firebaseConfig, "AcademyApp");
+    }
+    
+    const db = acadApp.firestore();
 
-    // تعريف كائن الأكاديمية على الـ window ليتمكن الـ HTML من رؤيته
     window.academy = {
         currentTab: 'courses',
         
         async loadData() {
             const grid = document.getElementById('academyGrid');
-            const collectionName = this.currentTab === 'courses' ? "academy_courses" : "academy_articles";
+            const colName = this.currentTab === 'courses' ? "academy_courses" : "academy_articles";
             grid.innerHTML = '<div class="flex justify-center py-10"><div class="w-6 h-6 border-2 border-sky-500 border-t-transparent rounded-full animate-spin"></div></div>';
 
             try {
-                const q = query(collection(localDb, collectionName), orderBy("createdAt", "desc"));
-                const snap = await getDocs(q);
+                const snap = await db.collection(colName).orderBy("createdAt", "desc").get();
                 
                 if (snap.empty) {
                     grid.innerHTML = '<div class="text-center py-10 text-gray-400 text-xs">لا يوجد محتوى حالياً</div>';
                     return;
                 }
 
-                grid.innerHTML = snap.docs.map(doc => `
-                    <div class="bg-white p-5 rounded-[1.5rem] border border-gray-100 shadow-sm text-right">
-                        <h4 class="font-bold text-slate-800 text-sm">${doc.data().title}</h4>
-                        <p class="text-[10px] text-gray-500 mt-2">${doc.data().desc}</p>
-                    </div>
-                `).join('');
+                let html = '';
+                snap.forEach(doc => {
+                    const data = doc.data();
+                    html += `
+                        <div class="bg-white p-5 rounded-[1.5rem] border border-gray-100 shadow-sm text-right">
+                            <h4 class="font-bold text-slate-800 text-sm">${data.title}</h4>
+                            <p class="text-[10px] text-gray-500 mt-2">${data.desc}</p>
+                        </div>`;
+                });
+                grid.innerHTML = html;
             } catch (e) {
                 console.error(e);
-                grid.innerHTML = '<p class="text-center text-red-500 text-xs">خطأ في التحميل</p>';
+                grid.innerHTML = '<p class="text-center text-red-500 text-xs">خطأ في الاتصال</p>';
             }
         },
 
@@ -98,22 +104,29 @@ const firebaseConfig = {
         async saveData() {
             const t = document.getElementById('acadTitle').value;
             const d = document.getElementById('acadDesc').value;
-            if(!t || !d) return alert("املا البيانات");
+            const btn = document.getElementById('acadBtnSave');
 
+            if(!t || !d) return alert("الرجاء إكمال البيانات");
+
+            btn.disabled = true;
             try {
-                const collectionName = this.currentTab === 'courses' ? "academy_courses" : "academy_articles";
-                await addDoc(collection(localDb, collectionName), {
+                const colName = this.currentTab === 'courses' ? "academy_courses" : "academy_articles";
+                await db.collection(colName).add({
                     title: t,
                     desc: d,
-                    createdAt: serverTimestamp()
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
                 this.closeModal();
                 this.loadData();
-            } catch(e) { alert("حدث خطأ"); }
+            } catch(e) {
+                alert("فشل النشر");
+            } finally {
+                btn.disabled = false;
+            }
         }
     };
 
-    // التشغيل المبدئي
-    document.getElementById('acadStatus').innerText = "● متصل (نظام مستقل)";
+    document.getElementById('acadStatus').innerText = "● الأكاديمية متصلة";
     window.academy.loadData();
+})();
 </script>
