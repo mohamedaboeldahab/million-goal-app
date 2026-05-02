@@ -1,32 +1,38 @@
-<!-- Shark UP Academy - Final Stable Version -->
+<!-- Shark UP Academy - النسخة النهائية المستقرة -->
+
+<!-- 1. استدعاء المكتبات الأساسية لضمان عملها داخل الـ WebView -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 
 <script>
-    // حل مشكلة ReferenceError: تعريف الكائن فوراً قبل أي شيء
+    // 2. تعريف كائن الأكاديمية فوراً لمنع أي أخطاء ReferenceError
     window.academy = {
-        switchTab: () => {},
-        toggleSeller: () => { 
+        currentTab: 'courses',
+        toggleSeller: () => {
             const p = document.getElementById('sellerPanel');
             if(p) p.classList.toggle('hidden');
         },
-        openModal: (id) => { 
-            const m = document.getElementById(id);
-            if(m) m.classList.remove('hidden');
+        openModal: (id) => {
+            document.getElementById(id)?.classList.remove('hidden');
+            document.getElementById('sellerPanel')?.classList.add('hidden');
         },
         closeModal: (id) => {
-            const m = document.getElementById(id);
-            if(m) m.classList.add('hidden');
+            document.getElementById(id)?.classList.add('hidden');
         },
-        saveData: () => { console.log("جاري التحميل..."); }
+        // دوال وهمية سيتم تحديثها عند تشغيل Firebase
+        switchTab: () => {},
+        saveData: () => {}
     };
 </script>
 
-<div class="max-w-2xl mx-auto px-4 pt-6 space-y-6 pb-24">
-    <!-- الهيدر -->
-    <div class="bg-gradient-to-br from-sky-600 to-blue-800 rounded-[2rem] p-6 text-white shadow-2xl">
-        <h2 class="text-xl font-black">📚 أكاديمية Shark UP</h2>
+<div class="max-w-2xl mx-auto px-4 pt-6 space-y-6 pb-28">
+    <!-- كارت الهيدر -->
+    <div class="bg-gradient-to-br from-sky-600 to-blue-800 rounded-[2rem] p-6 text-white shadow-2xl relative overflow-hidden">
+        <h2 class="text-xl font-black mb-1">📚 أكاديمية Shark UP</h2>
+        <p class="text-[10px] opacity-80">إدارة الكورسات والمقالات</p>
         <div class="mt-4 flex gap-3 text-center">
-            <div class="bg-white/10 px-4 py-2 rounded-xl flex-1 border border-white/10">
-                <span class="block text-[10px] opacity-70">المحتوى</span>
+            <div class="bg-white/10 px-4 py-2 rounded-xl flex-1 border border-white/5">
+                <span class="block text-[9px] opacity-70">المحتوى المتوفر</span>
                 <span id="itemsCount" class="text-sm font-bold">0</span>
             </div>
         </div>
@@ -34,42 +40,49 @@
 
     <!-- التبويبات -->
     <div class="flex gap-2 bg-white p-1 rounded-2xl shadow-sm border border-gray-100">
-        <button id="tabCourses" class="flex-1 py-3 rounded-xl font-bold text-xs bg-sky-500 text-white" onclick="window.academy.switchTab('courses')">الكورسات</button>
-        <button id="tabArticles" class="flex-1 py-3 rounded-xl font-bold text-xs text-gray-500" onclick="window.academy.switchTab('articles')">المقالات</button>
+        <button id="tabCourses" class="flex-1 py-3 rounded-xl font-bold text-xs bg-sky-500 text-white transition-all" onclick="window.academy.switchTab('courses')">الكورسات</button>
+        <button id="tabArticles" class="flex-1 py-3 rounded-xl font-bold text-xs text-gray-500 transition-all" onclick="window.academy.switchTab('articles')">المقالات</button>
     </div>
 
-    <!-- شبكة العرض -->
+    <!-- شبكة المحتوى -->
     <div id="contentGrid" class="grid gap-4 min-h-[200px]">
-        <div class="text-center py-10 text-gray-400 text-xs">جاري تحميل البيانات...</div>
-    </div>
-</div>
-
-<!-- زر الإضافة -->
-<button onclick="window.academy.toggleSeller()" class="fixed bottom-6 left-6 w-14 h-14 bg-white shadow-2xl rounded-2xl border flex items-center justify-center z-50">
-    <i class="fa-solid fa-plus text-sky-500 text-xl"></i>
-</button>
-
-<div id="sellerPanel" class="hidden fixed bottom-24 left-6 right-6 z-50 grid grid-cols-2 gap-3">
-    <button onclick="window.academy.openModal('addModal')" class="bg-sky-600 text-white p-4 rounded-2xl text-[10px] font-bold shadow-lg">إضافة جديد</button>
-</div>
-
-<!-- المودال (نافذة الإضافة) -->
-<div id="addModal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-    <div class="bg-white w-full max-w-md rounded-[2rem] p-6 space-y-4">
-        <h3 class="font-bold text-gray-800">إضافة محتوى</h3>
-        <input id="newTitle" class="w-full bg-gray-50 border-none rounded-xl p-3 text-sm" placeholder="العنوان">
-        <textarea id="newDesc" class="w-full bg-gray-50 border-none rounded-xl p-3 text-sm" rows="3" placeholder="التفاصيل"></textarea>
-        <div class="flex gap-2">
-            <button onclick="window.academy.saveData()" class="flex-1 bg-sky-600 text-white py-3 rounded-xl font-bold">نشر</button>
-            <button onclick="window.academy.closeModal('addModal')" class="bg-gray-100 text-gray-500 px-4 rounded-xl">إلغاء</button>
+        <div class="flex flex-col items-center justify-center py-10 space-y-3">
+            <div class="w-6 h-6 border-2 border-sky-500 border-t-transparent rounded-full animate-spin"></div>
+            <p class="text-gray-400 text-xs">جاري الاتصال بـ Firebase...</p>
         </div>
     </div>
 </div>
 
+<!-- أزرار الإضافة -->
+<button onclick="window.academy.toggleSeller()" class="fixed bottom-6 left-6 w-14 h-14 bg-white shadow-2xl rounded-2xl border flex items-center justify-center z-50 active:scale-90 transition-transform">
+    <i class="fa-solid fa-plus text-sky-500 text-xl"></i>
+</button>
+
+<div id="sellerPanel" class="hidden fixed bottom-24 left-6 right-6 z-50 grid grid-cols-2 gap-3 animate-bounce-in">
+    <button onclick="window.academy.openModal('addModal')" class="bg-sky-600 text-white p-5 rounded-[1.5rem] text-[10px] font-bold shadow-xl flex flex-col items-center gap-2">
+        <i class="fa-solid fa-plus-circle text-lg"></i> إضافة جديد
+    </button>
+</div>
+
+<!-- مودال الإضافة -->
+<div id="addModal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-md rounded-[2rem] p-6 space-y-4 shadow-2xl">
+        <div class="flex justify-between items-center">
+            <h3 class="font-black text-gray-800">إضافة محتوى جديد</h3>
+            <button onclick="window.academy.closeModal('addModal')" class="text-gray-400 text-lg">✕</button>
+        </div>
+        <input id="newTitle" class="w-full bg-gray-50 border-none rounded-xl p-4 text-sm outline-none focus:ring-2 focus:ring-sky-500" placeholder="العنوان...">
+        <textarea id="newDesc" class="w-full bg-gray-50 border-none rounded-xl p-4 text-sm outline-none focus:ring-2 focus:ring-sky-500" rows="4" placeholder="اكتب التفاصيل هنا..."></textarea>
+        <button id="btnSave" onclick="window.academy.saveData()" class="w-full bg-sky-600 text-white py-4 rounded-xl font-bold shadow-lg active:scale-95 transition-all">نشر الآن</button>
+    </div>
+</div>
+
 <script>
+    // 3. المحرك البرمجي الرئيسي
     (function startApp() {
+        // التأكد من تحميل المكتبات
         if (typeof firebase === 'undefined') {
-            setTimeout(startApp, 400);
+            setTimeout(startApp, 500);
             return;
         }
 
@@ -85,49 +98,83 @@
         if (!firebase.apps.length) firebase.initializeApp(config);
         const db = firebase.firestore();
 
-        // تحديث الدوال بالمنطق الحقيقي
-        window.academy.currentTab = 'courses';
-        
+        // تحديث منطق الدوال الحقيقي
         window.academy.loadData = async function() {
             const grid = document.getElementById('contentGrid');
             const collection = this.currentTab === 'courses' ? "academy_courses" : "academy_articles";
+            
             try {
-                const snap = await db.collection(collection).orderBy("createdAt", "desc").limit(10).get();
+                const snap = await db.collection(collection).orderBy("createdAt", "desc").limit(15).get();
                 document.getElementById('itemsCount').innerText = snap.size;
+                
+                if (snap.empty) {
+                    grid.innerHTML = '<div class="text-center py-20 text-gray-400 text-[10px]">لا يوجد بيانات في هذا القسم</div>';
+                    return;
+                }
+
                 grid.innerHTML = snap.docs.map(doc => `
-                    <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
-                        <h4 class="font-bold text-sm">${doc.data().title}</h4>
-                        <p class="text-[10px] text-gray-500 mt-1">${doc.data().desc}</p>
+                    <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm transition-all hover:border-sky-200">
+                        <div class="flex justify-between items-start mb-2">
+                            <span class="text-[8px] font-bold px-2 py-1 rounded bg-sky-50 text-sky-600 uppercase tracking-tighter">
+                                ${this.currentTab === 'courses' ? 'Course' : 'Article'}
+                            </span>
+                        </div>
+                        <h4 class="font-bold text-gray-800 text-sm">${doc.data().title}</h4>
+                        <p class="text-[10px] text-gray-500 mt-1 leading-relaxed line-clamp-3">${doc.data().desc}</p>
                     </div>
-                `).join('') || '<p class="text-center text-gray-400 text-[10px]">لا يوجد محتوى</p>';
-            } catch(e) { grid.innerHTML = "خطأ في الجلب"; }
+                `).join('');
+            } catch(e) {
+                grid.innerHTML = `<div class="text-center text-red-400 text-[10px]">خطأ: تأكد من إعدادات Firestore Rules</div>`;
+            }
         };
 
         window.academy.switchTab = function(tab) {
             this.currentTab = tab;
-            document.getElementById('tabCourses').className = tab==='courses' ? 'flex-1 py-3 rounded-xl font-bold text-xs bg-sky-500 text-white' : 'flex-1 py-3 rounded-xl font-bold text-xs text-gray-500';
-            document.getElementById('tabArticles').className = tab==='articles' ? 'flex-1 py-3 rounded-xl font-bold text-xs bg-sky-500 text-white' : 'flex-1 py-3 rounded-xl font-bold text-xs text-gray-500';
+            const isC = tab === 'courses';
+            document.getElementById('tabCourses').className = isC ? 'flex-1 py-3 rounded-xl font-bold text-xs bg-sky-500 text-white' : 'flex-1 py-3 rounded-xl font-bold text-xs text-gray-500';
+            document.getElementById('tabArticles').className = !isC ? 'flex-1 py-3 rounded-xl font-bold text-xs bg-sky-500 text-white' : 'flex-1 py-3 rounded-xl font-bold text-xs text-gray-500';
             this.loadData();
         };
 
         window.academy.saveData = async function() {
-            const title = document.getElementById('newTitle').value;
-            const desc = document.getElementById('newDesc').value;
-            if(!title || !desc) return alert("املا البيانات");
+            const t = document.getElementById('newTitle').value;
+            const d = document.getElementById('newDesc').value;
+            const btn = document.getElementById('btnSave');
 
+            if (!t || !d) return alert("من فضلك أدخل العنوان والوصف");
+
+            btn.disabled = true;
+            btn.innerText = "جاري النشر...";
+            
             const collection = this.currentTab === 'courses' ? "academy_courses" : "academy_articles";
+            
             try {
                 await db.collection(collection).add({
-                    title, desc, createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    title: t,
+                    desc: d,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
-                alert("تمت الإضافة!");
-                this.closeModal('addModal');
+                
+                alert("تم النشر بنجاح! 🎉");
                 document.getElementById('newTitle').value = "";
                 document.getElementById('newDesc').value = "";
+                this.closeModal('addModal');
                 this.loadData();
-            } catch(e) { alert("فشل الحفظ"); }
+            } catch(e) {
+                alert("خطأ أثناء الحفظ: " + e.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "نشر الآن";
+            }
         };
 
+        // البدء بجلب البيانات
         window.academy.loadData();
     })();
 </script>
+
+<style>
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .animate-fade-in { animation: fadeIn 0.4s ease forwards; }
+    .line-clamp-3 { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+</style>
