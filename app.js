@@ -126,12 +126,12 @@ window.engine = {
                     this.renderBgPicker();
                     this.watchStoriesContainer();
                 }, 50);
-            } else if (pageName === 'profile') {
-                setTimeout(() => {
-                    this.listenToProfilePosts('userPostsContainer');
-                    this.activateProfile();
-                }, 50);
-            }
+           } else if (pageName === 'profile') {
+    setTimeout(() => {
+        this.listenToProfilePosts('userPostsContainer');
+        this.activateProfile();
+    }, 150);
+}
             if (typeof setActiveNavLink === 'function') setActiveNavLink(pageName);
         } catch (e) { content.innerHTML = `<div class="text-center py-20 text-slate-400">قريباً..</div>`; }
     },
