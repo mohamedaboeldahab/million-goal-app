@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Shark AI 🦈</title>
+<title>Shark AI 🦈 No API</title>
 
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -12,135 +12,135 @@
 
 <body class="bg-slate-100 p-4">
 
-<div class="max-w-md mx-auto bg-white rounded-3xl shadow-2xl overflow-hidden mt-10">
+<div class="max-w-md mx-auto bg-white rounded-3xl shadow-2xl mt-10 overflow-hidden">
 
-    <div class="bg-slate-900 p-5 text-white flex justify-between">
-        <span>Shark AI 🦈</span>
-        <span class="text-xs text-sky-400">WORKING ✅</span>
-    </div>
+<!-- header -->
+<div class="bg-slate-900 text-white p-4 flex justify-between">
+  <span>Shark AI 🦈</span>
+  <span class="text-xs text-green-400">NO API MODE</span>
+</div>
 
-    <!-- الشات -->
-    <div id="chatBox" class="h-72 overflow-y-auto p-5 space-y-3 bg-slate-50 text-sm">
-        <div class="bg-white p-3 rounded-xl">أهلاً بيك 👋</div>
-    </div>
+<!-- chat -->
+<div id="chat" class="h-72 overflow-y-auto p-4 space-y-2 bg-slate-50 text-sm">
+  <div class="bg-white p-2 rounded-xl">جرب اسأل أي حاجة 👋</div>
+</div>
 
-    <!-- الرسم البياني -->
-    <div class="p-4">
-        <canvas id="myChart"></canvas>
-    </div>
+<!-- chart -->
+<canvas id="chart" class="p-3"></canvas>
 
-    <!-- الإدخال -->
-    <div class="p-4 flex gap-2">
-        <input id="msg" type="text"
-        class="flex-1 bg-slate-100 px-3 py-2 rounded-xl"
-        placeholder="اكتب هنا..."
-        onkeypress="if(event.key==='Enter')send()">
+<!-- input -->
+<div class="p-3 flex gap-2">
+  <input id="msg" class="flex-1 bg-slate-100 p-2 rounded-xl"
+  placeholder="اكتب..." onkeypress="if(event.key==='Enter')send()">
 
-        <button onclick="send()" class="bg-sky-600 text-white px-4 rounded-xl">
-            إرسال
-        </button>
-    </div>
+  <button onclick="send()" class="bg-sky-600 text-white px-4 rounded-xl">
+    إرسال
+  </button>
+</div>
 
 </div>
 
 <script>
 
-// ⚠️ حط مفتاحك هنا (للتجربة فقط)
-const API_KEY = "AIzaSyAUamuXa-gndq8CZw5DAXdqcxUuOwAsZz0";
+////////////////////////////////////////////////////
+// 🧠 AI بسيط (Rules Engine)
+////////////////////////////////////////////////////
+function brain(text){
 
-//////////////////////////////////////////////////
-// 🔥 Gemini بدون SDK
-//////////////////////////////////////////////////
+    text = text.toLowerCase();
 
-async function askAI(text) {
-    const res = await fetch(
-        "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=" + API_KEY,
-        {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                contents: [
-                    {
-                        parts: [{ text: text }]
-                    }
-                ]
-            })
-        }
-    );
+    // greetings
+    if(text.includes("مرحبا") || text.includes("سلام") || text.includes("اهلا")){
+        return "أهلاً بيك 👋 أنا Shark AI بدون API";
+    }
 
-    const data = await res.json();
+    // money
+    if(text.includes("فلوس") || text.includes("ربح")){
+        return "💰 ممكن تربح من التسويق بالعمولة أو المشاريع الرقمية";
+    }
 
-    return data?.candidates?.[0]?.content?.parts?.[0]?.text || "❌ مفيش رد";
+    // coding
+    if(text.includes("كود") || text.includes("برمجة")){
+        return "💻 البرمجة محتاجة تدريب، ابدأ بـ HTML + JS";
+    }
+
+    // ai
+    if(text.includes("ذكاء") || text.includes("ai")){
+        return "🤖 الذكاء الاصطناعي بيشتغل بالبيانات مش بالسحر";
+    }
+
+    // joke
+    if(text.includes("نكتة")){
+        return "😂 ليه المبرمج بيحب القهوة؟ عشان فيها Java!";
+    }
+
+    // default
+    return "🤔 مش فاهمك كويس، جرب تسأل بطريقة أبسط";
 }
 
-//////////////////////////////////////////////////
-// 💬 الشات
-//////////////////////////////////////////////////
+////////////////////////////////////////////////////
+// 💬 chat
+////////////////////////////////////////////////////
+function send(){
 
-async function send(){
-    const input = document.getElementById('msg');
+    const input = document.getElementById("msg");
     const text = input.value.trim();
     if(!text) return;
 
-    add(text,'user');
-    input.value = '';
+    add(text,"user");
+    input.value = "";
 
-    const loading = add('جاري التفكير...','ai');
+    const reply = brain(text);
+    const msg = add("جاري التفكير...","ai");
 
-    try{
-        const reply = await askAI(text);
-        loading.innerText = reply;
-
+    setTimeout(()=>{
+        msg.innerText = reply;
         updateChart(reply.length);
-
-    }catch(e){
-        loading.innerText = "❌ خطأ";
-    }
+    },500);
 }
 
 function add(t,type){
-    const box = document.getElementById('chatBox');
-    const div = document.createElement('div');
+    const box = document.getElementById("chat");
 
-    div.className = type === 'user'
-        ? 'bg-slate-900 text-white p-3 rounded-xl mr-auto w-fit max-w-[80%]'
-        : 'bg-white p-3 rounded-xl w-fit max-w-[80%]';
+    const div = document.createElement("div");
+
+    div.className = type==="user"
+    ? "bg-slate-900 text-white p-2 rounded-xl mr-auto w-fit max-w-[80%]"
+    : "bg-white p-2 rounded-xl w-fit max-w-[80%]";
 
     div.innerText = t;
     box.appendChild(div);
+
     box.scrollTop = box.scrollHeight;
+
     return div;
 }
 
-//////////////////////////////////////////////////
-// 📊 Chart.js
-//////////////////////////////////////////////////
+////////////////////////////////////////////////////
+// 📊 Chart
+////////////////////////////////////////////////////
+let chart;
+let i = 0;
 
-const ctx = document.getElementById('myChart');
+window.onload = function(){
 
-let chart = new Chart(ctx, {
-    type: 'line',
-    data: {
-        labels: ['1'],
-        datasets: [{
-            label: 'طول الرد',
-            data: [0],
-            borderWidth: 2
-        }]
-    },
-    options: {
-        responsive: true
-    }
-});
+    chart = new Chart(document.getElementById("chart"), {
+        type: "line",
+        data: {
+            labels: ["0"],
+            datasets: [{
+                label: "تفاعل المستخدم",
+                data: [0],
+                borderWidth: 2
+            }]
+        }
+    });
+};
 
-let count = 1;
-
-function updateChart(value){
-    count++;
-    chart.data.labels.push(count.toString());
-    chart.data.datasets[0].data.push(value);
+function updateChart(v){
+    i++;
+    chart.data.labels.push(i);
+    chart.data.datasets[0].data.push(v);
     chart.update();
 }
 
