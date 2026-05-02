@@ -2,43 +2,25 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Shark UP | مجتمع القروش</title>
     <link rel="manifest" href="manifest.json">
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.tailwindcss.com/3.4.0"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&display=swap" rel="stylesheet">
     <style>
-        * {
-            -webkit-tap-highlight-color: transparent;
-        }
-        body { font-family: 'Tajawal', sans-serif; background-color: #f0f2f5; margin: 0; padding: 0; }
+        body { font-family: 'Tajawal', sans-serif; background: #f0f2f5; margin: 0; }
         #splash { position: fixed; inset: 0; background: linear-gradient(135deg, #0f172a, #1e293b); z-index: 200; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .nav-link { display: flex; align-items: center; gap: 6px; white-space: nowrap; padding: 8px 16px; border-radius: 8px; font-weight: 600; font-size: 14px; color: #ffffffcc; transition: all 0.2s; }
-        .nav-link.active { color: white; background-color: rgba(255,255,255,0.2); }
+        .nav-link { display: flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 8px; font-weight: 600; font-size: 14px; color: #ffffffcc; transition: 0.2s; white-space: nowrap; }
+        .nav-link.active { color: white; background: rgba(255,255,255,0.2); }
+        .nav-link:hover { background: rgba(255,255,255,0.15); color: white; }
         .nav-links-container { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
         .nav-links-container::-webkit-scrollbar { display: none; }
-        
-        /* حل مشكلة اللمس على الموبايل */
-        [data-story-index] {
-            touch-action: manipulation;
-        }
-
-        #storyPlayer {
-            position: fixed !important;
-            inset: 0;
-            background-color: black !important;
-            z-index: 99999;
-            display: none;
-            opacity: 1;
-            pointer-events: auto;
-            transition: 0.2s;
-        }
+        #storyPlayer { position: fixed; inset: 0; background: #000; z-index: 99999; display: none; flex-direction: column; align-items: center; justify-content: center; }
+        #storyPlayer.active { display: flex !important; }
     </style>
 </head>
 <body>
-
-    <!-- شاشة البداية -->
     <div id="splash">
         <div class="w-24 h-24 bg-sky-500 rounded-[2rem] flex items-center justify-center mb-6 rotate-12 shadow-2xl animate-pulse">
             <i class="fa-solid fa-fish-fins text-5xl text-white"></i>
@@ -47,22 +29,16 @@
         <div id="authActions"><div class="w-8 h-8 border-4 border-sky-500 border-t-transparent rounded-full animate-spin"></div></div>
     </div>
 
-    <!-- شريط التنقل العلوي -->
     <nav class="bg-sky-500 shadow-md fixed top-0 left-0 right-0 z-50">
         <div class="flex items-center justify-between px-3 sm:px-4 h-14 gap-2">
             <div class="flex items-center gap-2 flex-shrink-0">
-                <div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
-                    <i class="fa-solid fa-fish-fins text-xl text-white"></i>
-                </div>
+                <div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center"><i class="fa-solid fa-fish-fins text-xl text-white"></i></div>
                 <span class="text-white font-black text-base sm:text-lg tracking-tight">SHARK UP</span>
             </div>
             <button onclick="openSearchOverlay()" class="flex items-center gap-2 bg-white/20 rounded-full px-3 sm:px-4 py-2 text-white/80 hover:bg-white/30 transition flex-1 max-w-[200px] mx-2">
-                <i class="fa-solid fa-magnifying-glass text-xs"></i>
-                <span class="truncate text-xs">ابحث في Shark UP</span>
+                <i class="fa-solid fa-magnifying-glass text-xs"></i><span class="truncate text-xs">ابحث في Shark UP</span>
             </button>
-            <button onclick="window.engine.loadPage('profile')" id="userBtn" class="w-9 h-9 rounded-full bg-white/20 overflow-hidden border-2 border-white flex items-center justify-center flex-shrink-0">
-                <i class="fa-solid fa-user text-white"></i>
-            </button>
+            <button onclick="window.engine.loadPage('profile')" id="userBtn" class="w-9 h-9 rounded-full bg-white/20 overflow-hidden border-2 border-white flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-user text-white"></i></button>
         </div>
         <div class="nav-links-container flex gap-1 px-4 pb-3 pt-1">
             <button onclick="window.engine.loadPage('home')" class="nav-link active" data-page="home"><i class="fa-solid fa-house"></i> الرئيسية</button>
@@ -73,15 +49,10 @@
         </div>
     </nav>
 
-    <!-- منطقة المحتوى -->
     <main id="app-content" class="max-w-2xl mx-auto px-4 pt-28 pb-10"></main>
 
-    <!-- زر المساعد العائم -->
-    <div onclick="window.engine.loadPage('ai-chat')" class="fixed bottom-6 left-6 w-14 h-14 bg-sky-500 rounded-2xl flex items-center justify-center text-white text-2xl shadow-lg cursor-pointer z-40 hover:scale-110 transition-transform">
-        <i class="fa-solid fa-robot"></i>
-    </div>
+    <div onclick="window.engine.loadPage('ai-chat')" class="fixed bottom-6 left-6 w-14 h-14 bg-sky-500 rounded-2xl flex items-center justify-center text-white text-2xl shadow-lg cursor-pointer z-40 hover:scale-110 transition-transform"><i class="fa-solid fa-robot"></i></div>
 
-    <!-- طبقة البحث -->
     <div id="searchOverlay" class="fixed inset-0 z-[100] bg-white hidden flex-col">
         <div class="flex items-center gap-3 px-4 h-14 bg-sky-500 text-white">
             <button onclick="closeSearchOverlay()" class="text-white text-xl"><i class="fa-solid fa-arrow-right"></i></button>
@@ -90,37 +61,46 @@
         <div id="searchOverlayContent" class="flex-1 overflow-y-auto p-4"></div>
     </div>
 
-    <!-- مشغل القصص -->
+    <!-- مشغل القصص الثابت -->
     <div id="storyPlayer">
-        <div style="position: absolute; top: 40px; right: 20px; z-index: 100001; padding: 20px;" onclick="window.engine.closeStory()">
-            <i class="fa-solid fa-xmark text-white text-4xl shadow-sm"></i>
-        </div>
-        <div id="storyContent" class="text-white text-center w-full px-4"></div>
-        <div class="absolute inset-y-0 left-0 w-1/3 z-[100000]" onclick="window.engine.prevStory()"></div>
-        <div class="absolute inset-y-0 right-0 w-1/3 z-[100000]" onclick="window.engine.nextStory()"></div>
+        <button id="closeStoryBtn" class="absolute top-5 right-5 text-white text-4xl z-50 bg-transparent border-0">&times;</button>
+        <div id="storyContent" class="text-white text-center px-4 mt-16"></div>
+        <div class="absolute inset-y-0 left-0 w-1/4 z-40" onclick="window.engine.prevStory()"></div>
+        <div class="absolute inset-y-0 right-0 w-1/4 z-40" onclick="window.engine.nextStory()"></div>
     </div>
 
     <script>
-        function setActiveNavLink(pageName) {
-            document.querySelectorAll('.nav-link').forEach(link => {
-                link.classList.toggle('active', link.dataset.page === pageName);
-            });
-        }
+        function setActiveNavLink(p) { document.querySelectorAll('.nav-link').forEach(l => l.classList.toggle('active', l.dataset.page === p)); }
         async function openSearchOverlay() {
-            const overlay = document.getElementById('searchOverlay');
-            const content = document.getElementById('searchOverlayContent');
-            if (!overlay || !content) return;
-            overlay.classList.replace('hidden', 'flex');
-            try {
-                const res = await fetch('search.html');
-                content.innerHTML = await res.text();
-            } catch (e) { content.innerHTML = '<p class="p-4 text-center">خطأ في التحميل</p>'; }
+            const ov = document.getElementById('searchOverlay'), cd = document.getElementById('searchOverlayContent');
+            if (!ov || !cd) return;
+            ov.classList.replace('hidden', 'flex');
+            try { cd.innerHTML = await (await fetch('search.html')).text(); } catch(e) { cd.innerHTML = '<p class="p-4 text-center">خطأ</p>'; }
         }
-        function closeSearchOverlay() {
-            document.getElementById('searchOverlay').classList.replace('flex', 'hidden');
-        }
-    </script>
+        function closeSearchOverlay() { document.getElementById('searchOverlay').classList.replace('flex', 'hidden'); }
 
+        // ربط مشغل القصص
+        document.getElementById('closeStoryBtn').addEventListener('click', (e) => { e.stopPropagation(); window.engine.closeStory(); });
+        // Event Delegation على مستوى document للقصص
+        document.addEventListener('touchstart', (e) => {
+            const el = e.target.closest('[data-story-index]');
+            if (el) {
+                e.preventDefault();
+                const idx = parseInt(el.getAttribute('data-story-index'));
+                if (!isNaN(idx) && window.engine) window.engine.openStoryPlayer(idx);
+            }
+        }, { passive: false });
+        document.addEventListener('click', (e) => {
+            const el = e.target.closest('[data-story-index]');
+            if (el) {
+                const idx = parseInt(el.getAttribute('data-story-index'));
+                if (!isNaN(idx) && window.engine) window.engine.openStoryPlayer(idx);
+            }
+        });
+    </script>
     <script type="module" src="app.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
+    </script>
 </body>
 </html>
