@@ -536,32 +536,42 @@ window.engine = {
     },
 
     // ========== صفحة البروفايل (إصلاح الفهرس) ==========
-    listenToProfilePosts(containerId) {
-        const userId = auth.currentUser?.uid;
-        if (!userId) return;
-        // استعلام بدون orderBy لتجنب الحاجة إلى فهرس مركب
-        const q = query(collection(db, "posts"), where("authorId", "==", userId));
-        onSnapshot(q, (snapshot) => {
-            const container = document.getElementById(containerId);
-            if (!container) return;
-            if (snapshot.empty) {
-                container.innerHTML = '<p class="text-gray-400 text-sm text-center py-8">لا توجد منشورات بعد</p>';
-                return;
-            }
-            // ترتيب النتائج يدوياً (الأحدث أولاً)
-            const docs = snapshot.docs.map(doc => ({ id: doc.id, data: doc.data() }));
-            docs.sort((a, b) => {
-                const timeA = a.data.createdAt?.toDate?.()?.getTime?.() || 0;
-                const timeB = b.data.createdAt?.toDate?.()?.getTime?.() || 0;
-                return timeB - timeA;
-            });
-            container.innerHTML = docs.map(doc => this.postHTML(doc.id, doc.data())).join('');
-            docs.forEach(d => this.listenToComments(d.id));
-        }, error => {
-            const container = document.getElementById(containerId);
-            if (container) container.innerHTML = '<p class="text-center text-red-500">تعذر تحميل المنشورات</p>';
+listenToProfilePosts(containerId) {
+    const userId = auth.currentUser?.uid;
+    if (!userId) return;
+
+    // استعلام بسيط بدون orderBy لتجنب الحاجة للفهرس
+    const q = query(collection(db, "posts"), where("authorId", "==", userId));
+
+    onSnapshot(q, (snapshot) => {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+
+        if (snapshot.empty) {
+            container.innerHTML = '<p class="text-gray-400 text-sm text-center py-8">لا توجد منشورات بعد</p>';
+            return;
+        }
+
+        // تحويل المستندات إلى كائنات عادية { id, data }
+        const docs = snapshot.docs.map(doc => ({ id: doc.id, data: doc.data() }));
+
+        // ترتيب النتائج يدوياً (الأحدث أولاً)
+        docs.sort((a, b) => {
+            const timeA = a.data.createdAt?.toDate?.()?.getTime?.() || 0;
+            const timeB = b.data.createdAt?.toDate?.()?.getTime?.() || 0;
+            return timeB - timeA;
         });
-    },
+
+        // عرض المنشورات باستخدام postHTML (بدون استدعاء دوال خاطئة)
+        container.innerHTML = docs.map(doc => this.postHTML(doc.id, doc.data)).join('');
+
+        // تفعيل التعليقات لكل منشور
+        docs.forEach(doc => this.listenToComments(doc.id));
+    }, error => {
+        const container = document.getElementById(containerId);
+        if (container) container.innerHTML = '<p class="text-center text-red-500">تعذر تحميل المنشورات</p>';
+    });
+},
 
     activateProfile() {
         document.querySelectorAll('.tab-btn').forEach(btn => {
