@@ -1,161 +1,176 @@
-<div class="flex flex-col h-[75vh]">
-    <!-- رأس المستشار -->
-    <div class="bg-sky-50 p-4 rounded-2xl mb-4 border border-sky-100 flex items-center gap-3">
-        <div class="w-10 h-10 bg-sky-500 rounded-full flex items-center justify-center text-white">
-            <i class="fa-solid fa-robot"></i>
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shark AI - المستشار المالي</title>
+    <!-- حل مشكلة favicon -->
+    <link rel="icon" href="data:,">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap');
+        body { font-family: 'Cairo', sans-serif; background-color: #f8fafc; }
+        .chat-box { height: 60vh; border-radius: 20px; }
+        .dot-loading { animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+    </style>
+</head>
+<body class="p-4 sm:p-8">
+
+<div class="max-w-xl mx-auto bg-white rounded-[32px] shadow-2xl border border-slate-100 overflow-hidden">
+    <!-- Header -->
+    <div class="bg-sky-600 p-6 text-white flex items-center gap-4">
+        <div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center border border-white/30">
+            <i class="fa-solid fa-robot text-xl"></i>
         </div>
         <div>
-            <h4 class="font-black text-sm text-sky-900">المستشار المالي (Shark AI)</h4>
-            <p class="text-[10px] text-sky-600">اسألني عن أي استثمار أو خطة مالية</p>
+            <h1 class="font-black text-lg">Shark AI</h1>
+            <p class="text-[10px] opacity-80 uppercase tracking-widest font-bold">المستشار الاستثماري الذكي</p>
         </div>
     </div>
 
-    <!-- مربع الدردشة -->
-    <div id="chatBox" class="flex-1 overflow-y-auto space-y-4 px-2 pb-4">
-        <div class="bg-white p-4 rounded-2xl rounded-tr-none shadow-sm text-sm text-slate-700 max-w-[80%] ml-auto">
-            مرحباً! أنا مستشارك المالي. صف لي موقفك المالي وسأساعدك.
+    <!-- Chat Area -->
+    <div id="chatBox" class="chat-box overflow-y-auto p-6 space-y-4 bg-slate-50/50">
+        <div class="bg-white p-4 rounded-2xl rounded-tr-none shadow-sm border border-slate-100 text-sm text-slate-700 max-w-[85%]">
+            أهلاً بك! أنا **Shark AI**. كيف يمكنني مساعدتك في استثماراتك اليوم؟
         </div>
     </div>
 
-    <!-- شريط المفتاح (يظهر إذا لم يُحفظ) -->
-    <div id="apiKeyBanner" class="p-3 bg-amber-50 rounded-xl border border-amber-200 text-xs text-amber-700 mb-2 hidden">
-        ⚠️ تحتاج إلى مفتاح Hugging Face (مجاني). <a href="https://huggingface.co/settings/tokens" target="_blank" class="underline font-bold">احصل عليه من هنا</a>.
-        <div class="flex gap-2 mt-2">
-            <input type="text" id="apiKeyInput" placeholder="hf_..." class="flex-1 border rounded-lg px-2 py-1 text-xs">
-            <button onclick="saveKey()" class="bg-amber-500 text-white px-3 py-1 rounded-lg text-xs font-bold">حفظ</button>
+    <!-- API Key Section (Visible if not set) -->
+    <div id="apiSection" class="p-4 bg-amber-50 border-y border-amber-100 hidden">
+        <p class="text-[10px] text-amber-700 font-bold mb-2">تنبيه: يجب إدخال مفتاح API ليعمل النظام</p>
+        <div class="flex gap-2">
+            <input type="password" id="apiKeyInput" placeholder="ألصق Gemini Key هنا..." 
+                   class="flex-1 border rounded-xl px-3 py-2 text-xs outline-none focus:border-amber-500 shadow-sm">
+            <button onclick="saveKey()" class="bg-amber-600 text-white px-4 py-2 rounded-xl text-xs font-bold transition-transform active:scale-95">حفظ</button>
         </div>
     </div>
 
-    <!-- شريط اختيار النموذج (صغير جداً) -->
-    <div class="flex items-center justify-between px-1 mb-2">
-        <span class="text-[9px] text-gray-400">النموذج:</span>
-        <select id="modelSelect" class="text-[10px] border rounded px-2 py-0.5 bg-white" onchange="changeModel()">
-            <option value="mistralai/Mistral-Nemo-Instruct-2407">Mistral Nemo (الأحدث)</option>
-            <option value="mistralai/Mistral-7B-Instruct-v0.2" selected>Mistral 7B (مستقر)</option>
-            <option value="HuggingFaceH4/zephyr-7b-beta">Zephyr 7B (خفيف)</option>
-        </select>
-    </div>
-
-    <!-- حقل الإدخال -->
-    <div class="p-4 bg-white rounded-2xl shadow-lg border flex gap-2">
-        <input type="text" id="aiInput" placeholder="اسأل المستشار..." class="flex-1 outline-none text-sm bg-transparent">
-        <button onclick="askAI()" class="bg-sky-500 text-white w-10 h-10 rounded-xl flex items-center justify-center">
-            <i class="fa-solid fa-paper-plane"></i>
-        </button>
+    <!-- Input Area -->
+    <div class="p-6 bg-white border-t border-slate-50">
+        <div class="flex gap-2">
+            <input type="text" id="aiInput" onkeypress="handleKeyPress(event)"
+                   placeholder="اسأل عن الذهب، الأسهم، أو الميزانية..." 
+                   class="flex-1 bg-slate-100 border-none rounded-2xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-sky-500 transition-all">
+            
+            <button onclick="askAI()" id="sendBtn" class="bg-sky-600 hover:bg-sky-700 text-white w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg transition-all active:scale-90">
+                <i class="fa-solid fa-paper-plane text-lg"></i>
+            </button>
+        </div>
     </div>
 </div>
 
 <script>
-    // ========== المتغيرات ==========
-    const DEFAULT_MODEL = 'mistralai/Mistral-7B-Instruct-v0.2';
-    let currentModel = localStorage.getItem('selected_model') || DEFAULT_MODEL;
-    let HF_TOKEN = localStorage.getItem('hf_token') || '';
+    // ========== المنطق البرمجي (تم تصحيح كافة المتغيرات) ==========
+    let chatHistory = [];
+    let currentKey = localStorage.getItem('my_gemini_key') || '';
 
-    // ضبط القائمة المنسدلة عند التحميل
-    document.getElementById('modelSelect').value = currentModel;
-
-    // إظهار شريط المفتاح إن لم يكن موجوداً
-    if (!HF_TOKEN) {
-        document.getElementById('apiKeyBanner').classList.remove('hidden');
-    }
-
-    function changeModel() {
-        currentModel = document.getElementById('modelSelect').value;
-        localStorage.setItem('selected_model', currentModel);
-        addMessage(`✅ تم تغيير النموذج إلى: ${currentModel.split('/')[1]}`, 'ai');
+    // إظهار خانة المفتاح إذا كان فارغاً
+    if (!currentKey) {
+        document.getElementById('apiSection').classList.remove('hidden');
     }
 
     function saveKey() {
-        const key = document.getElementById('apiKeyInput').value.trim();
-        if (key.startsWith('hf_')) {
-            localStorage.setItem('hf_token', key);
-            HF_TOKEN = key;
-            document.getElementById('apiKeyBanner').classList.add('hidden');
-            addMessage('✅ تم حفظ المفتاح. يمكنك الآن السؤال.', 'ai');
+        const keyVal = document.getElementById('apiKeyInput').value.trim();
+        if (keyVal) {
+            localStorage.setItem('my_gemini_key', keyVal);
+            currentKey = keyVal;
+            document.getElementById('apiSection').classList.add('hidden');
+            addMessageUI('✅ تم تفعيل المفتاح بنجاح! يمكنك السؤال الآن.', 'ai');
         }
     }
 
+    function handleKeyPress(e) { if (e.key === 'Enter') askAI(); }
+
     async function askAI() {
-        if (!HF_TOKEN) {
-            document.getElementById('apiKeyBanner').classList.remove('hidden');
-            addMessage('🔑 يرجى إدخال مفتاح Hugging Face من الشريط أعلاه.', 'ai');
+        const inputField = document.getElementById('aiInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const question = inputField.value.trim();
+
+        if (!question) return;
+        if (!currentKey) {
+            document.getElementById('apiSection').classList.remove('hidden');
+            alert('يرجى إدخال API Key أولاً');
             return;
         }
 
-        const input = document.getElementById('aiInput');
-        const question = input?.value.trim();
-        if (!question) return;
+        // 1. إضافة سؤال المستخدم
+        addMessageUI(question, 'user');
+        inputField.value = '';
+        
+        // 2. رسالة الانتظار
+        const typingDiv = addMessageUI('<span class="dot-loading">جاري تحليل طلبك المالي...</span>', 'ai');
+        sendBtn.disabled = true;
 
-        addMessage(question, 'user');
-        input.value = '';
-        const typingDiv = addMessage('...', 'ai');
-
-        const API_URL = `https://api-inference.huggingface.co/models/${currentModel}`;
-
+        // 3. المحادثة مع AI (تصحيح الروابط والـ Error Handling)
         try {
-            const response = await fetch(API_URL, {
+            chatHistory.push({ role: "user", parts: [{ text: question }] });
+
+            // استخدام الرابط الأكثر استقراراً
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${currentKey}`, {
                 method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${HF_TOKEN}`,
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    inputs: `[INST] أنت مستشار مالي خبير اسمه "Shark AI". تتحدث بالعربية فقط. تعطي إجابات دقيقة، مفصلة، ومفيدة. تقدم تحليلات ونصائح مخصصة بناءً على وصف المستخدم لموقفه المالي. تجيب بأسلوب واضح ومحترف. الآن أجب عن السؤال التالي:\n${question} [/INST]`,
-                    parameters: {
-                        max_new_tokens: 600,
-                        temperature: 0.7
-                    }
+                    contents: chatHistory,
+                    generationConfig: { temperature: 0.7, maxOutputTokens: 800 }
                 })
             });
 
             const data = await response.json();
-            let reply;
-            if (data.error) {
-                // إذا كان النموذج غير جاهز، انتظر قليلاً ثم أعد المحاولة تلقائياً
-                if (data.error.includes('loading') || data.error.includes('currently loading')) {
-                    updateMessage(typingDiv, '⏳ النموذج قيد التحميل، أعد المحاولة بعد لحظات...');
-                    // إعادة المحاولة بعد 5 ثوانٍ
-                    setTimeout(async () => {
-                        updateMessage(typingDiv, '🔄 جاري إعادة المحاولة...');
-                        await askAI(); // استدعاء ذاتي (مع نفس السؤال لكن ربما يعيد)
-                    }, 5000);
-                    return;
+
+            if (!response.ok) {
+                if (data.error?.message.includes("API key")) {
+                    throw new Error("KEY_INVALID");
                 }
-                throw new Error(data.error);
+                throw new Error("SERVER_ERROR");
             }
 
-            if (Array.isArray(data)) {
-                reply = data[0]?.generated_text || 'لم يتم توليد رد.';
-            } else {
-                reply = data.generated_text || 'لم يتم توليد رد.';
-            }
-            updateMessage(typingDiv, reply.trim());
+            const aiReply = data.candidates[0].content.parts[0].text;
+            
+            // 4. تحديث الواجهة
+            updateAIMessage(typingDiv, aiReply);
+            chatHistory.push({ role: "model", parts: [{ text: aiReply }] });
 
         } catch (error) {
-            console.error(error);
-            updateMessage(typingDiv, '❌ حدث خطأ. تأكد من صحة المفتاح أو جرب نموذجاً آخر من القائمة أعلاه.');
+            console.error("AI Error:", error);
+            if (error.message === "KEY_INVALID") {
+                updateAIMessage(typingDiv, "🔑 المفتاح غير صحيح أو غير مفعل. يرجى التأكد منه من Google AI Studio.");
+                document.getElementById('apiSection').classList.remove('hidden');
+            } else {
+                updateAIMessage(typingDiv, "❌ حدث خطأ في الاتصال. تأكد من الإنترنت أو حاول لاحقاً.");
+            }
+        } finally {
+            sendBtn.disabled = false;
+            // الحفاظ على آخر 10 رسائل لضمان السرعة
+            if (chatHistory.length > 10) chatHistory = chatHistory.slice(-10);
         }
     }
 
-    function addMessage(text, sender) {
+    function addMessageUI(text, sender) {
         const box = document.getElementById('chatBox');
-        if (!box) return null;
         const div = document.createElement('div');
         const isAI = sender === 'ai';
+        
         div.className = isAI
-            ? 'bg-white p-4 rounded-2xl rounded-tr-none shadow-sm text-sm text-slate-700 max-w-[80%]'
-            : 'bg-sky-500 text-white p-4 rounded-2xl rounded-tl-none shadow-sm text-sm max-w-[80%] ml-auto';
-        div.textContent = text;
+            ? 'bg-white p-4 rounded-2xl rounded-tr-none shadow-sm border border-slate-100 text-sm text-slate-700 max-w-[85%] leading-relaxed'
+            : 'bg-sky-600 p-4 rounded-2xl rounded-tl-none shadow-md text-sm text-white max-w-[85%] ml-auto leading-relaxed';
+        
+        div.innerHTML = text;
         box.appendChild(div);
         box.scrollTop = box.scrollHeight;
         return div;
     }
 
-    function updateMessage(element, newText) {
-        if (element) {
-            element.textContent = newText;
-            const box = document.getElementById('chatBox');
-            if (box) box.scrollTop = box.scrollHeight;
-        }
+    function updateAIMessage(element, text) {
+        if (!element) return;
+        const formatted = text
+            .replace(/\*\*(.*?)\*\*/g, '<strong class="text-sky-800">$1</strong>')
+            .replace(/\n/g, '<br>');
+        element.innerHTML = formatted;
+        document.getElementById('chatBox').scrollTop = document.getElementById('chatBox').scrollHeight;
     }
 </script>
+
+</body>
+</html>
