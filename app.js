@@ -243,10 +243,16 @@ window.engine = {
             postData.views = [];
             postData.likedBy = [];
         }
-        await addDoc(collection(db, "posts"), postData);
-        input.value = '';
-        this._currentBg = null;
-        this.renderBgPicker();
+        try {
+            await addDoc(collection(db, "posts"), postData);
+            input.value = '';
+            this._currentBg = null;
+            this.renderBgPicker();
+            console.log('✅ تم النشر بنجاح');
+        } catch (error) {
+            console.error('❌ فشل النشر:', error);
+            this.showToast('❌ فشل النشر: ' + error.message);
+        }
     },
 
     getActiveBites() {
@@ -434,8 +440,9 @@ window.engine = {
             if (this._visibleCount > this._allPosts.length) this._visibleCount = this._allPosts.length;
             this.renderVisiblePosts();
             this.renderStories();
+            console.log('🔄 تم تحديث المنشورات:', this._allPosts.length);
         }, error => {
-            console.error("Firestore error:", error);
+            console.error('❌ خطأ في تحميل المنشورات:', error);
             const feed = document.getElementById('feedList');
             if (feed) feed.innerHTML = '<p class="text-center text-red-500">تعذر تحميل المنشورات. تأكد من قواعد الأمان في Firestore.</p>';
         });
@@ -446,7 +453,7 @@ window.engine = {
         if (!feed) return;
         const normalPosts = this._allPosts.filter(p => p.data.type !== 'bite');
         const postsToShow = normalPosts.slice(0, this._visibleCount);
-        feed.innerHTML = postsToShow.map(({ id, data: p }) => this.postHTML(id, p)).join('');
+        feed.innerHTML = postsToShow.map(({ id, data: p }) => this.postHTML(id, p)).join('') || '<p class="text-gray-400 text-center py-8">لا توجد منشورات بعد</p>';
 
         const oldBtn = document.getElementById('loadMorePostsBtn');
         if (oldBtn) oldBtn.remove();
@@ -477,7 +484,7 @@ window.engine = {
         return `
         <div class="bg-white rounded-2xl p-4 mb-4 shadow-sm border border-gray-100" ${cardBg}>
             <div class="flex items-center gap-3 mb-3">
-                <img src="${img}" class="w-10 h-10 rounded-full border border-sky-200 object-cover" loading="lazy">
+                <img src="${img}" class="w-10 h-10 rounded-full border border-sky-200 object-cover" loading="lazy" onerror="this.src='${DEFAULT_AVATAR}'">
                 <div>
                     <span class="font-extrabold text-${bg ? 'white' : 'gray-800'} text-sm">${p.authorName || 'مستخدم'}</span>
                     <div class="text-xs ${textSubColor}">${dateStr}</div>
