@@ -368,6 +368,11 @@ window.engine = {
             if (this._visibleCount > this._allPosts.length) this._visibleCount = this._allPosts.length;
             this.renderVisiblePosts();
             this.renderStories();
+        }, error => {
+            console.error("Firestore error:", error);
+            // عرض رسالة للمستخدم إذا فشل التحميل
+            const feed = document.getElementById('feedList');
+            if (feed) feed.innerHTML = '<p class="text-center text-red-500">تعذر تحميل المنشورات. تأكد من قواعد الأمان في Firestore.</p>';
         });
     },
 
@@ -456,6 +461,9 @@ window.engine = {
             if (snapshot.empty) { container.innerHTML = '<p class="text-gray-400 text-sm text-center py-8">لا توجد منشورات بعد</p>'; return; }
             container.innerHTML = snapshot.docs.map(doc => this.postHTML(doc.id, doc.data())).join('');
             snapshot.docs.forEach(d => this.listenToComments(d.id));
+        }, error => {
+            const container = document.getElementById(containerId);
+            if (container) container.innerHTML = '<p class="text-center text-red-500">تعذر تحميل المنشورات</p>';
         });
     },
 
