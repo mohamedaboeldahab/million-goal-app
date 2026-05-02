@@ -25,10 +25,8 @@ const db = getFirestore(app);
 window.db = db;
 const provider = new GoogleAuthProvider();
 
-// صورة افتراضية جميلة على شكل قرش عند عدم وجود صورة
 const DEFAULT_AVATAR = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="%23e2e8f0"/><text x="50" y="67" font-size="60" text-anchor="middle" fill="%2394a3b8">🦈</text></svg>';
 
-// معالجة روابط الصور لجعلها بحجم مناسب ودعم الصور المفقودة
 function fixPhotoUrl(url) {
     if (!url) return DEFAULT_AVATAR;
     if (url.startsWith('data:')) return url;
@@ -39,6 +37,19 @@ function fixPhotoUrl(url) {
     return url + (url.includes('?') ? '&' : '?') + 'sz=50';
 }
 
+const bgGradients = {
+    gradient1: 'linear-gradient(135deg, #667eea, #764ba2)',
+    gradient2: 'linear-gradient(135deg, #f093fb, #f5576c)',
+    gradient3: 'linear-gradient(135deg, #4facfe, #00f2fe)',
+    gradient4: 'linear-gradient(135deg, #43e97b, #38f9d7)',
+    gradient5: 'linear-gradient(135deg, #fa709a, #fee140)',
+    gradient6: 'linear-gradient(135deg, #a18cd1, #fbc2eb)',
+    gradient7: 'linear-gradient(135deg, #fccb90, #d57eeb)',
+    gradient8: 'linear-gradient(135deg, #e0c3fc, #8ec5fc)',
+    gradient9: 'linear-gradient(135deg, #f093fb, #f5576c)',
+    gradient10: 'linear-gradient(135deg, #fddb92, #d1fdff)'
+};
+
 window.engine = {
     _allComments: {},
     _allPosts: [],
@@ -48,6 +59,7 @@ window.engine = {
     _activeBites: [],
     _storyIndex: 0,
     _observer: null,
+    _currentBg: null,
 
     async init() {
         try { await setPersistence(auth, browserLocalPersistence); } catch (e) {}
@@ -111,7 +123,8 @@ window.engine = {
                     this.activateCharCounter();
                     this.updateTypeButtons();
                     this.updateCreatorAvatar();
-                    this.watchStoriesContainer();
+                    this.renderBgPicker();        // <-- مهم: عرض ألوان الخلفية
+                    this.watchStoriesContainer(); // <-- مراقبة القصص وربط اللمس
                 }, 50);
             } else if (pageName === 'profile') {
                 setTimeout(() => {
@@ -165,6 +178,37 @@ window.engine = {
         });
     },
 
+    // ------- خلفيات البوست -------
+    renderBgPicker() {
+        const container = document.getElementById('bgPickerContainer');
+        if (!container) return;
+        container.innerHTML = '';
+        Object.entries(bgGradients).forEach(([name, gradient]) => {
+            const circle = document.createElement('div');
+            circle.className = `w-8 h-8 rounded-full cursor-pointer border-2 ${this._currentBg === name ? 'border-sky-500 scale-110' : 'border-transparent'}`;
+            circle.style.background = gradient;
+            circle.dataset.bg = name;
+            circle.addEventListener('click', () => this.setBg(name));
+            container.appendChild(circle);
+        });
+        const clearBtn = document.createElement('div');
+        clearBtn.className = 'w-8 h-8 rounded-full cursor-pointer border-2 border-gray-300 flex items-center justify-center text-xs text-gray-500';
+        clearBtn.innerHTML = '✕';
+        clearBtn.addEventListener('click', () => this.setBg(null));
+        container.appendChild(clearBtn);
+    },
+
+    setBg(name) {
+        this._currentBg = name;
+        document.querySelectorAll('#bgPickerContainer div').forEach(el => {
+            if (el.dataset.bg === name) {
+                el.classList.add('border-sky-500', 'scale-110');
+            } else {
+                el.classList.remove('border-sky-500', 'scale-110');
+            }
+        });
+    },
+
     async handleVote(postId, type) {
         const postRef = doc(db, "posts", postId);
         const userId = auth.currentUser.uid;
@@ -193,12 +237,17 @@ window.engine = {
             createdAt: serverTimestamp(),
             type: this._currentPostType
         };
+        if (this._currentPostType === 'post' && this._currentBg) {
+            postData.backgroundColor = this._currentBg;
+        }
         if (this._currentPostType === 'bite') {
             postData.views = [];
             postData.likedBy = [];
         }
         await addDoc(collection(db, "posts"), postData);
         input.value = '';
+        this._currentBg = null;
+        this.renderBgPicker();
     },
 
     getActiveBites() {
@@ -240,21 +289,47 @@ window.engine = {
         return views.includes(userId);
     },
 
+    // ------- إصلاح اللمس للقصص: فتح بضغطة واحدة -------
     watchStoriesContainer() {
         const row = document.getElementById('storiesRow');
         if (!row || this._observer) return;
+
+        // نستخدم متغيرات لتتبع التمرير
+        let startX = 0, startY = 0, moved = false;
+
         this._observer = new MutationObserver(() => {
             document.querySelectorAll('.story-item').forEach(story => {
                 if (story.dataset.bound === 'true') return;
                 story.dataset.bound = 'true';
                 const index = parseInt(story.getAttribute('data-story-index'));
                 if (isNaN(index)) return;
-                const handler = (e) => {
-                    e.preventDefault();
-                    engine.openStoryPlayer(index);
-                };
-                story.addEventListener('pointerdown', handler);
-                story.addEventListener('click', handler);
+
+                // تسجيل بداية اللمس
+                story.addEventListener('touchstart', (e) => {
+                    startX = e.touches[0].clientX;
+                    startY = e.touches[0].clientY;
+                    moved = false;
+                }, { passive: true });
+
+                // تتبع الحركة
+                story.addEventListener('touchmove', (e) => {
+                    const dx = Math.abs(e.touches[0].clientX - startX);
+                    const dy = Math.abs(e.touches[0].clientY - startY);
+                    if (dx > 5 || dy > 5) moved = true; // اعتبره تمرير
+                }, { passive: true });
+
+                // عند رفع الإصبع: إذا لم يتحرك، افتح القصة
+                story.addEventListener('touchend', (e) => {
+                    if (!moved) {
+                        e.preventDefault();
+                        engine.openStoryPlayer(index);
+                    }
+                });
+
+                // احتياطي للفأرة
+                story.addEventListener('click', (e) => {
+                    if (!moved) engine.openStoryPlayer(index);
+                });
             });
         });
         this._observer.observe(row, { childList: true, subtree: true });
@@ -314,7 +389,6 @@ window.engine = {
         }
         const bite = this._activeBites[this._storyIndex];
         const img = fixPhotoUrl(bite.data.authorPhoto);
-
         const storyImage = document.getElementById('storyImage');
         const storyAuthor = document.getElementById('storyAuthor');
         const storyText = document.getElementById('storyText');
@@ -341,7 +415,6 @@ window.engine = {
                 if (viewsCount) viewsCount.innerHTML = `<i class="fa-regular fa-eye"></i> ${views} · <i class="fa-${newLiked ? 'solid' : 'regular'} fa-heart text-${newLiked ? 'red-500' : 'gray-500'}"></i> ${newLiked ? likes + 1 : likes - 1}`;
             };
         }
-
         this.recordView(bite.id);
     },
 
@@ -361,6 +434,7 @@ window.engine = {
         }
     },
 
+    // ---------- المنشورات (مع دعم الخلفيات) ----------
     listenToPosts() {
         const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
         this._currentSnapUnsubscribe = onSnapshot(q, (snapshot) => {
@@ -370,7 +444,6 @@ window.engine = {
             this.renderStories();
         }, error => {
             console.error("Firestore error:", error);
-            // عرض رسالة للمستخدم إذا فشل التحميل
             const feed = document.getElementById('feedList');
             if (feed) feed.innerHTML = '<p class="text-center text-red-500">تعذر تحميل المنشورات. تأكد من قواعد الأمان في Firestore.</p>';
         });
@@ -381,35 +454,7 @@ window.engine = {
         if (!feed) return;
         const normalPosts = this._allPosts.filter(p => p.data.type !== 'bite');
         const postsToShow = normalPosts.slice(0, this._visibleCount);
-        feed.innerHTML = postsToShow.map(({ id, data: p }) => {
-            const postId = id;
-            let dateStr = '';
-            try { dateStr = p.createdAt?.toDate().toLocaleString('ar-EG'); } catch (e) { dateStr = '---'; }
-            const img = fixPhotoUrl(p.authorPhoto);
-            return `
-            <div class="bg-white rounded-2xl p-4 mb-4 shadow-sm border border-gray-100">
-                <div class="flex items-center gap-3 mb-3">
-                    <img src="${img}" class="w-10 h-10 rounded-full border border-sky-200 object-cover" loading="lazy">
-                    <div>
-                        <span class="font-extrabold text-gray-800 text-sm">${p.authorName || 'مستخدم'}</span>
-                        <div class="text-xs text-gray-400">${dateStr}</div>
-                    </div>
-                </div>
-                <p class="text-gray-700 text-sm leading-relaxed mb-4 whitespace-pre-wrap">${p.content}</p>
-                <div class="flex gap-2 mb-3">
-                    <button onclick="engine.handleVote('${postId}', 'support')" class="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-sky-400 to-blue-500 text-white font-bold py-2 rounded-xl shadow text-sm"><span class="text-base">🦈</span> أؤيد <span class="bg-white/40 px-2 py-0.5 rounded-full text-sm font-extrabold">${p.supportCount || 0}</span></button>
-                    <button onclick="engine.handleVote('${postId}', 'oppose')" class="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-amber-400 to-orange-400 text-white font-bold py-2 rounded-xl shadow text-sm"><span class="text-base">🐟</span> لا أؤيد <span class="bg-white/40 px-2 py-0.5 rounded-full text-sm font-extrabold">${p.opposeCount || 0}</span></button>
-                </div>
-                <div class="border-t border-gray-100 pt-3">
-                    <div id="comments_list_${postId}" class="space-y-2 mb-2"></div>
-                    <button id="load_more_btn_${postId}" style="display:none;" onclick="engine.loadMoreComments('${postId}')" class="text-sky-600 text-xs font-bold hover:underline w-full text-center py-1">عرض كل التعليقات</button>
-                    <div class="flex gap-2 mt-2">
-                        <input type="text" id="comm_${postId}" placeholder="أضف تعليقاً..." class="flex-1 bg-gray-100 rounded-lg px-3 py-1.5 text-xs border border-gray-200 outline-none focus:ring-1 focus:ring-sky-400">
-                        <button onclick="engine.addComment('${postId}')" class="bg-sky-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold"><i class="fa-solid fa-paper-plane"></i></button>
-                    </div>
-                </div>
-            </div>`;
-        }).join('');
+        feed.innerHTML = postsToShow.map(({ id, data: p }) => this.postHTML(id, p)).join('');
 
         const oldBtn = document.getElementById('loadMorePostsBtn');
         if (oldBtn) oldBtn.remove();
@@ -426,6 +471,40 @@ window.engine = {
             feed.parentNode.appendChild(loadMoreBtn);
         }
         postsToShow.forEach(({ id }) => this.listenToComments(id));
+    },
+
+    postHTML(postId, p) {
+        let dateStr = '';
+        try { dateStr = p.createdAt?.toDate().toLocaleString('ar-EG'); } catch (e) { dateStr = '---'; }
+        const img = fixPhotoUrl(p.authorPhoto);
+        const bg = p.backgroundColor ? bgGradients[p.backgroundColor] : null;
+        const textColor = bg ? 'text-white' : 'text-gray-700';
+        const textSubColor = bg ? 'text-white/70' : 'text-gray-400';
+        const cardBg = bg ? `style="background: ${bg};"` : '';
+
+        return `
+        <div class="bg-white rounded-2xl p-4 mb-4 shadow-sm border border-gray-100" ${cardBg}>
+            <div class="flex items-center gap-3 mb-3">
+                <img src="${img}" class="w-10 h-10 rounded-full border border-sky-200 object-cover" loading="lazy">
+                <div>
+                    <span class="font-extrabold text-${bg ? 'white' : 'gray-800'} text-sm">${p.authorName || 'مستخدم'}</span>
+                    <div class="text-xs ${textSubColor}">${dateStr}</div>
+                </div>
+            </div>
+            <p class="${textColor} text-sm leading-relaxed mb-4 whitespace-pre-wrap">${p.content}</p>
+            <div class="flex gap-2 mb-3">
+                <button onclick="engine.handleVote('${postId}', 'support')" class="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-sky-400 to-blue-500 text-white font-bold py-2 rounded-xl shadow text-sm"><span class="text-base">🦈</span> أؤيد <span class="bg-white/40 px-2 py-0.5 rounded-full text-sm font-extrabold">${p.supportCount || 0}</span></button>
+                <button onclick="engine.handleVote('${postId}', 'oppose')" class="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-amber-400 to-orange-400 text-white font-bold py-2 rounded-xl shadow text-sm"><span class="text-base">🐟</span> لا أؤيد <span class="bg-white/40 px-2 py-0.5 rounded-full text-sm font-extrabold">${p.opposeCount || 0}</span></button>
+            </div>
+            <div class="border-t border-gray-100 pt-3">
+                <div id="comments_list_${postId}" class="space-y-2 mb-2"></div>
+                <button id="load_more_btn_${postId}" style="display:none;" onclick="engine.loadMoreComments('${postId}')" class="text-sky-600 text-xs font-bold hover:underline w-full text-center py-1">عرض كل التعليقات</button>
+                <div class="flex gap-2 mt-2">
+                    <input type="text" id="comm_${postId}" placeholder="أضف تعليقاً..." class="flex-1 bg-gray-100 rounded-lg px-3 py-1.5 text-xs border border-gray-200 outline-none focus:ring-1 focus:ring-sky-400">
+                    <button onclick="engine.addComment('${postId}')" class="bg-sky-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold"><i class="fa-solid fa-paper-plane"></i></button>
+                </div>
+            </div>
+        </div>`;
     },
 
     listenToComments(postId) {
@@ -451,6 +530,7 @@ window.engine = {
         btn.style.display = 'none';
     },
 
+    // ---------- صفحة البروفايل ----------
     listenToProfilePosts(containerId) {
         const userId = auth.currentUser?.uid;
         if (!userId) return;
@@ -467,34 +547,7 @@ window.engine = {
         });
     },
 
-    postHTML(postId, p) {
-        let dateStr = '';
-        try { dateStr = p.createdAt?.toDate().toLocaleString('ar-EG'); } catch (e) { dateStr = '---'; }
-        const img = fixPhotoUrl(p.authorPhoto);
-        return `
-        <div class="bg-white rounded-2xl p-4 mb-4 shadow-sm border border-gray-100">
-            <div class="flex items-center gap-3 mb-3">
-                <img src="${img}" class="w-10 h-10 rounded-full border border-sky-200 object-cover" loading="lazy">
-                <div>
-                    <span class="font-extrabold text-gray-800 text-sm">${p.authorName || 'مستخدم'}</span>
-                    <div class="text-xs text-gray-400">${dateStr}</div>
-                </div>
-            </div>
-            <p class="text-gray-700 text-sm leading-relaxed mb-4 whitespace-pre-wrap">${p.content}</p>
-            <div class="flex gap-2 mb-3">
-                <button onclick="engine.handleVote('${postId}', 'support')" class="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-sky-400 to-blue-500 text-white font-bold py-2 rounded-xl shadow text-sm"><span class="text-base">🦈</span> أؤيد <span class="bg-white/40 px-2 py-0.5 rounded-full text-sm font-extrabold">${p.supportCount || 0}</span></button>
-                <button onclick="engine.handleVote('${postId}', 'oppose')" class="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-amber-400 to-orange-400 text-white font-bold py-2 rounded-xl shadow text-sm"><span class="text-base">🐟</span> لا أؤيد <span class="bg-white/40 px-2 py-0.5 rounded-full text-sm font-extrabold">${p.opposeCount || 0}</span></button>
-            </div>
-            <div class="border-t border-gray-100 pt-3">
-                <div id="comments_list_${postId}" class="space-y-2 mb-2"></div>
-                <button id="load_more_btn_${postId}" style="display:none;" onclick="engine.loadMoreComments('${postId}')" class="text-sky-600 text-xs font-bold hover:underline w-full text-center py-1">عرض كل التعليقات</button>
-                <div class="flex gap-2 mt-2">
-                    <input type="text" id="comm_${postId}" placeholder="أضف تعليقاً..." class="flex-1 bg-gray-100 rounded-lg px-3 py-1.5 text-xs border border-gray-200 outline-none focus:ring-1 focus:ring-sky-400">
-                    <button onclick="engine.addComment('${postId}')" class="bg-sky-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold"><i class="fa-solid fa-paper-plane"></i></button>
-                </div>
-            </div>
-        </div>`;
-    },
+    postHTML(postId, p) { /* موجود أعلاه */ },
 
     activateProfile() {
         document.querySelectorAll('.tab-btn').forEach(btn => {
