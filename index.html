@@ -9,19 +9,20 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&display=swap" rel="stylesheet">
     <style>
-        * { -webkit-tap-highlight-color: transparent; }
         body { font-family: 'Tajawal', sans-serif; background: #f0f2f5; margin: 0; }
         #splash { position: fixed; inset: 0; background: linear-gradient(135deg, #0f172a, #1e293b); z-index: 200; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .nav-link { display: flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 8px; font-weight: 600; font-size: 14px; color: #ffffffcc; transition: 0.2s; white-space: nowrap; }
         .nav-link.active { color: white; background: rgba(255,255,255,0.2); }
+        .nav-link:hover { background: rgba(255,255,255,0.15); color: white; }
         .nav-links-container { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
         .nav-links-container::-webkit-scrollbar { display: none; }
-        #storyPlayer { position: fixed; inset: 0; background: #000; z-index: 99999; display: none; flex-direction: column; align-items: center; justify-content: center; }
-        #storyPlayer.active { display: flex !important; }
-        img { image-rendering: -webkit-optimize-contrast; max-width: 100%; height: auto; }
+        @media (max-width: 768px) {
+            .nav-link { padding: 6px 12px; font-size: 12px; }
+        }
     </style>
 </head>
 <body>
+    <!-- شاشة البداية -->
     <div id="splash">
         <div class="w-24 h-24 bg-sky-500 rounded-[2rem] flex items-center justify-center mb-6 rotate-12 shadow-2xl animate-pulse">
             <i class="fa-solid fa-fish-fins text-5xl text-white"></i>
@@ -30,6 +31,7 @@
         <div id="authActions"><div class="w-8 h-8 border-4 border-sky-500 border-t-transparent rounded-full animate-spin"></div></div>
     </div>
 
+    <!-- شريط التنقل العلوي -->
     <nav class="bg-sky-500 shadow-md fixed top-0 left-0 right-0 z-50">
         <div class="flex items-center justify-between px-3 sm:px-4 h-14 gap-2">
             <div class="flex items-center gap-2 flex-shrink-0">
@@ -50,24 +52,24 @@
         </div>
     </nav>
 
+    <!-- منطقة المحتوى الرئيسية -->
     <main id="app-content" class="max-w-2xl mx-auto px-4 pt-28 pb-10"></main>
 
+    <!-- زر المساعد الذكي العائم -->
     <div onclick="window.engine.loadPage('ai-chat')" class="fixed bottom-6 left-6 w-14 h-14 bg-sky-500 rounded-2xl flex items-center justify-center text-white text-2xl shadow-lg cursor-pointer z-40 hover:scale-110 transition-transform"><i class="fa-solid fa-robot"></i></div>
 
+    <!-- زر مسح الكاش -->
+    <button onclick="clearAllCache()" class="fixed bottom-24 right-6 w-12 h-12 bg-red-500 rounded-full flex items-center justify-center text-white shadow-lg z-50 opacity-60 hover:opacity-100 transition-opacity" title="مسح الكاش وتحديث التطبيق">
+        <i class="fa-solid fa-rotate"></i>
+    </button>
+
+    <!-- طبقة البحث -->
     <div id="searchOverlay" class="fixed inset-0 z-[100] bg-white hidden flex-col">
         <div class="flex items-center gap-3 px-4 h-14 bg-sky-500 text-white">
             <button onclick="closeSearchOverlay()" class="text-white text-xl"><i class="fa-solid fa-arrow-right"></i></button>
             <h2 class="font-bold text-lg">بحث</h2>
         </div>
         <div id="searchOverlayContent" class="flex-1 overflow-y-auto p-4"></div>
-    </div>
-
-    <!-- مشغل القصص الثابت -->
-    <div id="storyPlayer">
-        <button id="closeStoryBtn" class="absolute top-5 right-5 text-white text-4xl z-50 bg-transparent border-0 p-4">&times;</button>
-        <div id="storyContent" class="text-white text-center px-4 mt-16"></div>
-        <div class="absolute inset-y-0 left-0 w-1/4 z-40" id="prevArea"></div>
-        <div class="absolute inset-y-0 right-0 w-1/4 z-40" id="nextArea"></div>
     </div>
 
     <script>
@@ -80,29 +82,39 @@
         }
         function closeSearchOverlay() { document.getElementById('searchOverlay').classList.replace('flex', 'hidden'); }
 
-        // ربط مشغل القصص
-        document.getElementById('closeStoryBtn')?.addEventListener('click', (e) => { e.stopPropagation(); window.engine?.closeStory?.(); });
-        document.getElementById('prevArea')?.addEventListener('click', (e) => { e.stopPropagation(); window.engine?.prevStory?.(); });
-        document.getElementById('nextArea')?.addEventListener('click', (e) => { e.stopPropagation(); window.engine?.nextStory?.(); });
-
-        // ========== السحر: Event Delegation على document للقصص ==========
-        function handleStoryInteraction(e) {
-            const el = e.target.closest('[data-story-index]');
-            if (el) {
-                e.preventDefault();
-                const idx = parseInt(el.getAttribute('data-story-index'));
-                if (!isNaN(idx) && window.engine?.openStoryPlayer) {
-                    window.engine.openStoryPlayer(idx);
+        async function clearAllCache() {
+            if (confirm('سيتم مسح جميع البيانات المحلية وإعادة تشغيل التطبيق. موافق؟')) {
+                if ('serviceWorker' in navigator) {
+                    const registrations = await navigator.serviceWorker.getRegistrations();
+                    for (let reg of registrations) { await reg.unregister(); }
                 }
+                localStorage.clear();
+                sessionStorage.clear();
+                if ('caches' in window) {
+                    const keys = await caches.keys();
+                    await Promise.all(keys.map(key => caches.delete(key)));
+                }
+                location.reload(true);
             }
         }
-
-        document.addEventListener('touchstart', handleStoryInteraction, { passive: false });
-        document.addEventListener('click', handleStoryInteraction);
     </script>
     <script type="module" src="app.js"></script>
     <script>
-        if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js').then(reg => {
+                reg.addEventListener('updatefound', () => {
+                    const newWorker = reg.installing;
+                    newWorker.addEventListener('statechange', () => {
+                        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                            if (confirm('يوجد تحديث جديد! اضغط موافق لتحديث التطبيق.')) {
+                                newWorker.postMessage({ type: 'SKIP_WAITING' });
+                                location.reload();
+                            }
+                        }
+                    });
+                });
+            });
+        }
     </script>
 </body>
 </html>
