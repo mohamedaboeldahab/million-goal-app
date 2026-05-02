@@ -6,7 +6,7 @@ import {
 import {
     getFirestore, collection, addDoc, updateDoc, doc, setDoc,
     onSnapshot, query, orderBy, where, serverTimestamp, increment,
-    arrayUnion, getDoc, deleteDoc, getDocs
+    arrayUnion, getDoc, deleteDoc, getDocs, arrayRemove
 } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -24,6 +24,20 @@ window.auth = auth;
 const db = getFirestore(app);
 window.db = db;
 const provider = new GoogleAuthProvider();
+
+// صورة افتراضية جميلة على شكل قرش عند عدم وجود صورة
+const DEFAULT_AVATAR = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="%23e2e8f0"/><text x="50" y="67" font-size="60" text-anchor="middle" fill="%2394a3b8">🦈</text></svg>';
+
+// معالجة روابط الصور لجعلها بحجم مناسب ودعم الصور المفقودة
+function fixPhotoUrl(url) {
+    if (!url) return DEFAULT_AVATAR;
+    if (url.startsWith('data:')) return url;
+    if (url.includes('googleusercontent.com') || url.includes('ggpht.com')) {
+        return url.replace(/=s[0-9]+(-c)?/, '=s50-c').replace(/=s[0-9]+/, '=s50');
+    }
+    if (url.includes('?sz=')) return url;
+    return url + (url.includes('?') ? '&' : '?') + 'sz=50';
+}
 
 window.engine = {
     _allComments: {},
@@ -48,7 +62,7 @@ window.engine = {
                 if (nav) nav.classList.remove('hidden');
                 const userBtn = document.getElementById('userBtn');
                 this.getOrCreateUserProfile().then(profile => {
-                    const photo = (profile.photoURL || user.photoURL || '') + '?sz=48';
+                    const photo = fixPhotoUrl(profile.photoURL || user.photoURL);
                     if (userBtn) userBtn.innerHTML = `<img src="${photo}" class="w-full h-full object-cover rounded-2xl" loading="lazy">`;
                 });
                 this.loadPage('home');
@@ -113,7 +127,7 @@ window.engine = {
         const img = document.getElementById('creatorAvatar');
         if (!img || !auth.currentUser) return;
         const profile = await this.getOrCreateUserProfile();
-        img.src = (profile.photoURL || auth.currentUser.photoURL || '') + '?sz=50';
+        img.src = fixPhotoUrl(profile.photoURL || auth.currentUser.photoURL);
     },
 
     async deleteExpiredBites() {
@@ -167,7 +181,7 @@ window.engine = {
         if (!input?.value.trim()) return;
         const profile = await this.getOrCreateUserProfile();
         const displayName = profile.displayName || auth.currentUser.displayName;
-        const photoURL = (profile.photoURL || auth.currentUser.photoURL || '') + '?sz=50';
+        const photoURL = fixPhotoUrl(profile.photoURL || auth.currentUser.photoURL);
         const postData = {
             content: input.value,
             authorName: displayName,
@@ -179,7 +193,6 @@ window.engine = {
             createdAt: serverTimestamp(),
             type: this._currentPostType
         };
-        // إذا كانت قصة، أضف عداد مشاهدات وإعجابات
         if (this._currentPostType === 'bite') {
             postData.views = [];
             postData.likedBy = [];
@@ -205,17 +218,19 @@ window.engine = {
         this._activeBites = this.getActiveBites();
         row.innerHTML = '';
         if (this._activeBites.length === 0) return;
-        row.innerHTML = this._activeBites.map((bite, index) => `
+        row.innerHTML = this._activeBites.map((bite, index) => {
+            const img = fixPhotoUrl(bite.data.authorPhoto);
+            const viewed = this.isStoryViewed(bite);
+            return `
             <div class="flex flex-col items-center gap-1 flex-shrink-0 story-item" data-story-index="${index}" style="cursor:pointer; touch-action: manipulation;">
-                <!-- دائرة القصة بتصميم فيسبوكي -->
-                <div class="w-16 h-16 rounded-full p-0.5 ${this.isStoryViewed(bite) ? 'bg-gray-300' : 'bg-gradient-to-tr from-sky-400 to-blue-500'}">
+                <div class="w-16 h-16 rounded-full p-0.5 ${viewed ? 'bg-gray-300' : 'bg-gradient-to-tr from-sky-400 to-blue-500'}">
                     <div class="w-full h-full rounded-full bg-white p-0.5">
-                        <img src="${bite.data.authorPhoto}" class="w-full h-full rounded-full object-cover" loading="lazy">
+                        <img src="${img}" class="w-full h-full rounded-full object-cover" loading="lazy">
                     </div>
                 </div>
-                <span class="text-[10px] font-bold text-gray-700 text-center truncate w-16">${bite.data.authorName}</span>
-            </div>
-        `).join('');
+                <span class="text-[10px] font-bold text-gray-700 text-center truncate w-16">${bite.data.authorName || 'مستخدم'}</span>
+            </div>`;
+        }).join('');
     },
 
     isStoryViewed(bite) {
@@ -268,7 +283,6 @@ window.engine = {
         if (data && data.type === 'bite') {
             const likedBy = data.likedBy || [];
             if (likedBy.includes(userId)) {
-                // إلغاء الإعجاب
                 await updateDoc(postRef, { likedBy: arrayRemove(userId) });
             } else {
                 await updateDoc(postRef, { likedBy: arrayUnion(userId) });
@@ -299,38 +313,35 @@ window.engine = {
             return;
         }
         const bite = this._activeBites[this._storyIndex];
-        const content = document.getElementById('storyContent');
-        if (content) {
-            content.innerHTML = `
-                <img src="${bite.data.authorPhoto}" class="w-20 h-20 rounded-full border-2 border-white/50 mb-4" loading="lazy">
-                <h3 class="font-bold text-xl">${bite.data.authorName}</h3>
-                <p class="text-sm mt-2 text-center max-w-xs">${bite.data.content}</p>
-            `;
-        }
+        const img = fixPhotoUrl(bite.data.authorPhoto);
 
-        // تحديث عداد المشاهدات والإعجابات
-        const viewsCount = (bite.data.views || []).length;
+        const storyImage = document.getElementById('storyImage');
+        const storyAuthor = document.getElementById('storyAuthor');
+        const storyText = document.getElementById('storyText');
+        if (storyImage) storyImage.src = img;
+        if (storyAuthor) storyAuthor.textContent = bite.data.authorName || 'مستخدم';
+        if (storyText) storyText.textContent = bite.data.content;
+
+        const views = (bite.data.views || []).length;
         const likedBy = bite.data.likedBy || [];
-        const likesCount = likedBy.length;
+        const likes = likedBy.length;
         const userId = auth.currentUser?.uid;
         const isLiked = userId && likedBy.includes(userId);
 
-        const viewsSpan = document.getElementById('viewsCount');
-        if (viewsSpan) viewsSpan.textContent = `👁 ${viewsCount} مشاهد · ❤️ ${likesCount}`;
+        const viewsCount = document.getElementById('viewsCount');
+        if (viewsCount) viewsCount.innerHTML = `<i class="fa-regular fa-eye"></i> ${views} · <i class="fa-${isLiked ? 'solid' : 'regular'} fa-heart text-${isLiked ? 'red-500' : 'gray-500'}"></i> ${likes}`;
 
         const likeBtn = document.getElementById('likeStoryBtn');
         if (likeBtn) {
-            likeBtn.innerHTML = isLiked ? '<i class="fa-solid fa-heart text-red-500"></i>' : '<i class="fa-regular fa-heart"></i>';
+            likeBtn.innerHTML = isLiked ? '<i class="fa-solid fa-heart text-red-500 text-2xl"></i>' : '<i class="fa-regular fa-heart text-2xl"></i>';
             likeBtn.onclick = async () => {
                 await this.toggleLike(bite.id);
-                // تحديث مؤقت للواجهة
-                likeBtn.innerHTML = isLiked ? '<i class="fa-regular fa-heart"></i>' : '<i class="fa-solid fa-heart text-red-500"></i>';
-                const newLikes = isLiked ? likesCount - 1 : likesCount + 1;
-                viewsSpan.textContent = `👁 ${viewsCount} مشاهد · ❤️ ${newLikes}`;
+                const newLiked = !isLiked;
+                likeBtn.innerHTML = newLiked ? '<i class="fa-solid fa-heart text-red-500 text-2xl"></i>' : '<i class="fa-regular fa-heart text-2xl"></i>';
+                if (viewsCount) viewsCount.innerHTML = `<i class="fa-regular fa-eye"></i> ${views} · <i class="fa-${newLiked ? 'solid' : 'regular'} fa-heart text-${newLiked ? 'red-500' : 'gray-500'}"></i> ${newLiked ? likes + 1 : likes - 1}`;
             };
         }
 
-        // تسجيل مشاهدة
         this.recordView(bite.id);
     },
 
@@ -350,7 +361,6 @@ window.engine = {
         }
     },
 
-    // ---------- المنشورات (بدون تغيير) ----------
     listenToPosts() {
         const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
         this._currentSnapUnsubscribe = onSnapshot(q, (snapshot) => {
@@ -370,12 +380,13 @@ window.engine = {
             const postId = id;
             let dateStr = '';
             try { dateStr = p.createdAt?.toDate().toLocaleString('ar-EG'); } catch (e) { dateStr = '---'; }
+            const img = fixPhotoUrl(p.authorPhoto);
             return `
             <div class="bg-white rounded-2xl p-4 mb-4 shadow-sm border border-gray-100">
                 <div class="flex items-center gap-3 mb-3">
-                    <img src="${p.authorPhoto}" class="w-10 h-10 rounded-full border border-sky-200 object-cover" loading="lazy">
+                    <img src="${img}" class="w-10 h-10 rounded-full border border-sky-200 object-cover" loading="lazy">
                     <div>
-                        <span class="font-extrabold text-gray-800 text-sm">${p.authorName}</span>
+                        <span class="font-extrabold text-gray-800 text-sm">${p.authorName || 'مستخدم'}</span>
                         <div class="text-xs text-gray-400">${dateStr}</div>
                     </div>
                 </div>
@@ -435,7 +446,6 @@ window.engine = {
         btn.style.display = 'none';
     },
 
-    // ========== صفحة البروفايل ==========
     listenToProfilePosts(containerId) {
         const userId = auth.currentUser?.uid;
         if (!userId) return;
@@ -452,12 +462,13 @@ window.engine = {
     postHTML(postId, p) {
         let dateStr = '';
         try { dateStr = p.createdAt?.toDate().toLocaleString('ar-EG'); } catch (e) { dateStr = '---'; }
+        const img = fixPhotoUrl(p.authorPhoto);
         return `
         <div class="bg-white rounded-2xl p-4 mb-4 shadow-sm border border-gray-100">
             <div class="flex items-center gap-3 mb-3">
-                <img src="${p.authorPhoto}" class="w-10 h-10 rounded-full border border-sky-200 object-cover" loading="lazy">
+                <img src="${img}" class="w-10 h-10 rounded-full border border-sky-200 object-cover" loading="lazy">
                 <div>
-                    <span class="font-extrabold text-gray-800 text-sm">${p.authorName}</span>
+                    <span class="font-extrabold text-gray-800 text-sm">${p.authorName || 'مستخدم'}</span>
                     <div class="text-xs text-gray-400">${dateStr}</div>
                 </div>
             </div>
@@ -498,7 +509,7 @@ window.engine = {
         if (avatarImg && nameEl) {
             this.getOrCreateUserProfile().then(profile => {
                 const u = auth.currentUser;
-                avatarImg.src = (profile.photoURL || u.photoURL || '') + '?sz=50';
+                avatarImg.src = fixPhotoUrl(profile.photoURL || u.photoURL);
                 nameEl.textContent = profile.displayName || u.displayName || 'مستخدم';
                 const bio = profile.bio || '🦈 مؤسس في Shark Hub';
                 if (bioEl) bioEl.textContent = bio;
@@ -570,7 +581,7 @@ window.engine = {
         const uid = auth.currentUser.uid;
         await updateDoc(doc(db, "users", uid), updates);
         const userBtn = document.getElementById('userBtn');
-        if (updates.photoURL && userBtn) userBtn.innerHTML = `<img src="${updates.photoURL}?sz=48" class="w-full h-full object-cover rounded-2xl" loading="lazy">`;
+        if (updates.photoURL && userBtn) userBtn.innerHTML = `<img src="${fixPhotoUrl(updates.photoURL)}" class="w-full h-full object-cover rounded-2xl" loading="lazy">`;
     },
 
     async addComment(postId) {
@@ -585,6 +596,4 @@ window.engine = {
     }
 };
 
-// استيراد دالة arrayRemove (غير موجودة افتراضياً في Firebase، سنستخدم arrayRemove من Firestore)
-import { arrayRemove } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-firestore.js";
 window.engine.init();
