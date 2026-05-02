@@ -1,1027 +1,641 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Shark AI 🦈 | مساعد الاستثمار الذكي</title>
-    <script src="https://cdn.tailwindcss.com">
-    </script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js">
-    </script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        shark: {
-                            50: '#f0f9ff',
-                            100: '#e0f2fe',
-                            200: '#bae6fd',
-                            300: '#7dd3fc',
-                            400: '#38bdf8',
-                            500: '#0ea5e9',
-                            600: '#0284c7',
-                            700: '#0369a1',
-                            800: '#075985',
-                            900: '#0c4a6e',
-                            950: '#082f49',
-                        }
-                    },
-                    fontFamily: {
-                        'arabic': ['Tajawal', 'Almarai', 'Cairo', 'sans-serif'],
-                    },
-                    animation: {
-                        'float': 'float 3s ease-in-out infinite',
-                        'pulse-soft': 'pulseSoft 2s ease-in-out infinite',
-                        'bounce-gentle': 'bounceGentle 2s infinite',
-                        'slide-up': 'slideUp 0.3s ease-out',
-                        'fade-in': 'fadeIn 0.4s ease-out',
-                        'ripple': 'ripple 0.6s ease-out',
-                    },
-                    keyframes: {
-                        float: {
-                            '0%, 100%': {transform: 'translateY(0px)'},
-                            '50%': {transform: 'translateY(-8px)'},
-                        },
-                        pulseSoft: {
-                            '0%, 100%': {opacity: '1'},
-                            '50%': {opacity: '0.7'},
-                        },
-                        bounceGentle: {
-                            '0%, 100%': {transform: 'translateY(0)'},
-                            '50%': {transform: 'translateY(-4px)'},
-                        },
-                        slideUp: {
-                            '0%': {transform: 'translateY(20px)', opacity: '0'},
-                            '100%': {transform: 'translateY(0)', opacity: '1'},
-                        },
-                        fadeIn: {
-                            '0%': {opacity: '0'},
-                            '100%': {opacity: '1'},
-                        },
-                        ripple: {
-                            '0%': {transform: 'scale(0)', opacity: '0.6'},
-                            '100%': {transform: 'scale(4)', opacity: '0'},
-                        },
-                    },
-                },
-            },
-        }
-    </script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&family=Tajawal:wght@300;400;500;700;800;900&display=swap');
-
-        :root {
-            --shark-400: #38bdf8;
-            --shark-500: #0ea5e9;
-            --shark-600: #0284c7;
-        }
-
-        * {
-            -webkit-tap-highlight-color: transparent;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Cairo', 'Tajawal', sans-serif;
-            background: #e8f4f8;
-            display: flex;
-            justify-content: center;
-            align-items: flex-start;
-            min-height: 100vh;
-            margin: 0;
-            padding: 0;
-            user-select: none;
-            -webkit-user-select: none;
-            overflow-x: hidden;
-        }
-
-        /* === حاوية التليفون === */
-        .phone-frame {
-            width: 100%;
-            max-width: 420px;
-            min-height: 100vh;
-            height: 100vh;
-            max-height: 900px;
-            background: #ffffff;
-            position: relative;
-            overflow: hidden;
-            box-shadow: 0 25px 60px rgba(2, 132, 199, 0.18), 0 8px 20px rgba(0, 0, 0, 0.08);
-            display: flex;
-            flex-direction: column;
-            border-radius: 0;
-        }
-
-        @media (min-width: 430px) {
-            .phone-frame {
-                border-radius: 32px;
-                margin-top: 10px;
-                min-height: 92vh;
-                height: 92vh;
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Shark AI 🦈 | مساعد الاستثمار الذكي</title>
+  <script src="https://cdn.tailwindcss.com">
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js">
+  </script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            shark: {
+              50: '#f0f9ff',
+              100: '#e0f2fe',
+              200: '#bae6fd',
+              300: '#7dd3fc',
+              400: '#38bdf8',
+              500: '#0ea5e9',
+              600: '#0284c7',
+              700: '#0369a1',
+              800: '#075985',
+              900: '#0c4a6e',
+              950: '#082f49',
             }
-            body {
-                padding: 10px;
-            }
+          }
         }
+      }
+    }
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&family=Tajawal:wght@300;400;500;700;800;900&display=swap');
 
-        /* === شريط الحالة === */
-        .status-bar {
-            background: linear-gradient(135deg, #0ea5e9, #38bdf8);
-            color: white;
-            padding: 8px 16px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 0.7rem;
-            font-weight: 600;
-            letter-spacing: 0.5px;
-            z-index: 30;
-            position: relative;
-            flex-shrink: 0;
-            border-radius: 0;
-        }
-        @media (min-width: 430px) {
-            .status-bar {
-                border-radius: 32px 32px 0 0;
-            }
-        }
+    :root {
+      --shark-400: #38bdf8;
+      --shark-500: #0ea5e9;
+      --shark-600: #0284c7;
+    }
 
-        .status-dot {
-            width: 7px;
-            height: 7px;
-            background: #4ade80;
-            border-radius: 50%;
-            display: inline-block;
-            animation: pulseSoft 2s ease-in-out infinite;
-            margin-left: 4px;
-            box-shadow: 0 0 8px rgba(74, 222, 128, 0.6);
-        }
+    * {
+      -webkit-tap-highlight-color: transparent;
+      box-sizing: border-box;
+    }
 
-        /* === المحتوى الرئيسي === */
-        .main-content {
-            flex: 1;
-            overflow-y: auto;
-            overflow-x: hidden;
-            padding-bottom: 80px;
-            scroll-behavior: smooth;
-            background: #f8fafc;
-            position: relative;
-            z-index: 1;
-        }
-        .main-content::-webkit-scrollbar {
-            width: 3px;
-        }
-        .main-content::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        .main-content::-webkit-scrollbar-thumb {
-            background: #bae6fd;
-            border-radius: 10px;
-        }
+    body {
+      font-family: 'Cairo', 'Tajawal', sans-serif;
+      background: #e8f4f8;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      overflow-x: hidden;
+    }
 
-        /* === شاشات === */
-        .screen {
-            display: none;
-            animation: fadeIn 0.35s ease-out;
-            padding: 12px;
-            min-height: 100%;
-        }
-        .screen.active {
-            display: block;
-        }
+    .phone-frame {
+      width: 100%;
+      max-width: 420px;
+      min-height: 100vh;
+      height: 100vh;
+      max-height: 900px;
+      background: #ffffff;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 25px 60px rgba(2, 132, 199, 0.18), 0 8px 20px rgba(0, 0, 0, 0.08);
+      display: flex;
+      flex-direction: column;
+      border-radius: 0;
+    }
 
-        /* === شريط التبويبات العائم === */
-        .floating-tabs {
-            position: absolute;
-            bottom: 12px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #ffffff;
-            border-radius: 20px;
-            display: flex;
-            gap: 4px;
-            padding: 6px 8px;
-            z-index: 50;
-            box-shadow: 0 10px 35px rgba(2, 132, 199, 0.2), 0 2px 8px rgba(0, 0, 0, 0.06);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(186, 230, 253, 0.5);
-            width: calc(100% - 24px);
-            max-width: 390px;
-            justify-content: space-around;
-        }
-        .tab-btn {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 8px 4px;
-            border-radius: 16px;
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            background: transparent;
-            border: none;
-            color: #94a3b8;
-            font-size: 0.65rem;
-            font-weight: 500;
-            gap: 4px;
-            position: relative;
-            font-family: inherit;
-            white-space: nowrap;
-            min-width: 0;
-        }
-        .tab-btn .tab-icon {
-            font-size: 1.3rem;
-            transition: all 0.3s ease;
-        }
-        .tab-btn.active {
-            color: #0284c7;
-            background: #f0f9ff;
-            font-weight: 700;
-            box-shadow: 0 4px 12px rgba(14, 165, 233, 0.15);
-        }
-        .tab-btn.active .tab-icon {
-            transform: translateY(-2px);
-            filter: drop-shadow(0 2px 4px rgba(14, 165, 233, 0.4));
-        }
-        .tab-btn:active {
-            transform: scale(0.94);
-            transition: transform 0.1s;
-        }
-        .tab-badge {
-            position: absolute;
-            top: 2px;
-            right: 8px;
-            width: 8px;
-            height: 8px;
-            background: #ef4444;
-            border-radius: 50%;
-            border: 1.5px solid white;
-            display: none;
-        }
-        .tab-badge.show {
-            display: block;
-            animation: pulseSoft 1.5s infinite;
-        }
+    @media (min-width: 430px) {
+      .phone-frame {
+        border-radius: 32px;
+        margin-top: 10px;
+        min-height: 92vh;
+        height: 92vh;
+      }
+      body {
+        padding: 10px;
+      }
+    }
 
-        /* === فقاعات الدردشة === */
-        .msg-bubble {
-            padding: 10px 14px;
-            border-radius: 18px;
-            max-width: 84%;
-            word-wrap: break-word;
-            line-height: 1.55;
-            font-size: 0.88rem;
-            animation: slideUp 0.35s ease-out;
-            position: relative;
-            transition: all 0.2s;
-            letter-spacing: 0.2px;
-        }
-        .msg-user {
-            background: linear-gradient(135deg, #0ea5e9, #38bdf8);
-            color: #fff;
-            margin-right: auto;
-            margin-left: 4px;
-            border-bottom-right-radius: 6px;
-            box-shadow: 0 3px 10px rgba(14, 165, 233, 0.2);
-            font-weight: 500;
-        }
-        .msg-ai {
-            background: #ffffff;
-            color: #1e293b;
-            margin-left: auto;
-            margin-right: 4px;
-            border-bottom-left-radius: 6px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-            border: 1px solid #e2e8f0;
-            font-weight: 400;
-        }
-        .msg-ai .typing-dots {
-            display: flex;
-            gap: 3px;
-            padding: 4px 0;
-        }
-        .msg-ai .typing-dots span {
-            width: 7px;
-            height: 7px;
-            background: #94a3b8;
-            border-radius: 50%;
-            animation: bounceGentle 1.2s infinite;
-        }
-        .msg-ai .typing-dots span:nth-child(2) {
-            animation-delay: 0.2s;
-        }
-        .msg-ai .typing-dots span:nth-child(3) {
-            animation-delay: 0.4s;
-        }
+    .status-bar {
+      background: linear-gradient(135deg, #0ea5e9, #38bdf8);
+      color: white;
+      padding: 8px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      z-index: 30;
+      position: relative;
+      flex-shrink: 0;
+      border-radius: 0;
+    }
+    @media (min-width: 430px) {
+      .status-bar {
+        border-radius: 32px 32px 0 0;
+      }
+    }
 
-        /* === كروت === */
-        .card {
-            background: #fff;
-            border-radius: 16px;
-            padding: 14px 16px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
-            border: 1px solid #e8f0f4;
-            margin-bottom: 10px;
-            transition: all 0.25s;
-        }
-        .card:active {
-            transform: scale(0.985);
-            box-shadow: 0 4px 16px rgba(14, 165, 233, 0.12);
-        }
-        .card-accent {
-            border-right: 4px solid #38bdf8;
-        }
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      background: #4ade80;
+      border-radius: 50%;
+      display: inline-block;
+      animation: pulseSoft 2s ease-in-out infinite;
+      margin-left: 4px;
+      box-shadow: 0 0 8px rgba(74, 222, 128, 0.6);
+    }
 
-        /* === أزرار === */
-        .btn-primary {
-            background: linear-gradient(135deg, #0ea5e9, #38bdf8);
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 14px;
-            font-weight: 700;
-            cursor: pointer;
-            font-family: inherit;
-            transition: all 0.25s;
-            box-shadow: 0 4px 14px rgba(14, 165, 233, 0.3);
-            letter-spacing: 0.3px;
-        }
-        .btn-primary:active {
-            transform: scale(0.94);
-            box-shadow: 0 2px 6px rgba(14, 165, 233, 0.4);
-        }
-        .btn-ghost {
-            background: #f0f9ff;
-            color: #0284c7;
-            border: 1.5px solid #bae6fd;
-            padding: 8px 16px;
-            border-radius: 12px;
-            font-weight: 600;
-            cursor: pointer;
-            font-family: inherit;
-            transition: all 0.2s;
-        }
+    .main-content {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding-bottom: 90px;  /* مساحة إضافية حتى لا تغطي التبويبات المحتوى */
+      scroll-behavior: smooth;
+      background: #f8fafc;
+      position: relative;
+      z-index: 1;
+    }
+    .main-content::-webkit-scrollbar {
+      width: 3px;
+    }
+    .main-content::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .main-content::-webkit-scrollbar-thumb {
+      background: #bae6fd;
+      border-radius: 10px;
+    }
 
-        /* === إدخال === */
-        .input-area {
-            display: flex;
-            gap: 8px;
-            padding: 10px 12px;
-            background: #fff;
-            border-top: 1px solid #e2e8f0;
-            flex-shrink: 0;
-            z-index: 25;
-            position: relative;
-        }
-        .input-area input {
-            flex: 1;
-            background: #f1f5f9;
-            border: 2px solid transparent;
-            padding: 10px 16px;
-            border-radius: 20px;
-            font-family: inherit;
-            font-size: 0.9rem;
-            outline: none;
-            transition: all 0.25s;
-            color: #1e293b;
-        }
-        .input-area input:focus {
-            border-color: #38bdf8;
-            background: #fff;
-            box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.08);
-        }
-        .input-area button {
-            background: linear-gradient(135deg, #0ea5e9, #38bdf8);
-            color: white;
-            border: none;
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
-            cursor: pointer;
-            font-size: 1.2rem;
-            transition: all 0.25s;
-            box-shadow: 0 4px 12px rgba(14, 165, 233, 0.35);
-            flex-shrink: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .input-area button:active {
-            transform: scale(0.88);
-        }
+    .screen {
+      display: none;
+      animation: fadeIn 0.35s ease-out;
+      padding: 12px;
+      min-height: 100%;
+    }
+    .screen.active {
+      display: block;
+    }
 
-        /* === مؤشر السوق === */
-        .market-indicator {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 0.78rem;
-            font-weight: 600;
-            padding: 4px 10px;
-            border-radius: 20px;
-            background: #f0fdf4;
-            color: #16a34a;
-        }
-        .market-indicator.down {
-            background: #fef2f2;
-            color: #dc2626;
-        }
+    /* تبويبات عائمة - تم رفعها للأعلى حتى لا تغطي شريط الإدخال */
+    .floating-tabs {
+      position: absolute;
+      bottom: 80px;   /* كانت 12px → الآن أعلى بكثير */
+      left: 50%;
+      transform: translateX(-50%);
+      background: #ffffff;
+      border-radius: 20px;
+      display: flex;
+      gap: 4px;
+      padding: 6px 8px;
+      z-index: 50;
+      box-shadow: 0 10px 35px rgba(2, 132, 199, 0.2), 0 2px 8px rgba(0, 0, 0, 0.06);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(186, 230, 253, 0.5);
+      width: calc(100% - 24px);
+      max-width: 390px;
+      justify-content: space-around;
+    }
 
-        /* === رسم بياني صغير === */
-        .mini-chart-wrap {
-            position: relative;
-            height: 120px;
-            width: 100%;
-        }
-        canvas {
-            max-width: 100%;
-        }
-    </style>
+    .tab-btn {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 8px 4px;
+      border-radius: 16px;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      font-size: 0.65rem;
+      font-weight: 500;
+      gap: 4px;
+      position: relative;
+      font-family: inherit;
+      white-space: nowrap;
+      min-width: 0;
+    }
+    .tab-btn .tab-icon {
+      font-size: 1.3rem;
+      transition: all 0.3s ease;
+    }
+    .tab-btn.active {
+      color: #0284c7;
+      background: #f0f9ff;
+      font-weight: 700;
+      box-shadow: 0 4px 12px rgba(14, 165, 233, 0.15);
+    }
+    .tab-btn.active .tab-icon {
+      transform: translateY(-2px);
+      filter: drop-shadow(0 2px 4px rgba(14, 165, 233, 0.4));
+    }
+    .tab-btn:active {
+      transform: scale(0.94);
+      transition: transform 0.1s;
+    }
+
+    .msg-bubble {
+      padding: 10px 14px;
+      border-radius: 18px;
+      max-width: 84%;
+      word-wrap: break-word;
+      line-height: 1.55;
+      font-size: 0.88rem;
+      animation: slideUp 0.35s ease-out;
+      position: relative;
+      transition: all 0.2s;
+      letter-spacing: 0.2px;
+    }
+    .msg-user {
+      background: linear-gradient(135deg, #0ea5e9, #38bdf8);
+      color: #fff;
+      margin-right: auto;
+      margin-left: 4px;
+      border-bottom-right-radius: 6px;
+      box-shadow: 0 3px 10px rgba(14, 165, 233, 0.2);
+      font-weight: 500;
+    }
+    .msg-ai {
+      background: #ffffff;
+      color: #1e293b;
+      margin-left: auto;
+      margin-right: 4px;
+      border-bottom-left-radius: 6px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+      border: 1px solid #e2e8f0;
+      font-weight: 400;
+    }
+    .msg-ai .typing-dots {
+      display: flex;
+      gap: 3px;
+      padding: 4px 0;
+    }
+    .msg-ai .typing-dots span {
+      width: 7px;
+      height: 7px;
+      background: #94a3b8;
+      border-radius: 50%;
+      animation: bounceGentle 1.2s infinite;
+    }
+    .msg-ai .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .msg-ai .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+    .card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 14px 16px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+      border: 1px solid #e8f0f4;
+      margin-bottom: 10px;
+      transition: all 0.25s;
+    }
+    .card:active { transform: scale(0.985); box-shadow: 0 4px 16px rgba(14, 165, 233, 0.12); }
+    .card-accent { border-right: 4px solid #38bdf8; }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #0ea5e9, #38bdf8);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.25s;
+      box-shadow: 0 4px 14px rgba(14, 165, 233, 0.3);
+      letter-spacing: 0.3px;
+    }
+    .btn-primary:active { transform: scale(0.94); }
+
+    .btn-ghost {
+      background: #f0f9ff;
+      color: #0284c7;
+      border: 1.5px solid #bae6fd;
+      padding: 8px 16px;
+      border-radius: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.2s;
+    }
+
+    .input-area {
+      display: flex;
+      gap: 8px;
+      padding: 10px 12px;
+      background: #fff;
+      border-top: 1px solid #e2e8f0;
+      flex-shrink: 0;
+      z-index: 25;
+      position: relative;
+    }
+    .input-area input {
+      flex: 1;
+      background: #f1f5f9;
+      border: 2px solid transparent;
+      padding: 10px 16px;
+      border-radius: 20px;
+      font-family: inherit;
+      font-size: 0.9rem;
+      outline: none;
+      transition: all 0.25s;
+      color: #1e293b;
+    }
+    .input-area input:focus {
+      border-color: #38bdf8;
+      background: #fff;
+      box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.08);
+    }
+    .input-area button {
+      background: linear-gradient(135deg, #0ea5e9, #38bdf8);
+      color: white;
+      border: none;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 1.2rem;
+      transition: all 0.25s;
+      box-shadow: 0 4px 12px rgba(14, 165, 233, 0.35);
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .input-area button:active { transform: scale(0.88); }
+
+    .market-indicator {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 20px;
+      background: #f0fdf4;
+      color: #16a34a;
+    }
+    .market-indicator.down {
+      background: #fef2f2;
+      color: #dc2626;
+    }
+
+    .mini-chart-wrap {
+      position: relative;
+      height: 120px;
+      width: 100%;
+    }
+    canvas { max-width: 100%; }
+
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    @keyframes pulseSoft { 0%,100% { opacity:1; } 50% { opacity:0.7; } }
+    @keyframes bounceGentle { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-4px); } }
+  </style>
 </head>
 <body>
+<div class="phone-frame" id="phoneFrame">
+  <!-- شريط الحالة -->
+  <div class="status-bar">
+    <span>🦈 Shark AI</span>
+    <span>
+      <span class="status-dot"></span> ذكي
+      <span style="margin:0 6px;">|</span>
+      <span id="clockDisplay">--:--</span>
+    </span>
+  </div>
 
-    <div class="phone-frame" id="phoneFrame">
-        <!-- شريط الحالة -->
-        <div class="status-bar">
-            <span>🦈 Shark AI</span>
-            <span>
-                <span class="status-dot"></span> ذكي
-                <span style="margin:0 6px;">|</span>
-                <span id="clockDisplay">--:--</span>
-            </span>
+  <!-- المحتوى الرئيسي -->
+  <div class="main-content" id="mainContent">
+    <!-- شاشة المحادثة -->
+    <div class="screen active" id="screen-chat">
+      <div class="text-center mb-2">
+        <span class="text-xs text-shark-500 font-semibold bg-shark-50 px-3 py-1 rounded-full">💬 مساعد الاستثمار</span>
+      </div>
+      <div id="chatContainer" class="space-y-2">
+        <div class="msg-bubble msg-ai">🦈 أهلاً! أنا <b>Shark AI</b> – مساعدك الذكي في عالم الاستثمار. اسألني عن الأسهم، العملات الرقمية، أو خطط الادخار!</div>
+        <div class="flex flex-wrap gap-2 mt-3">
+          <button onclick="quickAsk('ما هي أفضل استراتيجية للاستثمار للمبتدئين؟')" class="btn-ghost text-xs">💡 استراتيجية مبتدئ</button>
+          <button onclick="quickAsk('كيف أحلل سهماً قبل الشراء؟')" class="btn-ghost text-xs">📈 تحليل سهم</button>
+          <button onclick="quickAsk('ما الفرق بين الأسهم والعملات الرقمية؟')" class="btn-ghost text-xs">₿ عملات رقمية</button>
+          <button onclick="quickAsk('كيف أحمي محفظتي من الخسائر؟')" class="btn-ghost text-xs">🛡️ حماية</button>
         </div>
-
-        <!-- المحتوى -->
-        <div class="main-content" id="mainContent">
-
-            <!-- شاشة المحادثة -->
-            <div class="screen active" id="screen-chat">
-                <div class="text-center mb-2">
-                    <span class="text-xs text-shark-500 font-semibold bg-shark-50 px-3 py-1 rounded-full">
-                        💬 مساعد الاستثمار
-                    </span>
-                </div>
-                <div id="chatContainer" class="space-y-2">
-                    <!-- رسائل ترحيبية -->
-                    <div class="msg-bubble msg-ai">
-                        🦈 أهلاً! أنا <b>Shark AI</b> – مساعدك الذكي في عالم الاستثمار. اسألني عن الأسهم، العملات الرقمية، أو خطط الادخار!
-                    </div>
-                    <div class="flex flex-wrap gap-2 mt-3">
-                        <button onclick="quickAsk('ما هي أفضل استراتيجية للاستثمار للمبتدئين؟')" class="btn-ghost text-xs">💡 استراتيجية مبتدئ</button>
-                        <button onclick="quickAsk('كيف أحلل سهماً قبل الشراء؟')" class="btn-ghost text-xs">📈 تحليل سهم</button>
-                        <button onclick="quickAsk('ما الفرق بين الأسهم والعملات الرقمية؟')" class="btn-ghost text-xs">₿ عملات رقمية</button>
-                        <button onclick="quickAsk('كيف أحمي محفظتي من الخسائر؟')" class="btn-ghost text-xs">🛡️ حماية</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- شاشة الأسواق -->
-            <div class="screen" id="screen-market">
-                <h3 class="font-bold text-shark-700 mb-3 text-lg">📊 نظرة على الأسواق</h3>
-                <div class="card card-accent">
-                    <div class="flex justify-between items-center">
-                        <span class="font-semibold">📈 مؤشر السوق (محاكاة)</span>
-                        <span class="market-indicator" id="marketStatus">🟢 +2.4%</span>
-                    </div>
-                    <div class="mini-chart-wrap mt-2">
-                        <canvas id="miniMarketChart"></canvas>
-                    </div>
-                </div>
-                <div class="card">
-                    <div class="flex justify-between">
-                        <span>🦈 سهـم Shark (افتراضي)</span>
-                        <span class="text-green-600 font-bold">$142.80 <small class="text-xs">+3.2%</small></span>
-                    </div>
-                    <p class="text-xs text-slate-500 mt-1">حجم التداول: 2.4M | توصية: <b>شراء</b></p>
-                </div>
-                <div class="card">
-                    <div class="flex justify-between">
-                        <span>₿ بيتكوين (محاكاة)</span>
-                        <span class="text-green-600 font-bold">$67,340 <small class="text-xs">+1.8%</small></span>
-                    </div>
-                    <p class="text-xs text-slate-500 mt-1">تقلب منخفض | اتجاه: <b>صاعد</b></p>
-                </div>
-                <p class="text-xs text-slate-400 text-center mt-2">⚠️ بيانات محاكاة للأغراض التعليمية</p>
-            </div>
-
-            <!-- شاشة المحفظة -->
-            <div class="screen" id="screen-portfolio">
-                <h3 class="font-bold text-shark-700 mb-3 text-lg">💰 محفظتي الافتراضية</h3>
-                <div class="card" style="background:linear-gradient(135deg,#f0f9ff,#e0f2fe);border:2px solid #bae6fd;">
-                    <p class="text-xs text-shark-600 font-semibold">القيمة الإجمالية</p>
-                    <p class="text-3xl font-extrabold text-shark-800" id="portfolioValue">$10,000.00</p>
-                    <p class="text-xs text-green-600">+5.2% هذا الشهر 📈</p>
-                </div>
-                <div class="card flex justify-between items-center">
-                    <span>📊 أسهم تقنية</span>
-                    <span class="font-bold text-shark-600">$4,200</span>
-                </div>
-                <div class="card flex justify-between items-center">
-                    <span>₿ عملات رقمية</span>
-                    <span class="font-bold text-shark-600">$3,100</span>
-                </div>
-                <div class="card flex justify-between items-center">
-                    <span>💵 نقد (للاستثمار)</span>
-                    <span class="font-bold text-shark-600" id="cashBalance">$2,700</span>
-                </div>
-                <button class="btn-primary w-full mt-2" onclick="simulateInvestment()">🔄 محاكاة استثمار جديد</button>
-            </div>
-
-            <!-- شاشة التعلم -->
-            <div class="screen" id="screen-learn">
-                <h3 class="font-bold text-shark-700 mb-3 text-lg">📚 أساسيات الاستثمار</h3>
-                <div class="card card-accent cursor-pointer" onclick="quickAsk('اشرح لي ما هو التنويع في الاستثمار')">
-                    <span class="font-semibold">🎯 الدرس ١: التنويع</span>
-                    <p class="text-xs text-slate-500 mt-1">لا تضع كل البيض في سلة واحدة</p>
-                </div>
-                <div class="card card-accent cursor-pointer" onclick="quickAsk('ما هو تحليل المخاطر في الاستثمار؟')">
-                    <span class="font-semibold">⚖️ الدرس ٢: تحليل المخاطر</span>
-                    <p class="text-xs text-slate-500 mt-1">افهم قدرتك على تحمل الخسائر</p>
-                </div>
-                <div class="card card-accent cursor-pointer" onclick="quickAsk('كيف أقرأ القوائم المالية للشركات؟')">
-                    <span class="font-semibold">📋 الدرس ٣: القوائم المالية</span>
-                    <p class="text-xs text-slate-500 mt-1">تعلم قراءة الأرقام</p>
-                </div>
-                <div class="card card-accent cursor-pointer" onclick="quickAsk('ما هو التحليل الفني للأسهم؟')">
-                    <span class="font-semibold">📈 الدرس ٤: التحليل الفني</span>
-                    <p class="text-xs text-slate-500 mt-1">الرسوم البيانية والمؤشرات</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- شريط الإدخال (للشاشة الرئيسية) -->
-        <div class="input-area" id="inputArea">
-            <input id="msgInput" type="text" placeholder="اسأل عن الاستثمار..."
-            onkeypress="if(event.key==='Enter')sendMessage()">
-            <button onclick="sendMessage()" aria-label="إرسال">➤</button>
-        </div>
-
-        <!-- تبويبات عائمة -->
-        <div class="floating-tabs" id="floatingTabs">
-            <button class="tab-btn active" data-screen="screen-chat" onclick="switchTab('screen-chat',this)">
-                <span class="tab-icon">💬</span> المحادثة
-                <span class="tab-badge" id="badge-chat"></span>
-            </button>
-            <button class="tab-btn" data-screen="screen-market" onclick="switchTab('screen-market',this)">
-                <span class="tab-icon">📊</span> الأسواق
-                <span class="tab-badge" id="badge-market"></span>
-            </button>
-            <button class="tab-btn" data-screen="screen-portfolio" onclick="switchTab('screen-portfolio',this)">
-                <span class="tab-icon">💰</span> محفظتي
-                <span class="tab-badge" id="badge-portfolio"></span>
-            </button>
-            <button class="tab-btn" data-screen="screen-learn" onclick="switchTab('screen-learn',this)">
-                <span class="tab-icon">📚</span> تعلم
-                <span class="tab-badge" id="badge-learn"></span>
-            </button>
-        </div>
+      </div>
     </div>
 
-    <script>
-        // ============================================
-        // 🧠 نظام الذاكرة المتقدم
-        // ============================================
-        const MEMORY_KEY = 'shark_invest_memory_v2';
-        let memory = {
-            name: null,
-            experience: null, // مبتدئ, متوسط, خبير
-            interests: [],
-            portfolio: { virtual: 10000, cash: 2700, stocks: 4200, crypto: 3100 },
-            history: [], // آخر 20 محادثة
-            preferences: { riskTolerance: 'medium', language: 'ar' },
-            lastVisit: null,
-        };
+    <!-- شاشة الأسواق -->
+    <div class="screen" id="screen-market">
+      <h3 class="font-bold text-shark-700 mb-3 text-lg">📊 نظرة على الأسواق</h3>
+      <div class="card card-accent">
+        <div class="flex justify-between items-center">
+          <span class="font-semibold">📈 مؤشر السوق (محاكاة)</span>
+          <span class="market-indicator" id="marketStatus">🟢 +2.4%</span>
+        </div>
+        <div class="mini-chart-wrap mt-2"><canvas id="miniMarketChart"></canvas></div>
+      </div>
+      <div class="card"><div class="flex justify-between"><span>🦈 سهـم Shark</span><span class="text-green-600 font-bold">$142.80 <small class="text-xs">+3.2%</small></span></div><p class="text-xs text-slate-500 mt-1">توصية: شراء</p></div>
+      <div class="card"><div class="flex justify-between"><span>₿ بيتكوين</span><span class="text-green-600 font-bold">$67,340 <small class="text-xs">+1.8%</small></span></div><p class="text-xs text-slate-500 mt-1">اتجاه صاعد</p></div>
+      <p class="text-xs text-slate-400 text-center mt-2">⚠️ بيانات محاكاة تعليمية</p>
+    </div>
 
-        function loadMemory() {
-            try {
-                const saved = localStorage.getItem(MEMORY_KEY);
-                if (saved) {
-                    const parsed = JSON.parse(saved);
-                    memory = { ...memory, ...parsed };
-                    if (!memory.portfolio) memory.portfolio = { virtual: 10000, cash: 2700, stocks: 4200,
-                        crypto: 3100 };
-                }
-            } catch (e) {
-                console.warn('Memory load failed, using defaults');
-            }
-            memory.lastVisit = new Date().toISOString();
-            saveMemory();
-        }
+    <!-- شاشة المحفظة -->
+    <div class="screen" id="screen-portfolio">
+      <h3 class="font-bold text-shark-700 mb-3 text-lg">💰 محفظتي الافتراضية</h3>
+      <div class="card" style="background:linear-gradient(135deg,#f0f9ff,#e0f2fe);border:2px solid #bae6fd;">
+        <p class="text-xs text-shark-600 font-semibold">القيمة الإجمالية</p>
+        <p class="text-3xl font-extrabold text-shark-800" id="portfolioValue">$10,000.00</p>
+        <p class="text-xs text-green-600">+5.2% هذا الشهر 📈</p>
+      </div>
+      <div class="card flex justify-between items-center"><span>📊 أسهم تقنية</span><span class="font-bold text-shark-600">$4,200</span></div>
+      <div class="card flex justify-between items-center"><span>₿ عملات رقمية</span><span class="font-bold text-shark-600">$3,100</span></div>
+      <div class="card flex justify-between items-center"><span>💵 نقد</span><span class="font-bold text-shark-600" id="cashBalance">$2,700</span></div>
+      <button class="btn-primary w-full mt-2" onclick="simulateInvestment()">🔄 محاكاة استثمار جديد</button>
+    </div>
 
-        function saveMemory() {
-            try {
-                localStorage.setItem(MEMORY_KEY, JSON.stringify(memory));
-            } catch (e) {
-                console.warn('Memory save failed');
-            }
-        }
+    <!-- شاشة التعلم -->
+    <div class="screen" id="screen-learn">
+      <h3 class="font-bold text-shark-700 mb-3 text-lg">📚 أساسيات الاستثمار</h3>
+      <div class="card card-accent cursor-pointer" onclick="quickAsk('اشرح لي ما هو التنويع في الاستثمار')"><span class="font-semibold">🎯 الدرس ١: التنويع</span><p class="text-xs text-slate-500 mt-1">لا تضع كل البيض في سلة واحدة</p></div>
+      <div class="card card-accent cursor-pointer" onclick="quickAsk('ما هو تحليل المخاطر في الاستثمار؟')"><span class="font-semibold">⚖️ الدرس ٢: تحليل المخاطر</span></div>
+      <div class="card card-accent cursor-pointer" onclick="quickAsk('كيف أقرأ القوائم المالية للشركات؟')"><span class="font-semibold">📋 الدرس ٣: القوائم المالية</span></div>
+      <div class="card card-accent cursor-pointer" onclick="quickAsk('ما هو التحليل الفني للأسهم؟')"><span class="font-semibold">📈 الدرس ٤: التحليل الفني</span></div>
+    </div>
+  </div>
 
-        loadMemory();
+  <!-- شريط الإدخال (يظهر فقط في شاشة المحادثة) -->
+  <div class="input-area" id="inputArea">
+    <input id="msgInput" type="text" placeholder="اسأل عن الاستثمار..." onkeypress="if(event.key==='Enter')sendMessage()">
+    <button onclick="sendMessage()" aria-label="إرسال">➤</button>
+  </div>
 
-        // ============================================
-        // 🧠 محرك الفهم الطبيعي (NLP بسيط ومتطور)
-        // ============================================
-        function normalize(text) {
-            return text.toLowerCase().trim()
-                .replace(/[إأآا]/g, 'ا')
-                .replace(/[ةه]/g, 'ه')
-                .replace(/[ىيئ]/g, 'ي')
-                .replace(/[ؤ]/g, 'و')
-                .replace(/[\?؟،,\.!؛]/g, '')
-                .replace(/\s+/g, ' ');
-        }
+  <!-- تبويبات عائمة (أعلى من شريط الإدخال) -->
+  <div class="floating-tabs" id="floatingTabs">
+    <button class="tab-btn active" data-screen="screen-chat" onclick="switchTab('screen-chat',this)"><span class="tab-icon">💬</span> المحادثة</button>
+    <button class="tab-btn" data-screen="screen-market" onclick="switchTab('screen-market',this)"><span class="tab-icon">📊</span> الأسواق</button>
+    <button class="tab-btn" data-screen="screen-portfolio" onclick="switchTab('screen-portfolio',this)"><span class="tab-icon">💰</span> محفظتي</button>
+    <button class="tab-btn" data-screen="screen-learn" onclick="switchTab('screen-learn',this)"><span class="tab-icon">📚</span> تعلم</button>
+  </div>
+</div>
 
-        function similarity(a, b) {
-            const wordsA = a.split(' ');
-            const wordsB = b.split(' ');
-            const setB = new Set(wordsB);
-            let match = 0;
-            for (const w of wordsA) {
-                if (setB.has(w)) match++;
-                else {
-                    for (const wb of wordsB) {
-                        if (wb.includes(w) || w.includes(wb)) { match += 0.5; break; }
-                    }
-                }
-            }
-            return match / Math.max(wordsA.length, 1);
-        }
+<script>
+  // ========== ذاكرة متقدمة ==========
+  const MEMORY_KEY = 'shark_invest_memory_v2';
+  let memory = {
+    name: null,
+    experience: null,
+    interests: [],
+    portfolio: { virtual: 10000, cash: 2700, stocks: 4200, crypto: 3100 },
+    history: [],
+    preferences: { riskTolerance: 'medium' },
+    lastVisit: null
+  };
 
-        function extractName(text) {
-            const patterns = [
-                /اسمي\s+(\S+)/i,
-                /انا\s+(\S+)/i,
-                /أنا\s+(\S+)/i,
-                /ادعوني\s+(\S+)/i,
-                /لقبي\s+(\S+)/i,
-            ];
-            for (const p of patterns) {
-                const m = text.match(p);
-                if (m && m[1] && m[1].length > 1 && m[1].length < 20) return m[1];
-            }
-            return null;
-        }
+  function loadMemory() {
+    try {
+      const saved = localStorage.getItem(MEMORY_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        memory = { ...memory, ...parsed };
+        if (!memory.portfolio) memory.portfolio = { virtual: 10000, cash: 2700, stocks: 4200, crypto: 3100 };
+      }
+    } catch (e) {}
+    memory.lastVisit = new Date().toISOString();
+    saveMemory();
+  }
+  function saveMemory() { try { localStorage.setItem(MEMORY_KEY, JSON.stringify(memory)); } catch (e) {} }
+  loadMemory();
 
-        function detectTopic(text) {
-            const t = normalize(text);
-            const topics = {
-                stocks: ['سهم', 'اسهم', 'بورصه', 'تداول', 'شركه', 'مؤشر', 'سوق مالي', 'ارباح اسهم', 'توزيعات'],
-                crypto: ['بيتكوين', 'عملات رقميه', 'كربتو', 'تشفير', 'بلوكشين', 'ايثيريوم', 'ريبل', 'محفظه رقميه'],
-                strategy: ['استراتيجيه', 'خطه', 'طريقه', 'نصيحه', 'افضل طريقه', 'كيف ابدا', 'مبتدئ'],
-                risk: ['مخاطر', 'خساره', 'حمايه', 'امان', 'تقلب', 'تحوط'],
-                analysis: ['تحليل', 'قراءه', 'فهم', 'شرح', 'مؤشرات', 'رسم بياني', 'قوائم ماليه'],
-                savings: ['ادخار', 'توفير', 'مبلغ', 'شهري', 'دخل', 'راتب'],
-            };
-            let scores = {};
-            for (const [topic, keywords] of Object.entries(topics)) {
-                scores[topic] = keywords.filter(k => t.includes(k)).length;
-            }
-            const best = Object.entries(scores).sort((a, b) => b[1] - a[1])[0];
-            return best && best[1] > 0 ? best[0] : 'general';
-        }
+  // ========== محرك الفهم ==========
+  function normalize(text) {
+    return text.toLowerCase().trim().replace(/[إأآا]/g,'ا').replace(/[ةه]/g,'ه').replace(/[ىيئ]/g,'ي').replace(/[ؤ]/g,'و').replace(/[\?؟,\.!؛]/g,'').replace(/\s+/g,' ');
+  }
+  function similarity(a,b) {
+    let A = a.split(' '), B = b.split(' '), setB = new Set(B), match = 0;
+    A.forEach(w => { if(setB.has(w)) match++; else { for(let wb of B) if(wb.includes(w)||w.includes(wb)) { match+=0.5; break; } } });
+    return match / Math.max(A.length,1);
+  }
+  function extractName(text) {
+    let patterns = [/اسمي\s+(\S+)/i, /انا\s+(\S+)/i, /أنا\s+(\S+)/i, /ادعوني\s+(\S+)/i, /لقبي\s+(\S+)/i];
+    for(let p of patterns) { let m = text.match(p); if(m && m[1] && m[1].length>1 && m[1].length<20) return m[1]; }
+    return null;
+  }
+  function detectTopic(text) {
+    let t = normalize(text);
+    let topics = {
+      stocks: ['سهم','اسهم','بورصه','تداول','شركه','مؤشر','سوق مالي'],
+      crypto: ['بيتكوين','عملات رقميه','كربتو','تشفير','بلوكشين','ايثيريوم'],
+      strategy: ['استراتيجيه','خطه','طريقه','نصيحه','كيف ابدا','مبتدئ'],
+      risk: ['مخاطر','خساره','حمايه','امان','تقلب','تحوط'],
+      analysis: ['تحليل','قراءه','فهم','شرح','مؤشرات','رسم بياني'],
+      savings: ['ادخار','توفير','مبلغ','شهري','دخل','راتب']
+    };
+    let scores = {};
+    for(let [topic, keys] of Object.entries(topics)) scores[topic] = keys.filter(k=>t.includes(k)).length;
+    let best = Object.entries(scores).sort((a,b)=>b[1]-a[1])[0];
+    return best && best[1]>0 ? best[0] : 'general';
+  }
 
-        function smartReply(input) {
-            const text = input.trim();
-            const t = normalize(text);
-            const topic = detectTopic(text);
+  function smartReply(input) {
+    let text = input.trim(), t = normalize(text), topic = detectTopic(text);
+    let name = extractName(text);
+    if(name && !memory.name) { memory.name = name; saveMemory(); return `🎉 تشرفت بمعرفتك يا <b>${name}</b>!`; }
+    if(name && memory.name && name!==memory.name) { let old=memory.name; memory.name=name; saveMemory(); return `تم تحديث اسمك من "${old}" إلى <b>${name}</b> ✅`; }
+    if(t.includes('اسمي اي')||t.includes('مين انا')||t.includes('تعرفني')) return memory.name ? `أنت <b>${memory.name}</b> 🧠` : `لم تخبرني باسمك بعد.`;
+    if(similarity(t,'مرحبا كيف حالك')>0.35||t.includes('اهلا')||t.includes('السلام عليكم')) return (memory.name?`أهلاً بعودتك يا <b>${memory.name}</b>! `:'أهلاً! ') + '🦈 جاهز لمساعدتك.';
+    if(t.includes('مبتدئ')||t.includes('جديد')) { memory.experience='مبتدئ'; saveMemory(); return '📘 ابدأ بمبلغ صغير وتعلم الأساسيات.'; }
+    if(topic==='strategy') return '📋 أفضل استراتيجية: حدد هدفك، نوع استثماراتك، استثمر شهرياً، تعلم باستمرار.';
+    if(topic==='stocks') return '📈 الأسهم: اقرأ القوائم المالية، راقب P/E، تابع الأخبار.';
+    if(topic==='crypto') return '₿ العملات الرقمية: شديدة التقلب، لا تستثمر أكثر من 5-10%.';
+    if(topic==='risk') return '🛡️ لحماية محفظتك: نوع، استخدم أوامر الإيقاف، احتفظ بنقد.';
+    if(topic==='analysis') return '🔍 التحليل نوعان: فني (رسوم ومؤشرات) وأساسي (قوائم مالية).';
+    if(topic==='savings') return '💰 استثمر 10-20% من دخلك شهرياً.';
+    if(t.includes('نكته')) return '😂 ليه المستثمر الذكي ما يزعل؟ لأنه ينوع مخاطره!';
+    return '🦈 سؤال مهم! هل تقصد الأسهم أم العملات الرقمية؟';
+  }
 
-            // --- تعرف على الاسم ---
-            const name = extractName(text);
-            if (name && !memory.name) {
-                memory.name = name;
-                saveMemory();
-                return `🎉 تشرفت بمعرفتك يا <b>${name}</b>! الآن أنا فاكر اسمك وهخاطبك بيه. كيف أقدر أساعدك في رحلتك الاستثمارية؟`;
-            }
-            if (name && memory.name && name !== memory.name) {
-                const old = memory.name;
-                memory.name = name;
-                saveMemory();
-                return `آه، اسمك تغير من "${old}" إلى <b>${name}</b>! تم التحديث ✅.`;
-            }
+  // ========== محادثة ==========
+  function addMessageToChat(text, type) {
+    let container = document.getElementById('chatContainer');
+    let div = document.createElement('div');
+    div.className = 'msg-bubble ' + (type==='user'?'msg-user':'msg-ai');
+    if(type==='ai' && text==='...') div.innerHTML = '<div class="typing-dots"><span></span><span></span><span></span></div>';
+    else div.innerHTML = text;
+    container.appendChild(div);
+    document.getElementById('mainContent').scrollTop = document.getElementById('mainContent').scrollHeight;
+    return div;
+  }
 
-            // --- استفسار عن الاسم ---
-            if (t.includes('اسمي اي') || t.includes('مين انا') || t.includes('تعرفني') || t.includes('فاكرني')) {
-                return memory.name ?
-                    `أنت <b>${memory.name}</b> 🧠 فاكرك كويس!` :
-                    `لم تُخبرني باسمك بعد 🤔 قُل لي: "اسمي فلان" وأنا هفتكره للأبد.`;
-            }
+  function sendMessage() {
+    let input = document.getElementById('msgInput');
+    let text = input.value.trim();
+    if(!text) return;
+    addMessageToChat(text, 'user');
+    input.value = '';
+    memory.history.push({role:'user',text,time:Date.now()}); if(memory.history.length>30) memory.history.shift();
+    let typing = addMessageToChat('...', 'ai');
+    setTimeout(() => {
+      let reply = smartReply(text);
+      typing.innerHTML = reply;
+      memory.history.push({role:'ai',text:reply,time:Date.now()});
+      saveMemory();
+      document.getElementById('mainContent').scrollTop = document.getElementById('mainContent').scrollHeight;
+    }, 500 + Math.random()*500);
+  }
 
-            // --- تحيات ---
-            if (similarity(t, 'مرحبا كيف حالك') > 0.35 || t.includes('اهلا') || t.includes('السلام عليكم') || t
-                .includes('صباح') || t.includes('مساء')) {
-                const greet = memory.name ? `أهلاً بعودتك يا <b>${memory.name}</b>!` : 'أهلاً بيك!';
-                return `${greet} 🦈 أنا جاهز لمساعدتك في عالم الاستثمار. اسألني عن الأسهم، العملات الرقمية، أو أي نصيحة مالية.`;
-            }
+  function quickAsk(q) {
+    document.getElementById('msgInput').value = q;
+    switchTab('screen-chat', document.querySelector('[data-screen="screen-chat"]'));
+    setTimeout(() => { document.getElementById('msgInput').focus(); }, 100);
+    sendMessage();
+  }
 
-            // --- مستوى الخبرة ---
-            if (t.includes('مبتدئ') || t.includes('جديد') || t.includes('اول مره') || t.includes('ما عندي خبره')) {
-                memory.experience = 'مبتدئ';
-                saveMemory();
-                return `📘 بما إنك مبتدئ، نصيحتي الأولى: <b>ابدأ بمبلغ صغير</b>، تعلم أساسيات التحليل، ولا تستثمر أبداً ما لا تتحمل خسارته. هل تحب أرشح لك كورسات مجانية؟`;
-            }
-            if (t.includes('خبره') || t.includes('متوسط') || t.includes('عندي فكره')) {
-                memory.experience = 'متوسط';
-                saveMemory();
-                return `👍 مستواك متوسط – تقدر تبدأ تتعمق في <b>التحليل الفني</b> وقراءة القوائم المالية. عايز شرح في موضوع معين؟`;
-            }
+  // ========== تبويبات ==========
+  function switchTab(screenId, btn) {
+    document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+    document.getElementById(screenId).classList.add('active');
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    if(btn) btn.classList.add('active');
+    document.getElementById('inputArea').style.display = (screenId==='screen-chat') ? 'flex' : 'none';
+    if(screenId==='screen-chat') setTimeout(()=>document.getElementById('msgInput').focus(), 50);
+    if(screenId==='screen-market') setTimeout(initMiniChart, 300);
+    if(screenId==='screen-portfolio') updatePortfolioDisplay();
+    document.getElementById('mainContent').scrollTop = 0;
+  }
 
-            // --- استراتيجيات ---
-            if (topic === 'strategy' || t.includes('كيف ابدا') || t.includes('افضل طريقه') || t.includes('نصيحه للاستثمار')) {
-                return `📋 <b>أفضل استراتيجية للمبتدئين:</b><br>١. حدد هدفك (طويل أم قصير المدى)<br>٢. نوع استثماراتك (أسهم + عملات + نقد)<br>٣. استثمر مبلغاً ثابتاً شهرياً<br>٤. لا تتبع العواطف – اتبع التحليل<br>٥. تعلم باستمرار 📚<br><br>هل تريد شرح أي نقطة بالتفصيل؟`;
-            }
+  // ========== رسم بياني ==========
+  let miniChart;
+  function initMiniChart() {
+    let canvas = document.getElementById('miniMarketChart'); if(!canvas) return;
+    if(miniChart) { miniChart.destroy(); miniChart=null; }
+    let labels=[], data=[], now=new Date();
+    for(let i=14;i>=0;i--) { let d=new Date(now); d.setDate(d.getDate()-i); labels.push(d.toLocaleDateString('ar-SA',{day:'numeric',month:'short'})); data.push(95+Math.random()*12); }
+    miniChart = new Chart(canvas.getContext('2d'), {
+      type:'line', data:{labels,datasets:[{label:'المؤشر',data,borderColor:'#0ea5e9',backgroundColor:'rgba(56,189,248,0.08)',borderWidth:2.5,fill:true,tension:0.4,pointRadius:0}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{display:false},y:{display:false}}}
+    });
+  }
 
-            // --- أسهم ---
-            if (topic === 'stocks') {
-                return `📈 <b>الأسهم</b> هي حصص ملكية في شركة. عند شراء سهم، تصبح شريكاً.<br><br>🔹 <b>لتحليل سهم:</b><br>• اقرأ القوائم المالية<br>• راقب نسبة الربحية (P/E)<br>• تابع أخبار الشركة<br>• انظر للرسم البياني (تحليل فني)<br><br>هل تريدني أشرح لك كيفية قراءة الرسم البياني؟`;
-            }
+  function updatePortfolioDisplay() {
+    let p = memory.portfolio;
+    document.getElementById('portfolioValue').textContent = '$'+p.virtual.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+    document.getElementById('cashBalance').textContent = '$'+p.cash.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  }
 
-            // --- عملات رقمية ---
-            if (topic === 'crypto') {
-                return `₿ <b>العملات الرقمية</b> مثل البيتكوين تعتمد على تقنية البلوكشين.<br><br>⚠️ <b>تنبيه:</b> شديدة التقلب!<br>• لا تستثمر أكثر من 5-10% من محفظتك<br>• ابحث عن المشروع قبل الشراء<br>• استخدم محافظ آمنة<br>• تابع الأخبار التنظيمية<br><br>هل تحب ترشيح بعض العملات للدراسة؟`;
-            }
+  function simulateInvestment() {
+    let p = memory.portfolio;
+    p.virtual = Math.max(5000, p.virtual + (Math.random()-0.35)*800);
+    p.cash = Math.max(500, p.cash + (Math.random()-0.4)*400);
+    p.virtual = Math.round(p.virtual*100)/100;
+    p.cash = Math.round(p.cash*100)/100;
+    saveMemory(); updatePortfolioDisplay();
+    let el = document.getElementById('portfolioValue'); el.style.transform='scale(1.08)'; setTimeout(()=>el.style.transform='scale(1)',250);
+    showToast('🔄 تم تحديث المحفظة');
+  }
 
-            // --- مخاطر ---
-            if (topic === 'risk') {
-                return `🛡️ <b>لحماية محفظتك:</b><br>١. <b>نوّع</b> – لا تضع أكثر من 20% في أصل واحد<br>٢. استخدم <b>أمر إيقاف الخسارة</b><br>٣. احتفظ بـ 15-25% نقداً للفرص<br>٤. راجع محفظتك شهرياً<br>٥. لا تستثمر أموالاً تحتاجها قريباً<br><br>${memory.name ? 'يا ' + memory.name + '، ' : ''}هل محفظتك متنوعة حالياً؟`;
-            }
+  function showToast(msg) {
+    let toast = document.createElement('div'); toast.textContent=msg;
+    toast.style.cssText = 'position:fixed;bottom:110px;left:50%;transform:translateX(-50%);background:#1e293b;color:#fff;padding:10px 20px;border-radius:20px;font-size:0.8rem;z-index:99;animation:fadeIn 0.3s;box-shadow:0 8px 20px rgba(0,0,0,0.3);white-space:nowrap;';
+    document.body.appendChild(toast);
+    setTimeout(()=>{toast.style.opacity='0';toast.style.transition='opacity 0.4s';setTimeout(()=>toast.remove(),400);},1800);
+  }
 
-            // --- تحليل ---
-            if (topic === 'analysis') {
-                return `🔍 <b>التحليل نوعان:</b><br>📊 <b>فني:</b> دراسة الرسوم والمؤشرات (RSI, MACD)<br>📋 <b>أساسي:</b> دراسة القوائم المالية والإدارة<br><br>للمبتدئين: ابدأ بالتحليل الأساسي – افهم الشركة أولاً، ثم تعلم قراءة الرسوم. هل أشرح لك مؤشر RSI؟`;
-            }
+  function updateClock() {
+    document.getElementById('clockDisplay').textContent = new Date().toLocaleTimeString('ar-SA',{hour:'2-digit',minute:'2-digit'});
+  }
+  setInterval(updateClock,30000); updateClock();
 
-            // --- ادخار ---
-            if (topic === 'savings') {
-                return `💰 <b>نصيحة ادخارية:</b> استثمر <b>10-20% من دخلك الشهري</b> فور استلامه. إذا بدأت بمبلغ 500 ريال شهرياً بعائد 8% سنوياً، بعد 20 سنة قد يصل المبلغ لأكثر من 280,000! 📈<br><br>هل تريد خطة ادخار مخصصة؟`;
-            }
-
-            // --- نكتة ---
-            if (t.includes('نكته') || t.includes('ضحكني') || t.includes('فكاهه')) {
-                const jokes = [
-                    '😂 ليه المستثمر الذكي ما يزعل؟ لأنه <b>ينوّع</b> مخاطره!',
-                    '😄 قال سهم لسهم تاني: "ليه أنت دايماً متقلب؟" قاله: "أصل السوق مجنون!"',
-                    '🦈 ليه القرش مستثمر ناجح؟ لأنه دايمًا <b>يسبح</b> ضد التيار!',
-                ];
-                return jokes[Math.floor(Math.random() * jokes.length)];
-            }
-
-            // --- شكر ---
-            if (t.includes('شكرا') || t.includes('تسلم') || t.includes('يعطيك العافيه')) {
-                return `العفو ${memory.name ? 'يا ' + memory.name : ''}! 🦈 دايمًا في خدمتك. أي سؤال استثماري تاني؟`;
-            }
-
-            // --- رد عام ذكي ---
-            const generalReplies = [
-                `🦈 سؤال مهم! دعني أوضح: الاستثمار الناجح يحتاج <b>صبراً</b> و<b>تعلماً</b>. هل تقصد الاستثمار في الأسهم أم العملات الرقمية؟`,
-                `🤔 نقطة شيقة! بناءً على فهمي، الأفضل دائماً أن تبدأ بـ<b>خطة واضحة</b>. ما هو هدفك الاستثماري الأساسي؟`,
-                `📊 في عالم الاستثمار، <b>المعرفة قوة</b>. هل تريدني أن أشرح لك مفهوماً معيناً مثل التحليل الفني أو التنويع؟`,
-                `🦈 كمساعد استثماري، أنصحك بالتركيز على <b>التعلم المستمر</b>. هل تحب أن أشاركك أفضل المصادر المجانية؟`,
-            ];
-            return generalReplies[Math.floor(Math.random() * generalReplies.length)];
-        }
-
-        // ============================================
-        // 💬 نظام المحادثة
-        // ============================================
-        function addMessageToChat(text, type) {
-            const container = document.getElementById('chatContainer');
-            const div = document.createElement('div');
-            div.className = 'msg-bubble ' + (type === 'user' ? 'msg-user' : 'msg-ai');
-            if (type === 'ai' && text === '...') {
-                div.innerHTML =
-                    '<div class="typing-dots"><span></span><span></span><span></span></div>';
-            } else {
-                div.innerHTML = text;
-            }
-            container.appendChild(div);
-            const mainContent = document.getElementById('mainContent');
-            setTimeout(() => {
-                mainContent.scrollTop = mainContent.scrollHeight;
-            }, 100);
-            return div;
-        }
-
-        function sendMessage() {
-            const input = document.getElementById('msgInput');
-            const text = input.value.trim();
-            if (!text) return;
-
-            // أضف رسالة المستخدم
-            addMessageToChat(text, 'user');
-            input.value = '';
-            input.focus();
-
-            // حفظ في الذاكرة
-            memory.history.push({ role: 'user', text, time: Date.now() });
-            if (memory.history.length > 30) memory.history.shift();
-
-            // أضف مؤشر كتابة
-            const typingBubble = addMessageToChat('...', 'ai');
-
-            // رد بعد تأخير طبيعي
-            const delay = 400 + Math.random() * 700;
-            setTimeout(() => {
-                const reply = smartReply(text);
-                typingBubble.innerHTML = reply;
-                memory.history.push({ role: 'ai', text: reply, time: Date.now() });
-                if (memory.history.length > 30) memory.history.shift();
-                saveMemory();
-                updateChartData(reply.length);
-                const mainContent = document.getElementById('mainContent');
-                mainContent.scrollTop = mainContent.scrollHeight;
-            }, delay);
-        }
-
-        function quickAsk(question) {
-            document.getElementById('msgInput').value = question;
-            sendMessage();
-            switchTab('screen-chat', document.querySelector('[data-screen="screen-chat"]'));
-        }
-
-        // ============================================
-        // 📑 تبديل التبويبات
-        // ============================================
-        function switchTab(screenId, btn) {
-            // إخفاء كل الشاشات
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            // إظهار الشاشة المطلوبة
-            const screen = document.getElementById(screenId);
-            if (screen) screen.classList.add('active');
-
-            // تحديث التبويبات
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            if (btn) btn.classList.add('active');
-
-            // تحكم في ظهور شريط الإدخال
-            const inputArea = document.getElementById('inputArea');
-            if (screenId === 'screen-chat') {
-                inputArea.style.display = 'flex';
-            } else {
-                inputArea.style.display = 'none';
-            }
-
-            // تحديث الرسم البياني عند فتح الأسواق
-            if (screenId === 'screen-market') {
-                setTimeout(initMiniChart, 300);
-            }
-            if (screenId === 'screen-portfolio') {
-                updatePortfolioDisplay();
-            }
-
-            const mainContent = document.getElementById('mainContent');
-            mainContent.scrollTop = 0;
-        }
-
-        // ============================================
-        // 📊 الرسم البياني المصغر للأسواق
-        // ============================================
-        let miniChart = null;
-
-        function initMiniChart() {
-            const canvas = document.getElementById('miniMarketChart');
-            if (!canvas) return;
-            const ctx = canvas.getContext('2d');
-            if (miniChart) {
-                miniChart.destroy();
-                miniChart = null;
-            }
-            const labels = [];
-            const data = [];
-            const now = new Date();
-            for (let i = 14; i >= 0; i--) {
-                const d = new Date(now);
-                d.setDate(d.getDate() - i);
-                labels.push(d.toLocaleDateString('ar-SA', { day: 'numeric', month: 'short' }));
-                data.push(95 + Math.random() * 12);
-            }
-            miniChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels,
-                    datasets: [{
-                        label: 'المؤشر',
-                        data,
-                        borderColor: '#0ea5e9',
-                        backgroundColor: 'rgba(56,189,248,0.08)',
-                        borderWidth: 2.5,
-                        fill: true,
-                        tension: 0.4,
-                        pointRadius: 0,
-                        pointHoverRadius: 5,
-                        pointHoverBackgroundColor: '#0ea5e9',
-                    }],
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        x: { display: false },
-                        y: { display: false },
-                    },
-                    interaction: { intersect: false },
-                },
-            });
-        }
-
-        // ============================================
-        // 📈 رسم تفاعل المحادثة
-        // ============================================
-        let interactionChart = null;
-        let interactionData = [];
-
-        function updateChartData(valueLength) {
-            interactionData.push(valueLength);
-            if (interactionData.length > 20) interactionData.shift();
-        }
-
-        // ============================================
-        // 💰 محفظة افتراضية
-        // ============================================
-        function updatePortfolioDisplay() {
-            const p = memory.portfolio;
-            document.getElementById('portfolioValue').textContent = '$' + p.virtual.toLocaleString(
-            'en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-            document.getElementById('cashBalance').textContent = '$' + p.cash.toLocaleString('en-US', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-            });
-        }
-
-        function simulateInvestment() {
-            const p = memory.portfolio;
-            const change = (Math.random() - 0.35) * 800;
-            p.virtual = Math.max(5000, p.virtual + change);
-            p.virtual = Math.round(p.virtual * 100) / 100;
-            p.cash = Math.round((p.cash + (Math.random() - 0.4) * 400) * 100) / 100;
-            p.cash = Math.max(500, p.cash);
-            saveMemory();
-            updatePortfolioDisplay();
-            const valEl = document.getElementById('portfolioValue');
-            valEl.style.transform = 'scale(1.08)';
-            setTimeout(() => valEl.style.transform = 'scale(1)', 250);
-            showToast('🔄 تم تحديث المحفظة الافتراضية');
-        }
-
-        function showToast(msg) {
-            let toast = document.createElement('div');
-            toast.textContent = msg;
-            toast.style.cssText = `
-            position:fixed;bottom:110px;left:50%;transform:translateX(-50%);
-            background:#1e293b;color:#fff;padding:10px 20px;border-radius:20px;
-            font-size:0.8rem;z-index:99;animation:fadeIn 0.3s ease-out;
-            box-shadow:0 8px 20px rgba(0,0,0,0.3);font-family:inherit;
-            pointer-events:none;white-space:nowrap;
-          `;
-            document.body.appendChild(toast);
-            setTimeout(() => {
-                toast.style.opacity = '0';
-                toast.style.transition = 'opacity 0.4s';
-                setTimeout(() => toast.remove(), 400);
-            }, 1800);
-        }
-
-        // ============================================
-        // ⏰ ساعة
-        // ============================================
-        function updateClock() {
-            const now = new Date();
-            document.getElementById('clockDisplay').textContent =
-                now.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' });
-        }
-        setInterval(updateClock, 30000);
-        updateClock();
-
-        // ============================================
-        // 🚀 بدء التشغيل
-        // ============================================
-        function init() {
-            updatePortfolioDisplay();
-            if (memory.name) {
-                const container = document.getElementById('chatContainer');
-                const greeting = document.createElement('div');
-                greeting.className = 'msg-bubble msg-ai';
-                greeting.innerHTML =
-                    `🦈 أهلاً بعودتك يا <b>${memory.name}</b>! منذ آخر زيارة، الأسواق في حالة جيدة. كيف أقدر أساعدك اليوم في استثماراتك؟`;
-                container.appendChild(greeting);
-            }
-            document.getElementById('mainContent').scrollTop = document.getElementById('mainContent').scrollHeight;
-            // تحديث حالة السوق عشوائياً
-            const marketEl = document.getElementById('marketStatus');
-            if (Math.random() > 0.4) {
-                marketEl.textContent = '🟢 +' + (Math.random() * 4).toFixed(1) + '%';
-                marketEl.className = 'market-indicator';
-            } else {
-                marketEl.textContent = '🔴 -' + (Math.random() * 3).toFixed(1) + '%';
-                marketEl.className = 'market-indicator down';
-            }
-            updateClock();
-        }
-
-        init();
-        console.log('🦈 Shark AI Investment Assistant Ready | الذاكرة نشطة | المحادثة طبيعية');
-        console.log('💡 جرب أن تقول: "اسمي أحمد"، "كيف أستثمر في الأسهم؟"، "ما هي العملات الرقمية؟"');
-    </script>
+  window.onload = function() {
+    updatePortfolioDisplay();
+    if(memory.name) {
+      let container = document.getElementById('chatContainer');
+      let div = document.createElement('div'); div.className='msg-bubble msg-ai';
+      div.innerHTML = `🦈 أهلاً بعودتك يا <b>${memory.name}</b>!`;
+      container.appendChild(div);
+    }
+    document.getElementById('mainContent').scrollTop = document.getElementById('mainContent').scrollHeight;
+    if(Math.random()>0.4) {
+      document.getElementById('marketStatus').textContent = '🟢 +'+(Math.random()*4).toFixed(1)+'%';
+      document.getElementById('marketStatus').className = 'market-indicator';
+    } else {
+      document.getElementById('marketStatus').textContent = '🔴 -'+(Math.random()*3).toFixed(1)+'%';
+      document.getElementById('marketStatus').className = 'market-indicator down';
+    }
+  };
+</script>
 </body>
 </html>
