@@ -12,27 +12,21 @@
 
   <!-- تبويبات -->
   <div class="flex gap-2 bg-gray-100 p-1 rounded-full">
-    <button id="tabCourses" class="tab-btn flex-1 py-2 rounded-full font-bold text-sm active" onclick="switchTab('courses')">📚 الكورسات</button>
-    <button id="tabArticles" class="tab-btn flex-1 py-2 rounded-full font-bold text-sm" onclick="switchTab('articles')">📝 المقالات</button>
+    <button id="tabCourses" class="tab-btn flex-1 py-2 rounded-full font-bold text-sm active" onclick="window.academy?.switchTab('courses')">📚 الكورسات</button>
+    <button id="tabArticles" class="tab-btn flex-1 py-2 rounded-full font-bold text-sm" onclick="window.academy?.switchTab('articles')">📝 المقالات</button>
   </div>
 
   <!-- شريط الهاشتاجات للفلترة -->
   <div class="flex flex-wrap gap-2" id="filterHashtags">
-    <button data-tag="all" class="hashtag-btn bg-sky-500 text-white px-3 py-1.5 rounded-full text-xs font-bold shadow active">الكل</button>
-    <button data-tag="بيزنس" class="hashtag-btn bg-gray-200 text-gray-700 px-3 py-1.5 rounded-full text-xs font-bold">#بيزنس</button>
-    <button data-tag="استثمار" class="hashtag-btn bg-gray-200 text-gray-700 px-3 py-1.5 rounded-full text-xs font-bold">#استثمار</button>
-    <button data-tag="مشاريع" class="hashtag-btn bg-gray-200 text-gray-700 px-3 py-1.5 rounded-full text-xs font-bold">#مشاريع</button>
-    <button data-tag="تسويق" class="hashtag-btn bg-gray-200 text-gray-700 px-3 py-1.5 rounded-full text-xs font-bold">#تسويق</button>
-    <button data-tag="عملات_رقمية" class="hashtag-btn bg-gray-200 text-gray-700 px-3 py-1.5 rounded-full text-xs font-bold">#عملات_رقمية</button>
-    <button data-tag="ريادة_أعمال" class="hashtag-btn bg-gray-200 text-gray-700 px-3 py-1.5 rounded-full text-xs font-bold">#ريادة_أعمال</button>
+    <!-- الأزرار ستُملأ من academy.js -->
   </div>
 
   <!-- أزرار النشر (للبائع) -->
   <div id="sellerPanel" class="hidden flex gap-2">
-    <button onclick="openAddCourseModal()" class="flex-1 bg-sky-500 text-white py-3 rounded-2xl font-bold shadow-lg hover:bg-sky-600 transition text-sm">
+    <button onclick="window.academy?.openAddCourseModal()" class="flex-1 bg-sky-500 text-white py-3 rounded-2xl font-bold shadow-lg hover:bg-sky-600 transition text-sm">
       <i class="fa-solid fa-plus-circle"></i> أضف كورس
     </button>
-    <button onclick="openAddArticleModal()" class="flex-1 bg-emerald-500 text-white py-3 rounded-2xl font-bold shadow-lg hover:bg-emerald-600 transition text-sm">
+    <button onclick="window.academy?.openAddArticleModal()" class="flex-1 bg-emerald-500 text-white py-3 rounded-2xl font-bold shadow-lg hover:bg-emerald-600 transition text-sm">
       <i class="fa-solid fa-pen-to-square"></i> اكتب مقال
     </button>
   </div>
@@ -41,13 +35,13 @@
   <div id="contentGrid" class="grid gap-4"></div>
 
   <!-- أيقونة وضع البائع -->
-  <button id="toggleSellerBtn" onclick="toggleSellerMode()" class="fixed bottom-24 right-4 z-30 w-14 h-14 bg-gray-200 rounded-2xl flex items-center justify-center text-gray-600 text-xl shadow-lg hover:bg-gray-300 transition" title="وضع البائع">
+  <button id="toggleSellerBtn" onclick="window.academy?.toggleSellerMode()" class="fixed bottom-24 right-4 z-30 w-14 h-14 bg-gray-200 rounded-2xl flex items-center justify-center text-gray-600 text-xl shadow-lg hover:bg-gray-300 transition" title="وضع البائع">
     <i class="fa-solid fa-store"></i>
   </button>
 </div>
 
 <!-- مودال إضافة كورس -->
-<div id="courseModal" class="modal">
+<div id="courseModal" class="modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:1000; align-items:center; justify-content:center; padding:1rem;">
   <div class="bg-white w-full max-w-md rounded-3xl p-6 mx-4 shadow-2xl space-y-4 max-h-[80vh] overflow-y-auto">
     <h3 class="text-xl font-black text-gray-800">🎥 أضف كورس مجاني</h3>
     <input id="courseTitle" class="w-full bg-gray-100 rounded-xl p-3 text-sm border" placeholder="عنوان الكورس">
@@ -60,17 +54,17 @@
     <div class="border-t pt-3">
       <h4 class="font-bold text-gray-700 mb-2">📖 أجزاء الكورس</h4>
       <div id="courseModulesContainer" class="space-y-2"></div>
-      <button onclick="addCourseModuleField()" class="text-sky-500 text-sm font-bold mt-2"><i class="fa-solid fa-plus"></i> إضافة جزء</button>
+      <button onclick="window.academy?.addCourseModuleField()" class="text-sky-500 text-sm font-bold mt-2"><i class="fa-solid fa-plus"></i> إضافة جزء</button>
     </div>
     <div class="flex gap-2 justify-end">
-      <button onclick="closeModal('courseModal')" class="px-5 py-2 bg-gray-200 rounded-xl font-semibold">إلغاء</button>
-      <button onclick="publishCourse()" class="px-5 py-2 bg-sky-500 text-white rounded-xl font-semibold shadow">نشر الكورس</button>
+      <button onclick="window.academy?.closeModal('courseModal')" class="px-5 py-2 bg-gray-200 rounded-xl font-semibold">إلغاء</button>
+      <button onclick="window.academy?.publishCourse()" class="px-5 py-2 bg-sky-500 text-white rounded-xl font-semibold shadow">نشر الكورس</button>
     </div>
   </div>
 </div>
 
 <!-- مودال إضافة مقال -->
-<div id="articleModal" class="modal">
+<div id="articleModal" class="modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:1000; align-items:center; justify-content:center; padding:1rem;">
   <div class="bg-white w-full max-w-md rounded-3xl p-6 mx-4 shadow-2xl space-y-4 max-h-[80vh] overflow-y-auto">
     <h3 class="text-xl font-black text-gray-800">📝 اكتب مقالاً</h3>
     <input id="articleTitle" class="w-full bg-gray-100 rounded-xl p-3 text-sm border" placeholder="عنوان المقال">
@@ -80,16 +74,27 @@
       <div id="articleHashtagSelection" class="flex flex-wrap gap-2"></div>
     </div>
     <div class="flex gap-2 justify-end">
-      <button onclick="closeModal('articleModal')" class="px-5 py-2 bg-gray-200 rounded-xl font-semibold">إلغاء</button>
-      <button onclick="publishArticle()" class="px-5 py-2 bg-emerald-500 text-white rounded-xl font-semibold shadow">نشر المقال</button>
+      <button onclick="window.academy?.closeModal('articleModal')" class="px-5 py-2 bg-gray-200 rounded-xl font-semibold">إلغاء</button>
+      <button onclick="window.academy?.publishArticle()" class="px-5 py-2 bg-emerald-500 text-white rounded-xl font-semibold shadow">نشر المقال</button>
     </div>
   </div>
 </div>
 
 <!-- مودال عرض التفاصيل -->
-<div id="detailModal" class="modal">
+<div id="detailModal" class="modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:1000; align-items:center; justify-content:center; padding:1rem;">
   <div class="bg-white w-full max-w-md rounded-3xl p-6 mx-4 shadow-2xl max-h-[80vh] overflow-y-auto space-y-4">
     <div id="detailContent"></div>
-    <button onclick="closeModal('detailModal')" class="w-full bg-gray-200 py-2 rounded-xl font-bold mt-3">إغلاق</button>
+    <button onclick="window.academy?.closeModal('detailModal')" class="w-full bg-gray-200 py-2 rounded-xl font-bold mt-3">إغلاق</button>
   </div>
 </div>
+
+<!-- أنماط مدمجة -->
+<style>
+  body { font-family: 'Tajawal', sans-serif; background: #f0f2f5; margin: 0; }
+  .tab-btn.active { background: #0ea5e9; color: white; }
+  .card-item { transition: all 0.2s ease; }
+  .card-item:active { transform: scale(0.98); }
+  .hashtag-btn { transition: all 0.2s; }
+  .hashtag-btn.active { background: #0ea5e9; color: white; }
+  .hashtag-select { cursor: pointer; user-select: none; }
+</style>
