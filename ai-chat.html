@@ -27,45 +27,86 @@
 </div>
 
 <script>
-    // ========== المفتاح الثابت ==========
-    const GEMINI_API_KEY = 'AIzaSyAUamuXa-gndq8CZw5DAXdqcxUuOwAsZz0';
+    // ========== الإعدادات ==========
+    const GEMINI_API_KEY = 'AIzaSyAUamuXa-gndq8CZw5DAXdqcxUuOwAsZz0'; // مفتاح احتياطي (قد لا يعمل)
 
+    // ========== قاعدة معرفية مالية محلية (Offline) ==========
+    const financialKnowledge = [
+        { keywords: ['استثمار', 'استثمر', 'فلوس', 'مبلغ', 'الف', 'دولار', 'جنيه'], reply: '🦈 أفضل استثمار هو توزيع أموالك: 40% في صناديق مؤشرات (ETF)، 30% في أسهم قيادية، 20% في ذهب أو عقار، و10% نقد للطوارئ. ابدأ بمبلغ بسيط وتعلم.' },
+        { keywords: ['ادخار', 'أوفر', 'مستقبل', 'تقاعد'], reply: '💰 قاعدة 50/30/20: 50% للضروريات، 30% للكماليات، 20% للادخار. حاول أن تصل إلى ادخار 6 أشهر من المصروفات كصندوق طوارئ.' },
+        { keywords: ['عملات', 'رقمية', 'بيتكوين', 'كربتو', 'تداول'], reply: '⚠️ العملات الرقمية عالية المخاطر. لا تستثمر أكثر مما تستطيع خسارته. يُفضل ألا تتجاوز 5% من محفظتك في الأصول عالية المخاطر.' },
+        { keywords: ['ديون', 'قرض', 'دين', 'فوائد'], reply: '📉 سدد الديون ذات الفائدة العالية أولاً (مثل بطاقات الائتمان). فكر في تجميع الديون أو التفاوض مع البنك لتخفيض الفائدة.' },
+        { keywords: ['مشروع', 'فكرة', 'بيزنس', 'تجارة', 'شركة'], reply: '🚀 قبل البدء: ادرس السوق، اكتب خطة عمل، ابدأ صغيراً، استمع لآراء العملاء، ولا تخف من الفشل. أنصحك بمشاهدة دروس ريادة الأعمال المجانية.' },
+        { keywords: ['ضرائب', 'زكاة', 'ضريبة'], reply: '🧾 الزكاة واجبة على المال إذا بلغ النصاب وحال عليه الحول (2.5%). الضرائب تختلف حسب بلدك؛ استشر محاسباً مختصاً.' },
+        { keywords: ['مخاطرة', 'خسارة', 'أمان'], reply: '🛡 نوّع استثماراتك ولا تضع البيض كله في سلة واحدة. الاستثمارات الآمنة: الودائع البنكية، أذون الخزانة، صناديق أسواق النقد.' },
+        { keywords: ['راتب', 'دخل', 'مرتب', 'وظيفة'], reply: '💼 حاول تطوير مهاراتك لزيادة دخلك. استثمر في تعليمك، وتعلم مهارات جديدة مطلوبة في السوق. الدخل الإضافي يساعد في بناء الثروة.' },
+        { keywords: ['عقار', 'أرض', 'شقة', 'عمارة'], reply: '🏠 العقار استثمار طويل الأجل. ادرس الموقع والسوق قبل الشراء. يمكنك البدء بصناديق REIT إذا كان رأس المال محدوداً.' },
+        { keywords: ['ذهب', 'فضة', 'معادن'], reply: '🥇 الذهب ملاذ آمن وقت الأزمات. خصص 10-15% من محفظتك للذهب. يُفضل الشراء الفعلي أو عبر صناديق متداولة.' }
+    ];
+
+    function getLocalReply(question) {
+        const q = question.toLowerCase();
+        let bestMatch = null;
+        let maxHits = 0;
+
+        for (let entry of financialKnowledge) {
+            let hits = 0;
+            for (let kw of entry.keywords) {
+                if (q.includes(kw)) hits++;
+            }
+            if (hits > maxHits) {
+                maxHits = hits;
+                bestMatch = entry.reply;
+            }
+        }
+
+        if (maxHits > 0) return bestMatch;
+
+        // رد عام إذا لم يتطابق شيء
+        const defaultReplies = [
+            '📊 نصيحتي: ابدأ بتحديد أهدافك المالية بوضوح. كم تريد أن تجمع؟ ومتى تحتاج المبلغ؟ هذا سيساعدني في إعطائك خطة أدق.',
+            '💡 تذكر دائماً: الاستثمار ليس سباقاً سريعاً، بل ماراثون طويل. الصبر والانتظام هما مفتاح الثراء.',
+            '📚 أنصحك بقراءة كتب التوعية المالية مثل "الأب الغني والأب الفقير" و"المستثمر الذكي". المعرفة هي أفضل استثمار.',
+            '🦈 في عالم القروش، المفترس الحقيقي هو من يخطط جيداً. ضع خطة والتزم بها.'
+        ];
+        return defaultReplies[Math.floor(Math.random() * defaultReplies.length)];
+    }
+
+    // ========== دوال المحادثة ==========
     async function askAI() {
         const input = document.getElementById('aiInput');
         const question = input?.value.trim();
         if (!question) return;
 
-        // عرض سؤال المستخدم
         addMessage(question, 'user');
         input.value = '';
-
-        // رسالة مؤقتة
         const typingDiv = addMessage('...', 'ai');
 
+        // محاولة استخدام Gemini أولاً
+        let reply = null;
         try {
             const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    contents: [{
-                        parts: [{
-                            text: `أنت مستشار مالي ذكي اسمه Shark AI. أجب بالعربية فقط بإجابات واضحة ومفيدة. سؤال المستخدم: ${question}`
-                        }]
-                    }]
+                    contents: [{ parts: [{ text: `أنت مستشار مالي ذكي اسمه Shark AI. أجب بالعربية فقط بإجابات واضحة ومفيدة. سؤال المستخدم: ${question}` }] }]
                 })
             });
 
-            const data = await response.json();
-            if (data.error) throw new Error(data.error.message);
+            if (response.ok) {
+                const data = await response.json();
+                if (!data.error) {
+                    reply = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                }
+            }
+        } catch (e) { /* ستفعل الاحتياطي تلقائياً */ }
 
-            const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || 'عذراً، لم أستطع فهم طلبك.';
-            updateMessage(typingDiv, reply);
-        } catch (error) {
-            let msg = '❌ حدث خطأ في الاتصال.';
-            if (error.message.includes('API key')) msg = '🔑 مفتاح API غير صالح.';
-            else if (error.message.includes('quota')) msg = '⏳ تجاوزت الحد المسموح للاستخدام المجاني.';
-            updateMessage(typingDiv, msg);
+        // إذا لم يحصل رد من Gemini، استخدم القاعدة المحلية
+        if (!reply) {
+            reply = getLocalReply(question);
         }
+
+        updateMessage(typingDiv, reply);
     }
 
     function addMessage(text, sender) {
