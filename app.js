@@ -33,6 +33,7 @@ window.engine = {
     _currentPostType: 'post',
     _activeBites: [],
     _storyIndex: 0,
+    _storyEventsBound: false, // لتجنب تكرار الربط
 
     async init() {
         try { await setPersistence(auth, browserLocalPersistence); } catch (e) {}
@@ -178,7 +179,6 @@ window.engine = {
             type: this._currentPostType
         });
         input.value = '';
-        this.renderStories();
     },
 
     getActiveBites() {
@@ -186,7 +186,7 @@ window.engine = {
         return this._allPosts.filter(p => {
             if (p.data.type !== 'bite') return false;
             const t = p.data.createdAt;
-            if (!t) return true; // حديث النشر، لم يكتمل الطابع الزمني بعد
+            if (!t) return true; // حديثة النشر
             const time = t.toDate ? t.toDate().getTime() : (t.seconds ? t.seconds * 1000 : 0);
             return time > cutoff;
         });
@@ -196,38 +196,40 @@ window.engine = {
         const row = document.getElementById('storiesRow');
         if (!row) return;
         this._activeBites = this.getActiveBites();
-        row.innerHTML = '';
-        if (this._activeBites.length === 0) return;
-        row.innerHTML = this._activeBites.map((bite, index) => `
-            <div class="flex flex-col items-center gap-1 flex-shrink-0 story-item" data-story-index="${index}" style="cursor:pointer">
-                <div class="w-16 h-16 rounded-full bg-gradient-to-tr from-sky-400 to-blue-500 p-0.5 shadow-md">
-                    <img src="${bite.data.authorPhoto}" class="w-full h-full rounded-full object-cover border-2 border-white" loading="lazy">
+        // نمسح المحتوى ونبني من جديد
+        let html = '';
+        if (this._activeBites.length > 0) {
+            html = this._activeBites.map((bite, index) => `
+                <div class="flex flex-col items-center gap-1 flex-shrink-0" data-story-index="${index}" style="cursor:pointer">
+                    <div class="w-16 h-16 rounded-full bg-gradient-to-tr from-sky-400 to-blue-500 p-0.5 shadow-md">
+                        <img src="${bite.data.authorPhoto}" class="w-full h-full rounded-full object-cover border-2 border-white" loading="lazy">
+                    </div>
+                    <span class="text-[10px] font-bold text-gray-700 text-center truncate w-16">${bite.data.authorName}</span>
                 </div>
-                <span class="text-[10px] font-bold text-gray-700 text-center truncate w-16">${bite.data.authorName}</span>
-            </div>
-        `).join('');
+            `).join('');
+        }
+        row.innerHTML = html;
 
-        // إعادة ربط الأحداث بعد حقن العناصر الجديدة
-        this.attachStoryEvents();
+        // نضمن تفويض الأحداث مرة واحدة فقط
+        if (!this._storyEventsBound) {
+            this._bindStoryEvents(row);
+            this._storyEventsBound = true;
+        }
     },
 
-    attachStoryEvents() {
-        document.querySelectorAll('.story-item').forEach(story => {
-            // تجنب تكرار الربط
-            const newStory = story.cloneNode(true);
-            story.parentNode.replaceChild(newStory, story);
-
-            const handler = (e) => {
-                const index = parseInt(newStory.getAttribute('data-story-index'));
-                if (!isNaN(index)) {
-                    e.preventDefault();
-                    engine.openStoryPlayer(index);
-                }
-            };
-
-            newStory.addEventListener('click', handler);
-            newStory.addEventListener('touchend', handler);
-        });
+    _bindStoryEvents(row) {
+        // نستخدم touchend و click معاً لضمان التوافق
+        const handler = (e) => {
+            const target = e.target.closest('[data-story-index]');
+            if (!target) return;
+            e.preventDefault();
+            const index = parseInt(target.getAttribute('data-story-index'));
+            if (!isNaN(index)) {
+                this.openStoryPlayer(index);
+            }
+        };
+        row.addEventListener('touchend', handler, { passive: false });
+        row.addEventListener('click', handler);
     },
 
     closeStory() {
@@ -236,6 +238,7 @@ window.engine = {
     },
 
     openStoryPlayer(index) {
+        // تحديث القائمة الحية
         this._activeBites = this.getActiveBites();
         if (this._activeBites.length === 0 || index < 0 || index >= this._activeBites.length) return;
         this._storyIndex = index;
