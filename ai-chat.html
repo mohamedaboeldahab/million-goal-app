@@ -60,51 +60,65 @@
         input.value = '';
         const typingDiv = addMessage('...', 'ai');
 
-        // نستخدم النموذج gemini-pro المتاح مجاناً
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${currentKey}`;
+        // قائمة النماذج التي سنحاول استخدامها بالترتيب
+        const models = [
+            { name: 'gemini-1.5-flash', version: 'v1' },
+            { name: 'gemini-1.5-flash', version: 'v1beta' },
+            { name: 'gemini-1.5-pro', version: 'v1' },
+            { name: 'gemini-1.0-pro', version: 'v1' },
+            { name: 'gemini-pro', version: 'v1' }
+        ];
 
-        try {
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    contents: [{
-                        parts: [{
-                            text: `أنت مستشار مالي خبير اسمه "Shark AI". تتحدث بالعربية فقط. تعطي إجابات دقيقة، مفصلة، ومفيدة. تقدم تحليلات ونصائح مخصصة بناءً على وصف المستخدم لموقفه المالي. تجيب بأسلوب واضح ومحترف. الآن أجب عن السؤال التالي:\n\n${question}`
-                        }]
-                    }],
-                    generationConfig: {
-                        temperature: 0.7,
-                        maxOutputTokens: 800
+        let reply = null;
+        let lastError = null;
+
+        for (let model of models) {
+            const url = `https://generativelanguage.googleapis.com/${model.version}/models/${model.name}:generateContent?key=${currentKey}`;
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{
+                            parts: [{
+                                text: `أنت مستشار مالي خبير اسمه "Shark AI". تتحدث بالعربية فقط. تعطي إجابات دقيقة، مفصلة، ومفيدة. تقدم تحليلات ونصائح مخصصة بناءً على وصف المستخدم لموقفه المالي. تجيب بأسلوب واضح ومحترف. الآن أجب عن السؤال التالي:\n\n${question}`
+                            }]
+                        }],
+                        generationConfig: { temperature: 0.7, maxOutputTokens: 800 }
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (!data.error && data.candidates?.length) {
+                        reply = data.candidates[0].content.parts[0].text;
+                        break; // نجحنا مع هذا النموذج
+                    } else if (data.error) {
+                        if (data.error.status === 'PERMISSION_DENIED' || data.error.code === 403 || data.error.code === 400) {
+                            document.getElementById('apiKeyBanner').classList.remove('hidden');
+                            throw new Error('مفتاح API غير صالح');
+                        }
+                        lastError = new Error(data.error.message);
                     }
-                })
-            });
-
-            const data = await response.json();
-
-            if (data.error) {
-                // خطأ في المفتاح – أظهر البانر
-                if (data.error.code === 400 || data.error.code === 403 || data.error.status === 'PERMISSION_DENIED') {
-                    document.getElementById('apiKeyBanner').classList.remove('hidden');
-                    throw new Error('مفتاح API غير صالح');
+                } else if (response.status === 404) {
+                    // هذا النموذج غير موجود، جرب التالي
+                    lastError = new Error(`النموذج ${model.name} غير موجود`);
                 } else {
-                    throw new Error(data.error.message || 'خطأ غير معروف');
+                    lastError = new Error(`HTTP ${response.status}`);
                 }
+            } catch (e) {
+                lastError = e;
+                if (e.message.includes('API key') || e.message.includes('مفتاح')) break; // لا داعي للمتابعة
             }
+        }
 
-            const reply = data.candidates?.[0]?.content?.parts?.[0]?.text;
-            if (!reply) throw new Error('لم يتم استلام رد من النموذج');
-            
+        if (reply) {
             updateMessage(typingDiv, reply);
-
-        } catch (error) {
-            console.error(error);
-            let msg = '❌ حدث خطأ في الاتصال. حاول مرة أخرى لاحقاً.';
-            if (error.message.includes('API key') || error.message.includes('مفتاح')) {
-                msg = '🔑 المفتاح الحالي غير صالح. يُرجى تحديثه باستخدام زر الإعدادات أعلاه.';
-            } else if (error.message.includes('quota') || error.message.includes('429')) {
-                msg = '⏳ لقد تجاوزت الحد المسموح للاستخدام اليومي. يرجى المحاولة غداً أو استخدام مفتاح آخر.';
-            }
+        } else {
+            // كل النماذج فشلت
+            const msg = lastError?.message?.includes('API key') || lastError?.message?.includes('مفتاح')
+                ? '🔑 المفتاح الحالي غير صالح. يُرجى تحديثه باستخدام زر الإعدادات أعلاه.'
+                : '❌ لم يتمكن المستشار من الرد حالياً. حاول لاحقاً أو تأكد من اتصالك بالإنترنت.';
             updateMessage(typingDiv, msg);
         }
     }
