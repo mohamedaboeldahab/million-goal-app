@@ -1,4 +1,5 @@
 <div class="flex flex-col h-[75vh]">
+    <!-- رأس المستشار -->
     <div class="bg-sky-50 p-4 rounded-2xl mb-4 border border-sky-100 flex items-center gap-3">
         <div class="w-10 h-10 bg-sky-500 rounded-full flex items-center justify-center text-white">
             <i class="fa-solid fa-robot"></i>
@@ -9,12 +10,24 @@
         </div>
     </div>
 
+    <!-- مربع الدردشة -->
     <div id="chatBox" class="flex-1 overflow-y-auto space-y-4 px-2 pb-4">
         <div class="bg-white p-4 rounded-2xl rounded-tr-none shadow-sm text-sm text-slate-700 max-w-[80%] ml-auto">
             مرحباً أيها القرش! كيف يمكنني مساعدتك في تنمية ثروتك اليوم؟
         </div>
     </div>
 
+    <!-- إعدادات المفتاح (تظهر مرة واحدة) -->
+    <div id="apiKeySetup" class="p-4 bg-white rounded-2xl shadow-lg border mb-2 hidden">
+        <label class="text-xs font-bold text-gray-600 mb-1 block">أدخل Gemini API Key (مجاني من Google AI Studio)</label>
+        <div class="flex gap-2">
+            <input type="text" id="apiKeyInput" placeholder="AIzaSy..." class="flex-1 outline-none text-sm border rounded-lg px-3 py-2">
+            <button onclick="engine.saveApiKey()" class="bg-sky-500 text-white px-4 py-2 rounded-lg text-sm font-bold">حفظ</button>
+        </div>
+        <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-[10px] text-sky-600 underline mt-2 block">اضغط هنا للحصول على مفتاح مجاني</a>
+    </div>
+
+    <!-- حقل الإدخال -->
     <div class="p-4 bg-white rounded-2xl shadow-lg border flex gap-2">
         <input type="text" id="aiInput" placeholder="اسأل المستشار..." class="flex-1 outline-none text-sm bg-transparent">
         <button onclick="engine.askAI()" class="bg-sky-500 text-white w-10 h-10 rounded-xl flex items-center justify-center">
@@ -22,3 +35,6 @@
         </button>
     </div>
 </div>
+
+<!-- تحميل ملف الذكاء الاصطناعي المنفصل -->
+<script src="ai.js"></script>
