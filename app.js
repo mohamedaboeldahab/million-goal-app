@@ -30,7 +30,6 @@ window.engine = {
     _allPosts: [],
     _visibleCount: 10,
     _currentSnapUnsubscribe: null,
-    _currentPostType: 'post',
 
     async init() {
         try { await setPersistence(auth, browserLocalPersistence); } catch (e) {}
