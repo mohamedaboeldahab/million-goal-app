@@ -3,145 +3,109 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shark AI - المستشار المالي السريع</title>
-    <link rel="icon" href="data:,">
+    <title>Shark AI - Free Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap');
-        body { font-family: 'Cairo', sans-serif; background-color: #f0f4f8; }
-        .chat-container { height: 70vh; }
-        .glass { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
+        body { font-family: 'Cairo', sans-serif; background-color: #f3f4f6; }
     </style>
 </head>
-<body class="p-2 sm:p-6">
+<body class="p-4">
 
-<div class="max-w-2xl mx-auto glass rounded-[2.5rem] shadow-2xl border border-white overflow-hidden flex flex-col">
+<div class="max-w-xl mx-auto bg-white shadow-2xl rounded-3xl overflow-hidden mt-10">
     <!-- Header -->
-    <div class="bg-slate-900 p-6 text-white flex items-center justify-between">
-        <div class="flex items-center gap-4">
-            <div class="w-12 h-12 bg-sky-500 rounded-2xl flex items-center justify-center shadow-lg shadow-sky-500/50 rotate-3">
-                <i class="fa-solid fa-bolt text-2xl"></i>
-            </div>
-            <div>
-                <h1 class="font-black text-xl tracking-tight">Shark AI <span class="text-sky-400 text-xs font-normal">Powered by Groq</span></h1>
-                <p class="text-[10px] text-slate-400 uppercase font-bold">المستشار المالي فائق السرعة</p>
-            </div>
-        </div>
-        <div class="flex gap-2">
-            <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-            <span class="text-[10px] font-bold text-slate-300">متصل الآن</span>
-        </div>
+    <div class="bg-gradient-to-r from-blue-600 to-indigo-700 p-6 text-white text-center">
+        <h1 class="text-2xl font-black">Shark AI 🦈</h1>
+        <p class="text-xs opacity-80">الإصدار المجاني المستقر</p>
     </div>
 
     <!-- Chat Box -->
-    <div id="chatBox" class="chat-container overflow-y-auto p-6 space-y-6 bg-slate-50/30">
-        <div class="flex items-start gap-3">
-            <div class="bg-white p-4 rounded-2xl rounded-tr-none shadow-sm border border-slate-100 text-sm text-slate-700 max-w-[85%] leading-relaxed">
-                أهلاً بك يا قرش! 🦈 أنا **Shark AI**، مدعوم بتقنية **Groq** البرقية. <br>
-                أنا خبير في تحليل الأسهم، الذهب، وتخطيط الميزانيات. كيف يمكنني مساعدتك الآن؟
-            </div>
+    <div id="chatBox" class="h-[400px] overflow-y-auto p-6 space-y-4 bg-gray-50">
+        <div class="bg-blue-100 p-4 rounded-2xl rounded-tr-none text-sm text-gray-700">
+            أهلاً بك! أنا أعمل الآن عبر خوادم Hugging Face المجانية. كيف يمكنني مساعدتك؟
         </div>
     </div>
 
-    <!-- Input Area -->
-    <div class="p-6 bg-white border-t border-slate-100">
-        <div class="flex gap-3">
-            <input type="text" id="userInput" onkeypress="if(event.key === 'Enter') sendMessage()"
-                   placeholder="اسأل عن أي استثمار أو خطة مالية..." 
-                   class="flex-1 bg-slate-100 border-none rounded-2xl px-5 py-4 text-sm outline-none focus:ring-2 focus:ring-sky-500 transition-all">
-            
-            <button onclick="sendMessage()" id="sendBtn" class="bg-slate-900 hover:bg-sky-600 text-white w-14 h-14 rounded-2xl flex items-center justify-center shadow-xl transition-all active:scale-90">
-                <i class="fa-solid fa-paper-plane text-xl"></i>
+    <!-- Input -->
+    <div class="p-4 bg-white border-t">
+        <div class="flex gap-2">
+            <input type="text" id="userInput" onkeypress="if(event.key === 'Enter') askAI()"
+                   placeholder="اكتب سؤالك هنا..." 
+                   class="flex-1 border border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-blue-500">
+            <button onclick="askAI()" id="sendBtn" class="bg-blue-600 text-white px-6 rounded-xl hover:bg-blue-700 transition-all">
+                <i class="fa-solid fa-paper-plane"></i>
             </button>
         </div>
     </div>
 </div>
 
 <script>
-    // ========== الإعدادات (ثابتة وسهلة) ==========
-    const API_KEY = "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";
-    const API_URL = "https://api.groq.com/openai/v1/chat/completions";
-    let chatHistory = [
-        { role: "system", content: "أنت Shark AI، مستشار مالي ذكي ومحترف. تجيب باللغة العربية فقط بأسلوب واضح ومختصر. تركز على الاستثمار والادخار وتطوير المشاريع." }
-    ];
+    // هذا رابط نموذج Qwen 2.5 وهو جبار في اللغة العربية ومجاني
+    const API_URL = "https://api-inference.huggingface.co/models/Qwen/Qwen2.5-72B-Instruct";
+    
+    // ملاحظة: يفضل وضع الـ Token الخاص بك هنا لضمان عمله دائماً
+    // يمكنك الحصول عليه مجاناً من https://huggingface.co/settings/tokens
+    const HF_TOKEN = "hf_VvGAsLpPzWpLwEYSshfMMLvYvXvXvXvXv"; // ضع التوكن الخاص بك هنا
 
-    async function sendMessage() {
+    async function askAI() {
         const input = document.getElementById('userInput');
-        const sendBtn = document.getElementById('sendBtn');
         const text = input.value.trim();
+        const sendBtn = document.getElementById('sendBtn');
 
-        if (!text || sendBtn.disabled) return;
+        if (!text) return;
 
-        // إضافة رسالة المستخدم للواجهة
         addMessage(text, 'user');
         input.value = '';
-        
-        // رسالة جارٍ التفكير
-        const typingDiv = addMessage('<i class="fa-solid fa-circle-notch animate-spin ml-2"></i> جاري التحليل بسرعة البرق...', 'ai');
+        const typingDiv = addMessage('جاري التفكير...', 'ai');
         sendBtn.disabled = true;
-
-        // تحديث التاريخ
-        chatHistory.push({ role: "user", content: text });
 
         try {
             const response = await fetch(API_URL, {
-                method: 'POST',
+                method: "POST",
                 headers: {
-                    'Authorization': `Bearer ${API_KEY}`,
-                    'Content-Type': 'application/json'
+                    "Content-Type": "application/json",
+                    // "Authorization": `Bearer ${HF_TOKEN}` // فك التعليق إذا وضعت توكن
                 },
                 body: JSON.stringify({
-                    model: "llama-3.3-70b-specdec", // أقوى نموذج متاح حالياً على Groq
-                    messages: chatHistory,
-                    temperature: 0.7,
-                    max_completion_tokens: 1024
+                    inputs: `<|im_start|>system\nأنت مستشار مالي ذكي تجيب بالعربية بوضوح.<|im_end|>\n<|im_start|>user\n${text}<|im_end|>\n<|im_start|>assistant`,
+                    parameters: { max_new_tokens: 500, return_full_text: false }
                 })
             });
 
             const data = await response.json();
-
-            if (data.choices && data.choices[0]) {
-                const reply = data.choices[0].message.content;
-                updateMessage(typingDiv, reply);
-                chatHistory.push({ role: "assistant", content: reply });
+            
+            // في Hugging Face الرد يكون مصفوفة
+            let aiReply = "";
+            if (Array.isArray(data)) {
+                aiReply = data[0].generated_text;
             } else {
-                throw new Error("رد غير متوقع");
+                aiReply = "النظام مشغول حالياً، حاول مرة أخرى بعد لحظات.";
             }
 
+            updateMessage(typingDiv, aiReply);
+
         } catch (error) {
-            console.error("Groq Error:", error);
-            updateMessage(typingDiv, "❌ عذراً، حدث خطأ في الاتصال بمحرك Groq. تأكد من استهلاك الحصة المجانية.");
+            updateMessage(typingDiv, "❌ حدث خطأ، تأكد من اتصال الإنترنت.");
         } finally {
             sendBtn.disabled = false;
-            // الحفاظ على سياق آخر 6 رسائل فقط لضمان الأداء
-            if (chatHistory.length > 12) chatHistory = [chatHistory[0], ...chatHistory.slice(-10)];
         }
     }
 
     function addMessage(text, sender) {
         const box = document.getElementById('chatBox');
-        const wrapper = document.createElement('div');
-        wrapper.className = sender === 'ai' ? 'flex items-start gap-3' : 'flex items-start gap-3 justify-end';
-
         const div = document.createElement('div');
-        div.className = sender === 'ai'
-            ? 'bg-white p-4 rounded-2xl rounded-tr-none shadow-sm border border-slate-100 text-sm text-slate-700 max-w-[85%] leading-relaxed'
-            : 'bg-slate-900 p-4 rounded-2xl rounded-tl-none shadow-md text-sm text-white max-w-[85%] leading-relaxed';
-        
-        div.innerHTML = text;
-        wrapper.appendChild(div);
-        box.appendChild(wrapper);
+        div.className = sender === 'ai' 
+            ? 'bg-blue-100 p-4 rounded-2xl rounded-tr-none text-sm text-gray-700 w-fit max-w-[85%]'
+            : 'bg-blue-600 p-4 rounded-2xl rounded-tl-none text-sm text-white w-fit max-w-[85%] mr-auto';
+        div.innerText = text;
+        box.appendChild(div);
         box.scrollTop = box.scrollHeight;
         return div;
     }
 
     function updateMessage(element, text) {
-        // تحويل الـ Markdown البسيط إلى HTML
-        const formatted = text
-            .replace(/\*\*(.*?)\*\*/g, '<strong class="text-sky-600">$1</strong>')
-            .replace(/\n/g, '<br>');
-        element.innerHTML = formatted;
+        element.innerText = text;
         document.getElementById('chatBox').scrollTop = document.getElementById('chatBox').scrollHeight;
     }
 </script>
