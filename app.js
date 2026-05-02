@@ -123,8 +123,8 @@ window.engine = {
                     this.activateCharCounter();
                     this.updateTypeButtons();
                     this.updateCreatorAvatar();
-                    this.renderBgPicker();        // <-- مهم: عرض ألوان الخلفية
-                    this.watchStoriesContainer(); // <-- مراقبة القصص وربط اللمس
+                    this.renderBgPicker();
+                    this.watchStoriesContainer();
                 }, 50);
             } else if (pageName === 'profile') {
                 setTimeout(() => {
@@ -178,7 +178,6 @@ window.engine = {
         });
     },
 
-    // ------- خلفيات البوست -------
     renderBgPicker() {
         const container = document.getElementById('bgPickerContainer');
         if (!container) return;
@@ -289,12 +288,10 @@ window.engine = {
         return views.includes(userId);
     },
 
-    // ------- إصلاح اللمس للقصص: فتح بضغطة واحدة -------
     watchStoriesContainer() {
         const row = document.getElementById('storiesRow');
         if (!row || this._observer) return;
 
-        // نستخدم متغيرات لتتبع التمرير
         let startX = 0, startY = 0, moved = false;
 
         this._observer = new MutationObserver(() => {
@@ -304,21 +301,18 @@ window.engine = {
                 const index = parseInt(story.getAttribute('data-story-index'));
                 if (isNaN(index)) return;
 
-                // تسجيل بداية اللمس
                 story.addEventListener('touchstart', (e) => {
                     startX = e.touches[0].clientX;
                     startY = e.touches[0].clientY;
                     moved = false;
                 }, { passive: true });
 
-                // تتبع الحركة
                 story.addEventListener('touchmove', (e) => {
                     const dx = Math.abs(e.touches[0].clientX - startX);
                     const dy = Math.abs(e.touches[0].clientY - startY);
-                    if (dx > 5 || dy > 5) moved = true; // اعتبره تمرير
+                    if (dx > 5 || dy > 5) moved = true;
                 }, { passive: true });
 
-                // عند رفع الإصبع: إذا لم يتحرك، افتح القصة
                 story.addEventListener('touchend', (e) => {
                     if (!moved) {
                         e.preventDefault();
@@ -326,7 +320,6 @@ window.engine = {
                     }
                 });
 
-                // احتياطي للفأرة
                 story.addEventListener('click', (e) => {
                     if (!moved) engine.openStoryPlayer(index);
                 });
@@ -434,7 +427,6 @@ window.engine = {
         }
     },
 
-    // ---------- المنشورات (مع دعم الخلفيات) ----------
     listenToPosts() {
         const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
         this._currentSnapUnsubscribe = onSnapshot(q, (snapshot) => {
@@ -530,7 +522,6 @@ window.engine = {
         btn.style.display = 'none';
     },
 
-    // ---------- صفحة البروفايل ----------
     listenToProfilePosts(containerId) {
         const userId = auth.currentUser?.uid;
         if (!userId) return;
@@ -546,8 +537,6 @@ window.engine = {
             if (container) container.innerHTML = '<p class="text-center text-red-500">تعذر تحميل المنشورات</p>';
         });
     },
-
-    postHTML(postId, p) { /* موجود أعلاه */ },
 
     activateProfile() {
         document.querySelectorAll('.tab-btn').forEach(btn => {
