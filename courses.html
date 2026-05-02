@@ -123,36 +123,24 @@
     </div>
   </div>
 
-  <script>
-    // نضمن أن window.db و window.auth متاحة من التطبيق الرئيسي
-    const db = window.db;
-    const auth = window.auth;
-    
-    // إذا لم تكن متاحة (لأي سبب) نحاول التهيئة الاحتياطية
-    if (!db || !auth) {
-      console.warn('Firebase غير مهيأ، جارٍ التهيئة الاحتياطية...');
-      import("https://www.gstatic.com/firebasejs/10.12.1/firebase-app.js").then(({initializeApp}) => {
-        import("https://www.gstatic.com/firebasejs/10.12.1/firebase-firestore.js").then(({getFirestore, collection, addDoc, getDocs, query, orderBy, serverTimestamp, doc, updateDoc}) => {
-          import("https://www.gstatic.com/firebasejs/10.12.1/firebase-auth.js").then(({getAuth}) => {
-            const firebaseConfig = {
-              apiKey: "AIzaSyB_2ms4K8EPbag7uab9gbDy8eePY6xwpxc",
-              authDomain: "millionaireapp-be931.firebaseapp.com",
-              projectId: "millionaireapp-be931",
-              storageBucket: "millionaireapp-be931.firebasestorage.app",
-              messagingSenderId: "325577904362",
-              appId: "1:325577904362:web:8d85d4547bf22b1d8f4793"
-            };
-            const app = initializeApp(firebaseConfig);
-            window.db = getFirestore(app);
-            window.auth = getAuth(app);
-            // إعادة تشغيل التحميل بعد التهيئة
-            location.reload();
-          });
-        });
-      });
-      // نوقف التنفيذ الحالي حتى تتم التهيئة
-      throw new Error('انتظر التهيئة...');
-    }
+  <script type="module">
+    // ========== استيراد Firebase مباشر ==========
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-app.js";
+    import { getFirestore, collection, addDoc, getDocs, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-firestore.js";
+    import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyB_2ms4K8EPbag7uab9gbDy8eePY6xwpxc",
+      authDomain: "millionaireapp-be931.firebaseapp.com",
+      projectId: "millionaireapp-be931",
+      storageBucket: "millionaireapp-be931.firebasestorage.app",
+      messagingSenderId: "325577904362",
+      appId: "1:325577904362:web:8d85d4547bf22b1d8f4793"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
 
     // ========== الحالة العامة ==========
     let currentTab = 'courses';
@@ -167,8 +155,10 @@
       try {
         const courseSnap = await getDocs(query(collection(db, "academy_courses"), orderBy("createdAt", "desc")));
         courses = courseSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
         const articleSnap = await getDocs(query(collection(db, "academy_articles"), orderBy("createdAt", "desc")));
         articles = articleSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
         renderContent();
         updateCounters();
       } catch (e) {
@@ -274,8 +264,9 @@
                 <p class="text-xs text-gray-500 mt-1">${m.content || ''}</p>
               </div>`).join('')}
           </div>
-          <button onclick="enrollFreeCourse('${data.id}')" class="w-full bg-sky-500 text-white py-2 rounded-xl font-bold mt-4">انضم مجاناً</button>
+          <button id="enrollFreeBtn" class="w-full bg-sky-500 text-white py-2 rounded-xl font-bold mt-4">انضم مجاناً</button>
         `;
+        document.getElementById('enrollFreeBtn').addEventListener('click', () => enrollFreeCourse(data.id));
       } else {
         content.innerHTML = `
           <div class="flex items-center gap-2 mb-3">
@@ -310,7 +301,6 @@
         alert('فشل التسجيل: ' + e.message);
       }
     }
-    window.enrollFreeCourse = enrollFreeCourse;
 
     // ========== دوال النشر ==========
     function createHashtagSelector(containerId, selectedTags = []) {
@@ -394,14 +384,14 @@
           title,
           instructor,
           desc,
-          price: 0, // مجاني
+          price: 0,
           hashtags,
           modules,
           authorId: auth.currentUser.uid,
           createdAt: serverTimestamp()
         });
         closeModal('courseModal');
-        loadData();
+        await loadData();
       } catch (e) {
         alert('فشل النشر: ' + e.message);
       }
@@ -437,7 +427,7 @@
           createdAt: serverTimestamp()
         });
         closeModal('articleModal');
-        loadData();
+        await loadData();
       } catch (e) {
         alert('فشل النشر: ' + e.message);
       }
@@ -484,7 +474,6 @@
       btn.addEventListener('click', () => filterByHashtag(btn.dataset.tag));
     });
 
-    // إغلاق المودالات عند النقر خارجها
     document.getElementById('courseModal').addEventListener('click', function(e) {
       if (e.target === this) closeModal('courseModal');
     });
