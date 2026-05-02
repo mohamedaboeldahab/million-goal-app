@@ -1,15 +1,26 @@
-const CACHE = 'shark-fast-v4';
+const CACHE = 'shark-fast-v2';
 const ASSETS = [
-  '/', '/index.html', '/app.js', '/home.html',
-  '/profile.html', '/roadmap.html', '/assets.html',
-  '/courses.html', '/ai-chat.html', '/search.html',
+  '/', '/index.html', '/app.js', '/home.html', '/profile.html',
   '/manifest.json'
 ];
 
-self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
+self.addEventListener('install', event => {
+  event.waitUntil(
+    caches.open(CACHE).then(cache => cache.addAll(ASSETS))
+  );
+  self.skipWaiting();
 });
 
-self.addEventListener('fetch', e => {
-  e.respondWith(caches.match(e.request).then(r => r || fetch(e.request)));
+self.addEventListener('activate', event => {
+  event.waitUntil(
+    caches.keys().then(keys => Promise.all(
+      keys.filter(key => key !== CACHE).map(key => caches.delete(key))
+    )).then(() => self.clients.claim())
+  );
+});
+
+self.addEventListener('fetch', event => {
+  event.respondWith(
+    caches.match(event.request).then(res => res || fetch(event.request))
+  );
 });
