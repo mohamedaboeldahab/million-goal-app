@@ -468,54 +468,49 @@ window.engine = {
         postsToShow.forEach(({ id }) => this.listenToComments(id));
     },
 
-postHTML(postId, p) {
-    let dateStr = '';
-    try { dateStr = p.createdAt?.toDate().toLocaleString('ar-EG'); } catch (e) { dateStr = '---'; }
-    const img = fixPhotoUrl(p.authorPhoto);
-    const bg = p.backgroundColor ? bgGradients[p.backgroundColor] : null;
+    postHTML(postId, p) {
+        let dateStr = '';
+        try { dateStr = p.createdAt?.toDate().toLocaleString('ar-EG'); } catch (e) { dateStr = '---'; }
+        const img = fixPhotoUrl(p.authorPhoto);
+        const bg = p.backgroundColor ? bgGradients[p.backgroundColor] : null;
 
-    // بطاقة المنشور الرئيسية - هوامش أكبر وخطوط أوضح
-    let html = `
-    <div class="bg-white rounded-2xl p-5 mb-5 shadow-sm border border-gray-100">
-        <div class="flex items-center gap-4 mb-4">
-            <img src="${img}" class="w-12 h-12 rounded-full border-2 border-sky-200 object-cover" loading="lazy" onerror="this.src='${DEFAULT_AVATAR}'">
-            <div>
-                <span class="font-extrabold text-gray-800 text-base">${p.authorName || 'مستخدم'}</span>
-                <div class="text-sm text-gray-400 mt-0.5">${dateStr}</div>
+        let html = `
+        <div class="bg-white rounded-2xl p-4 mb-4 shadow-sm border border-gray-100">
+            <div class="flex items-center gap-3 mb-3">
+                <img src="${img}" class="w-10 h-10 rounded-full border border-sky-200 object-cover" loading="lazy" onerror="this.src='${DEFAULT_AVATAR}'">
+                <div>
+                    <span class="font-extrabold text-gray-800 text-sm">${p.authorName || 'مستخدم'}</span>
+                    <div class="text-xs text-gray-400">${dateStr}</div>
+                </div>
+            </div>`;
+
+        if (bg) {
+            html += `
+            <div style="background: ${bg}; border-radius: 16px; padding: 16px; margin-bottom: 16px;">
+                <p class="text-white text-sm leading-relaxed whitespace-pre-wrap" style="text-shadow: 0 1px 2px rgba(0,0,0,0.3);">${p.content}</p>
+            </div>`;
+        } else {
+            html += `
+            <p class="text-gray-700 text-sm leading-relaxed mb-4 whitespace-pre-wrap">${p.content}</p>`;
+        }
+
+        html += `
+            <div class="flex gap-2 mb-3">
+                <button onclick="engine.handleVote('${postId}', 'support')" class="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-sky-400 to-blue-500 text-white font-bold py-2 rounded-xl shadow text-sm"><span class="text-base">🦈</span> أؤيد <span class="bg-white/20 px-2 py-0.5 rounded-full text-sm font-extrabold">${p.supportCount || 0}</span></button>
+                <button onclick="engine.handleVote('${postId}', 'oppose')" class="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-amber-400 to-orange-400 text-white font-bold py-2 rounded-xl shadow text-sm"><span class="text-base">🐟</span> لا أؤيد <span class="bg-white/20 px-2 py-0.5 rounded-full text-sm font-extrabold">${p.opposeCount || 0}</span></button>
+            </div>
+            <div class="border-t border-gray-100 pt-3">
+                <div id="comments_list_${postId}" class="space-y-2 mb-2"></div>
+                <button id="load_more_btn_${postId}" style="display:none;" onclick="engine.loadMoreComments('${postId}')" class="text-sky-600 text-xs font-bold hover:underline w-full text-center py-1">عرض كل التعليقات</button>
+                <div class="flex gap-2 mt-2">
+                    <input type="text" id="comm_${postId}" placeholder="أضف تعليقاً..." class="flex-1 bg-gray-100 rounded-lg px-3 py-1.5 text-xs border border-gray-200 outline-none focus:ring-1 focus:ring-sky-400">
+                    <button onclick="engine.addComment('${postId}')" class="bg-sky-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold"><i class="fa-solid fa-paper-plane"></i></button>
+                </div>
             </div>
         </div>`;
 
-    // منطقة النص (مع أو بدون خلفية)
-    if (bg) {
-        html += `
-        <div style="background: ${bg}; border-radius: 16px; padding: 20px; margin-bottom: 20px;">
-            <p class="text-white text-base leading-relaxed whitespace-pre-wrap" style="text-shadow: 0 1px 2px rgba(0,0,0,0.3);">${p.content}</p>
-        </div>`;
-    } else {
-        html += `
-        <p class="text-gray-700 text-base leading-relaxed mb-5 whitespace-pre-wrap">${p.content}</p>`;
-    }
-
-    // أزرار التصويت - أكبر وأوضح
-    html += `
-        <div class="flex gap-3 mb-4">
-            <button onclick="engine.handleVote('${postId}', 'support')" class="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-sky-400 to-blue-500 text-white font-bold py-3 px-4 rounded-xl shadow text-base"><span class="text-xl">🦈</span> أؤيد <span class="bg-white/30 px-3 py-0.5 rounded-full text-base font-extrabold">${p.supportCount || 0}</span></button>
-            <button onclick="engine.handleVote('${postId}', 'oppose')" class="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-amber-400 to-orange-400 text-white font-bold py-3 px-4 rounded-xl shadow text-base"><span class="text-xl">🐟</span> لا أؤيد <span class="bg-white/30 px-3 py-0.5 rounded-full text-base font-extrabold">${p.opposeCount || 0}</span></button>
-        </div>
-
-        <!-- قسم التعليقات -->
-        <div class="border-t border-gray-100 pt-4">
-            <div id="comments_list_${postId}" class="space-y-3 mb-3"></div>
-            <button id="load_more_btn_${postId}" style="display:none;" onclick="engine.loadMoreComments('${postId}')" class="text-sky-600 text-sm font-bold hover:underline w-full text-center py-2">عرض كل التعليقات</button>
-            <div class="flex gap-3 mt-3">
-                <input type="text" id="comm_${postId}" placeholder="أضف تعليقاً..." class="flex-1 bg-gray-100 rounded-xl px-4 py-3 text-sm border border-gray-200 outline-none focus:ring-2 focus:ring-sky-400 transition">
-                <button onclick="engine.addComment('${postId}')" class="bg-sky-500 text-white px-5 py-3 rounded-xl text-sm font-bold hover:bg-sky-600 active:scale-95 transition shadow"><i class="fa-solid fa-paper-plane"></i></button>
-            </div>
-        </div>
-    </div>`;
-
-    return html;
-},
+        return html;
+    },
 
     listenToComments(postId) {
         const q = query(collection(db, `posts/${postId}/comments`), orderBy("createdAt", "asc"));
@@ -541,42 +536,32 @@ postHTML(postId, p) {
     },
 
     // ========== صفحة البروفايل (إصلاح الفهرس) ==========
-listenToProfilePosts(containerId) {
-    const userId = auth.currentUser?.uid;
-    if (!userId) return;
-
-    // استعلام بسيط بدون orderBy لتجنب الحاجة للفهرس
-    const q = query(collection(db, "posts"), where("authorId", "==", userId));
-
-    onSnapshot(q, (snapshot) => {
-        const container = document.getElementById(containerId);
-        if (!container) return;
-
-        if (snapshot.empty) {
-            container.innerHTML = '<p class="text-gray-400 text-sm text-center py-8">لا توجد منشورات بعد</p>';
-            return;
-        }
-
-        // تحويل المستندات إلى كائنات عادية { id, data }
-        const docs = snapshot.docs.map(doc => ({ id: doc.id, data: doc.data() }));
-
-        // ترتيب النتائج يدوياً (الأحدث أولاً)
-        docs.sort((a, b) => {
-            const timeA = a.data.createdAt?.toDate?.()?.getTime?.() || 0;
-            const timeB = b.data.createdAt?.toDate?.()?.getTime?.() || 0;
-            return timeB - timeA;
+    listenToProfilePosts(containerId) {
+        const userId = auth.currentUser?.uid;
+        if (!userId) return;
+        // استعلام بدون orderBy لتجنب الحاجة إلى فهرس مركب
+        const q = query(collection(db, "posts"), where("authorId", "==", userId));
+        onSnapshot(q, (snapshot) => {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            if (snapshot.empty) {
+                container.innerHTML = '<p class="text-gray-400 text-sm text-center py-8">لا توجد منشورات بعد</p>';
+                return;
+            }
+            // ترتيب النتائج يدوياً (الأحدث أولاً)
+            const docs = snapshot.docs.map(doc => ({ id: doc.id, data: doc.data() }));
+            docs.sort((a, b) => {
+                const timeA = a.data.createdAt?.toDate?.()?.getTime?.() || 0;
+                const timeB = b.data.createdAt?.toDate?.()?.getTime?.() || 0;
+                return timeB - timeA;
+            });
+            container.innerHTML = docs.map(doc => this.postHTML(doc.id, doc.data())).join('');
+            docs.forEach(d => this.listenToComments(d.id));
+        }, error => {
+            const container = document.getElementById(containerId);
+            if (container) container.innerHTML = '<p class="text-center text-red-500">تعذر تحميل المنشورات</p>';
         });
-
-        // عرض المنشورات باستخدام postHTML (بدون استدعاء دوال خاطئة)
-        container.innerHTML = docs.map(doc => this.postHTML(doc.id, doc.data)).join('');
-
-        // تفعيل التعليقات لكل منشور
-        docs.forEach(doc => this.listenToComments(doc.id));
-    }, error => {
-        const container = document.getElementById(containerId);
-        if (container) container.innerHTML = '<p class="text-center text-red-500">تعذر تحميل المنشورات</p>';
-    });
-},
+    },
 
     activateProfile() {
         document.querySelectorAll('.tab-btn').forEach(btn => {
