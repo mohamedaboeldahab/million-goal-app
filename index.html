@@ -9,15 +9,16 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&display=swap" rel="stylesheet">
     <style>
+        * { -webkit-tap-highlight-color: transparent; }
         body { font-family: 'Tajawal', sans-serif; background: #f0f2f5; margin: 0; }
         #splash { position: fixed; inset: 0; background: linear-gradient(135deg, #0f172a, #1e293b); z-index: 200; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .nav-link { display: flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 8px; font-weight: 600; font-size: 14px; color: #ffffffcc; transition: 0.2s; white-space: nowrap; }
         .nav-link.active { color: white; background: rgba(255,255,255,0.2); }
-        .nav-link:hover { background: rgba(255,255,255,0.15); color: white; }
         .nav-links-container { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
         .nav-links-container::-webkit-scrollbar { display: none; }
         #storyPlayer { position: fixed; inset: 0; background: #000; z-index: 99999; display: none; flex-direction: column; align-items: center; justify-content: center; }
         #storyPlayer.active { display: flex !important; }
+        img { image-rendering: -webkit-optimize-contrast; max-width: 100%; height: auto; }
     </style>
 </head>
 <body>
@@ -63,10 +64,10 @@
 
     <!-- مشغل القصص الثابت -->
     <div id="storyPlayer">
-        <button id="closeStoryBtn" class="absolute top-5 right-5 text-white text-4xl z-50 bg-transparent border-0">&times;</button>
+        <button id="closeStoryBtn" class="absolute top-5 right-5 text-white text-4xl z-50 bg-transparent border-0 p-4">&times;</button>
         <div id="storyContent" class="text-white text-center px-4 mt-16"></div>
-        <div class="absolute inset-y-0 left-0 w-1/4 z-40" onclick="window.engine.prevStory()"></div>
-        <div class="absolute inset-y-0 right-0 w-1/4 z-40" onclick="window.engine.nextStory()"></div>
+        <div class="absolute inset-y-0 left-0 w-1/4 z-40" id="prevArea"></div>
+        <div class="absolute inset-y-0 right-0 w-1/4 z-40" id="nextArea"></div>
     </div>
 
     <script>
@@ -80,23 +81,24 @@
         function closeSearchOverlay() { document.getElementById('searchOverlay').classList.replace('flex', 'hidden'); }
 
         // ربط مشغل القصص
-        document.getElementById('closeStoryBtn').addEventListener('click', (e) => { e.stopPropagation(); window.engine.closeStory(); });
-        // Event Delegation على مستوى document للقصص
-        document.addEventListener('touchstart', (e) => {
+        document.getElementById('closeStoryBtn')?.addEventListener('click', (e) => { e.stopPropagation(); window.engine?.closeStory?.(); });
+        document.getElementById('prevArea')?.addEventListener('click', (e) => { e.stopPropagation(); window.engine?.prevStory?.(); });
+        document.getElementById('nextArea')?.addEventListener('click', (e) => { e.stopPropagation(); window.engine?.nextStory?.(); });
+
+        // ========== السحر: Event Delegation على document للقصص ==========
+        function handleStoryInteraction(e) {
             const el = e.target.closest('[data-story-index]');
             if (el) {
                 e.preventDefault();
                 const idx = parseInt(el.getAttribute('data-story-index'));
-                if (!isNaN(idx) && window.engine) window.engine.openStoryPlayer(idx);
+                if (!isNaN(idx) && window.engine?.openStoryPlayer) {
+                    window.engine.openStoryPlayer(idx);
+                }
             }
-        }, { passive: false });
-        document.addEventListener('click', (e) => {
-            const el = e.target.closest('[data-story-index]');
-            if (el) {
-                const idx = parseInt(el.getAttribute('data-story-index'));
-                if (!isNaN(idx) && window.engine) window.engine.openStoryPlayer(idx);
-            }
-        });
+        }
+
+        document.addEventListener('touchstart', handleStoryInteraction, { passive: false });
+        document.addEventListener('click', handleStoryInteraction);
     </script>
     <script type="module" src="app.js"></script>
     <script>
