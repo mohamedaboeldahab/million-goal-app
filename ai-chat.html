@@ -4,22 +4,37 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Shark AI 🦈</title>
+
 <script src="https://cdn.tailwindcss.com"></script>
+
+<!-- Gemini -->
+<script src="https://unpkg.com/@google/generative-ai/dist/index.umd.js"></script>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 </head>
 
 <body class="bg-slate-100 p-4">
 
 <div class="max-w-md mx-auto bg-white rounded-3xl shadow-2xl overflow-hidden mt-10">
-    
+
     <div class="bg-slate-900 p-5 text-white flex justify-between">
         <span>Shark AI 🦈</span>
-        <span class="text-xs text-sky-400">Secure</span>
+        <span class="text-xs text-sky-400">ALL-IN-ONE</span>
     </div>
 
-    <div id="chatBox" class="h-96 overflow-y-auto p-5 space-y-3 bg-slate-50 text-sm">
+    <!-- الشات -->
+    <div id="chatBox" class="h-72 overflow-y-auto p-5 space-y-3 bg-slate-50 text-sm">
         <div class="bg-white p-3 rounded-xl">أهلاً بيك 👋</div>
     </div>
 
+    <!-- الرسم البياني -->
+    <div class="p-4">
+        <canvas id="myChart"></canvas>
+    </div>
+
+    <!-- الإدخال -->
     <div class="p-4 flex gap-2">
         <input id="msg" type="text"
         class="flex-1 bg-slate-100 px-3 py-2 rounded-xl"
@@ -35,6 +50,13 @@
 
 <script>
 
+const API_KEY = "AIzaSyAUamuXa-gndq8CZw5DAXdqcxUuOwAsZz0";
+
+// تشغيل Gemini
+const genAI = new window.GoogleGenerativeAI(API_KEY);
+const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+// شات
 async function send(){
     const input = document.getElementById('msg');
     const text = input.value.trim();
@@ -46,20 +68,21 @@ async function send(){
     const loading = add('جاري التفكير...','ai');
 
     try{
-        const res = await fetch('api.php',{
-            method:'POST',
-            headers:{'Content-Type':'application/json'},
-            body: JSON.stringify({msg:text})
-        });
+        const result = await model.generateContent(text);
+        const response = await result.response;
+        const reply = response.text();
 
-        const data = await res.json();
-        loading.innerText = data.reply;
+        loading.innerText = reply;
+
+        // تحديث الشارت بناءً على طول الرد
+        updateChart(reply.length);
 
     }catch(e){
-        loading.innerText = "❌ حصل خطأ";
+        loading.innerText = "❌ خطأ";
     }
 }
 
+// إضافة رسالة
 function add(t,type){
     const box = document.getElementById('chatBox');
     const div = document.createElement('div');
@@ -72,6 +95,36 @@ function add(t,type){
     box.appendChild(div);
     box.scrollTop = box.scrollHeight;
     return div;
+}
+
+//////////////////////////////////////////////////
+// Chart.js
+//////////////////////////////////////////////////
+
+const ctx = document.getElementById('myChart');
+
+let chart = new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: ['1'],
+        datasets: [{
+            label: 'طول الرد',
+            data: [0],
+            borderWidth: 2
+        }]
+    },
+    options: {
+        responsive: true
+    }
+});
+
+let count = 1;
+
+function updateChart(value){
+    count++;
+    chart.data.labels.push(count.toString());
+    chart.data.datasets[0].data.push(value);
+    chart.update();
 }
 
 </script>
