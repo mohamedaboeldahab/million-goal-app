@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>أكاديمية Shark UP</title>
+  <title>الأكاديمية – Shark UP</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     body { font-family: 'Tajawal', sans-serif; background: #f0f2f5; margin: 0; }
     .tab-btn.active { background: #0ea5e9; color: white; }
-    .course-card { transition: all 0.2s ease; }
-    .course-card:active { transform: scale(0.98); }
+    .card-item { transition: all 0.2s ease; }
+    .card-item:active { transform: scale(0.98); }
     .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 1000; align-items: center; justify-content: center; }
     .modal.active { display: flex; }
     .hashtag-btn { transition: all 0.2s; }
@@ -18,16 +18,25 @@
   </style>
 </head>
 <body class="bg-gray-50 h-full overflow-y-auto">
-  
+
   <div id="academy-app" class="max-w-2xl mx-auto px-4 pt-6 pb-20 space-y-6">
     <!-- رأس الصفحة -->
     <div class="bg-gradient-to-br from-sky-500 to-blue-600 rounded-3xl p-6 text-white shadow-xl">
       <h2 class="text-2xl font-black mb-2">📚 أكاديمية Shark UP</h2>
-      <p class="opacity-90 text-sm">دورات احترافية في المال، الأعمال، والتسويق – انشر كورسك أو اشترِ المعرفة</p>
-      <div class="mt-3 text-xs bg-white/20 rounded-full px-3 py-1 inline-block" id="courseCount">تحميل...</div>
+      <p class="opacity-90 text-sm">دورات احترافية ومقالات ثرية – انشر معرفتك أو تعلّم من الخبراء</p>
+      <div class="mt-3 flex gap-3 text-xs">
+        <span class="bg-white/20 px-3 py-1 rounded-full" id="coursesCount">0 كورس</span>
+        <span class="bg-white/20 px-3 py-1 rounded-full" id="articlesCount">0 مقال</span>
+      </div>
     </div>
 
-    <!-- شريط الهاشتاجات -->
+    <!-- تبويبات التبديل -->
+    <div class="flex gap-2 bg-gray-100 p-1 rounded-full">
+      <button id="tabCourses" class="tab-btn flex-1 py-2 rounded-full font-bold text-sm active" onclick="switchTab('courses')">📚 الكورسات</button>
+      <button id="tabArticles" class="tab-btn flex-1 py-2 rounded-full font-bold text-sm" onclick="switchTab('articles')">📝 المقالات</button>
+    </div>
+
+    <!-- شريط الهاشتاجات (الفلترة) -->
     <div class="flex flex-wrap gap-2" id="hashtagFilters">
       <button data-tag="all" class="hashtag-btn bg-sky-500 text-white px-3 py-1.5 rounded-full text-xs font-bold shadow active">الكل</button>
       <button data-tag="بيزنس" class="hashtag-btn bg-gray-200 text-gray-700 px-3 py-1.5 rounded-full text-xs font-bold">#بيزنس</button>
@@ -38,58 +47,73 @@
       <button data-tag="ريادة_أعمال" class="hashtag-btn bg-gray-200 text-gray-700 px-3 py-1.5 rounded-full text-xs font-bold">#ريادة_أعمال</button>
     </div>
 
-    <!-- زر إضافة كورس (للبائعين) -->
-    <div id="sellerPanel" class="hidden">
-      <button onclick="window.academy.openAddModal()" class="w-full bg-sky-500 text-white py-3 rounded-2xl font-bold shadow-lg hover:bg-sky-600 transition flex items-center justify-center gap-2">
-        <i class="fa-solid fa-plus-circle"></i> إضافة كورس جديد
+    <!-- زر النشر (وضع البائع) -->
+    <div id="sellerPanel" class="hidden flex gap-2">
+      <button onclick="openAddCourseModal()" class="flex-1 bg-sky-500 text-white py-3 rounded-2xl font-bold shadow-lg hover:bg-sky-600 transition text-sm">
+        <i class="fa-solid fa-plus-circle"></i> أضف كورس
+      </button>
+      <button onclick="openAddArticleModal()" class="flex-1 bg-emerald-500 text-white py-3 rounded-2xl font-bold shadow-lg hover:bg-emerald-600 transition text-sm">
+        <i class="fa-solid fa-pen-to-square"></i> اكتب مقال
       </button>
     </div>
 
-    <!-- حاوية الكورسات -->
-    <div id="coursesGrid" class="grid gap-4"></div>
+    <!-- حاوية المحتوى -->
+    <div id="contentGrid" class="grid gap-4"></div>
 
-    <!-- أيقونة وضع البائع (أسفل اليمين) -->
-    <button id="toggleSellerBtn" onclick="window.academy.toggleSeller()" class="fixed bottom-24 right-4 z-30 w-14 h-14 bg-gray-200 rounded-2xl flex items-center justify-center text-gray-600 text-xl shadow-lg hover:bg-gray-300 transition" title="وضع البائع">
+    <!-- أيقونة وضع البائع -->
+    <button id="toggleSellerBtn" onclick="toggleSellerMode()" class="fixed bottom-24 right-4 z-30 w-14 h-14 bg-gray-200 rounded-2xl flex items-center justify-center text-gray-600 text-xl shadow-lg hover:bg-gray-300 transition" title="وضع البائع">
       <i class="fa-solid fa-store"></i>
     </button>
   </div>
 
-  <!-- مودال إضافة كورس (يتضمن إضافة أجزاء) -->
-  <div id="addCourseModal" class="modal">
+  <!-- ========== مودال إضافة كورس ========== -->
+  <div id="courseModal" class="modal">
     <div class="bg-white w-full max-w-md rounded-3xl p-6 mx-4 shadow-2xl space-y-4 max-h-[80vh] overflow-y-auto">
-      <h3 class="text-xl font-black text-gray-800">🎥 أضف كورسك للبيع</h3>
+      <h3 class="text-xl font-black text-gray-800">🎥 أضف كورسك</h3>
       <input id="courseTitle" class="w-full bg-gray-100 rounded-xl p-3 text-sm border" placeholder="عنوان الكورس">
       <input id="courseInstructor" class="w-full bg-gray-100 rounded-xl p-3 text-sm border" placeholder="اسم المدرّب">
       <textarea id="courseDesc" rows="2" class="w-full bg-gray-100 rounded-xl p-3 text-sm border" placeholder="وصف مختصر"></textarea>
       <input id="coursePrice" type="number" class="w-full bg-gray-100 rounded-xl p-3 text-sm border" placeholder="السعر (0 للمجاني)" min="0" step="0.01" value="0">
       <input id="courseHashtags" class="w-full bg-gray-100 rounded-xl p-3 text-sm border" placeholder="هاشتاجات (مثال: بيزنس,تسويق)">
       
-      <!-- قسم الأجزاء -->
       <div class="border-t pt-3">
         <h4 class="font-bold text-gray-700 mb-2">📖 أجزاء الكورس</h4>
-        <div id="modulesContainer" class="space-y-2"></div>
-        <button onclick="window.academy.addModuleField()" class="text-sky-500 text-sm font-bold mt-2"><i class="fa-solid fa-plus"></i> إضافة جزء</button>
+        <div id="courseModulesContainer" class="space-y-2"></div>
+        <button onclick="addCourseModuleField()" class="text-sky-500 text-sm font-bold mt-2"><i class="fa-solid fa-plus"></i> إضافة جزء</button>
       </div>
 
       <div class="flex gap-2 justify-end">
-        <button onclick="window.academy.closeAddModal()" class="px-5 py-2 bg-gray-200 rounded-xl font-semibold">إلغاء</button>
-        <button id="publishCourseBtn" onclick="window.academy.publishCourse()" class="px-5 py-2 bg-sky-500 text-white rounded-xl font-semibold shadow">نشر الكورس</button>
+        <button onclick="closeModal('courseModal')" class="px-5 py-2 bg-gray-200 rounded-xl font-semibold">إلغاء</button>
+        <button onclick="publishCourse()" class="px-5 py-2 bg-sky-500 text-white rounded-xl font-semibold shadow">نشر</button>
       </div>
     </div>
   </div>
 
-  <!-- مودال عرض تفاصيل الكورس والأجزاء -->
-  <div id="courseDetailModal" class="modal">
+  <!-- ========== مودال إضافة مقال ========== -->
+  <div id="articleModal" class="modal">
+    <div class="bg-white w-full max-w-md rounded-3xl p-6 mx-4 shadow-2xl space-y-4 max-h-[80vh] overflow-y-auto">
+      <h3 class="text-xl font-black text-gray-800">📝 اكتب مقالاً</h3>
+      <input id="articleTitle" class="w-full bg-gray-100 rounded-xl p-3 text-sm border" placeholder="عنوان المقال">
+      <textarea id="articleContent" rows="6" class="w-full bg-gray-100 rounded-xl p-3 text-sm border" placeholder="محتوى المقال هنا..."></textarea>
+      <input id="articleHashtags" class="w-full bg-gray-100 rounded-xl p-3 text-sm border" placeholder="هاشتاجات (مثال: بيزنس,تسويق)">
+      <div class="flex gap-2 justify-end">
+        <button onclick="closeModal('articleModal')" class="px-5 py-2 bg-gray-200 rounded-xl font-semibold">إلغاء</button>
+        <button onclick="publishArticle()" class="px-5 py-2 bg-emerald-500 text-white rounded-xl font-semibold shadow">نشر المقال</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== مودال عرض التفاصيل ========== -->
+  <div id="detailModal" class="modal">
     <div class="bg-white w-full max-w-md rounded-3xl p-6 mx-4 shadow-2xl max-h-[80vh] overflow-y-auto space-y-4">
-      <div id="courseDetailContent"></div>
-      <button onclick="document.getElementById('courseDetailModal').classList.remove('active')" class="w-full bg-gray-200 py-2 rounded-xl font-bold mt-3">إغلاق</button>
+      <div id="detailContent"></div>
+      <button onclick="closeModal('detailModal')" class="w-full bg-gray-200 py-2 rounded-xl font-bold mt-3">إغلاق</button>
     </div>
   </div>
 
   <script type="module">
-    // ========== إعداد Firebase (يستخدم نفس config التطبيق) ==========
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-app.js";
-    import { getFirestore, collection, addDoc, getDocs, query, orderBy, doc, updateDoc, deleteDoc, onSnapshot, arrayUnion, arrayRemove, getDoc } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, getDocs, query, orderBy, doc, getDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-firestore.js";
     import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-auth.js";
 
     const firebaseConfig = {
@@ -104,243 +128,271 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     const auth = getAuth(app);
-    
-    // اجعلها متاحة عالمياً لبقية الأكواد
     window.db = db;
     window.auth = auth;
 
-    // ========== إدارة الأكاديمية ==========
-    const academy = {
-      courses: [],
-      currentFilter: 'all',
-      sellerMode: false,
-      courseCollection: 'academy_courses',
-      purchasesCollection: 'academy_purchases',
+    // ========== الحالة العامة ==========
+    let currentTab = 'courses'; // 'courses' or 'articles'
+    let currentFilter = 'all';
+    let sellerMode = false;
+    let courses = [];
+    let articles = [];
 
-      async init() {
-        await this.loadCourses();
-        this.renderHashtagButtons();
-        this.toggleSellerUI(false);
-        document.getElementById('toggleSellerBtn').addEventListener('click', () => this.toggleSeller());
-        document.getElementById('addCourseModal').addEventListener('click', (e) => {
-          if (e.target === document.getElementById('addCourseModal')) this.closeAddModal();
-        });
-        document.getElementById('courseDetailModal').addEventListener('click', (e) => {
-          if (e.target === document.getElementById('courseDetailModal')) document.getElementById('courseDetailModal').classList.remove('active');
-        });
-        this.addModuleField(); // حقل جزء واحد افتراضي
-      },
+    // ========== دوال عرض المحتوى ==========
+    async function loadData() {
+      try {
+        // تحميل الكورسات
+        const courseSnap = await getDocs(query(collection(db, "academy_courses"), orderBy("createdAt", "desc")));
+        courses = courseSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+        // تحميل المقالات
+        const articleSnap = await getDocs(query(collection(db, "academy_articles"), orderBy("createdAt", "desc")));
+        articles = articleSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+        renderContent();
+        updateCounters();
+      } catch (e) { console.error(e); }
+    }
 
-      async loadCourses() {
-        try {
-          const q = query(collection(db, this.courseCollection), orderBy("createdAt", "desc"));
-          const snapshot = await getDocs(q);
-          this.courses = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-          this.renderCourses();
-          document.getElementById('courseCount').textContent = `${this.courses.length} كورس`;
-        } catch (e) {
-          document.getElementById('courseCount').textContent = 'خطأ في التحميل';
-          console.error(e);
+    function updateCounters() {
+      document.getElementById('coursesCount').textContent = courses.length + ' كورس';
+      document.getElementById('articlesCount').textContent = articles.length + ' مقال';
+    }
+
+    function renderContent() {
+      const grid = document.getElementById('contentGrid');
+      if (!grid) return;
+
+      let data = currentTab === 'courses' ? courses : articles;
+      if (currentFilter !== 'all') {
+        data = data.filter(item => 
+          (item.hashtags || []).some(t => t.toLowerCase().includes(currentFilter.toLowerCase()))
+        );
+      }
+
+      if (data.length === 0) {
+        grid.innerHTML = `<div class="text-center text-gray-400 py-10"><i class="fa-solid fa-book-open text-4xl mb-2"></i><p>لا توجد ${currentTab === 'courses' ? 'كورسات' : 'مقالات'} هنا</p></div>`;
+        return;
+      }
+
+      grid.innerHTML = data.map(item => {
+        if (currentTab === 'courses') return courseCard(item);
+        return articleCard(item);
+      }).join('');
+
+      // ربط أزرار التفاصيل
+      data.forEach(item => {
+        const detailBtn = document.getElementById(`detail-${item.id}`);
+        if (detailBtn) {
+          detailBtn.addEventListener('click', () => showDetail(item.id));
         }
-      },
-
-      renderCourses() {
-        const grid = document.getElementById('coursesGrid');
-        if (!grid) return;
-        let filtered = this.courses;
-        if (this.currentFilter !== 'all') {
-          filtered = this.courses.filter(c => c.hashtags && c.hashtags.some(t => t.toLowerCase().includes(this.currentFilter.toLowerCase())));
+        if (currentTab === 'courses') {
+          const buyBtn = document.getElementById(`buy-${item.id}`);
+          if (buyBtn) buyBtn.addEventListener('click', () => buyCourse(item.id));
         }
-        if (filtered.length === 0) {
-          grid.innerHTML = '<div class="text-center text-gray-400 py-10"><i class="fa-solid fa-book-open text-4xl mb-2"></i><p>لا توجد كورسات هنا</p></div>';
-          return;
-        }
-        grid.innerHTML = filtered.map(course => this.courseCard(course)).join('');
-        
-        // إضافة مستمعين لأزرار الشراء والتفاصيل
-        filtered.forEach(course => {
-          const buyBtn = document.getElementById(`buy-${course.id}`);
-          if (buyBtn) buyBtn.addEventListener('click', () => this.buyCourse(course.id));
-          const detailBtn = document.getElementById(`detail-${course.id}`);
-          if (detailBtn) detailBtn.addEventListener('click', () => this.showCourseDetail(course.id));
-        });
-      },
+      });
+    }
 
-      courseCard(course) {
-        const modulesCount = (course.modules || []).length;
-        return `
-          <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition course-card">
-            <div class="flex justify-between items-start mb-2">
-              <h3 class="font-bold text-gray-800">${course.title}</h3>
-              <span class="text-sm font-bold text-sky-600">${course.price > 0 ? '$' + course.price : 'مجاني'}</span>
-            </div>
-            <p class="text-xs text-gray-500 line-clamp-2 mb-2">${course.desc || ''}</p>
-            <div class="flex items-center gap-2 text-xs text-gray-400 mb-2">
-              <i class="fa-solid fa-user"></i> ${course.instructor || 'مجهول'}
-              <span class="mx-1">•</span>
-              <i class="fa-solid fa-layer-group"></i> ${modulesCount} أجزاء
-            </div>
-            <div class="flex flex-wrap gap-1 mb-3">
-              ${(course.hashtags || []).map(t => `<span class="bg-sky-50 text-sky-600 px-2 py-0.5 rounded-full text-xs font-bold">#${t}</span>`).join('')}
-            </div>
-            <div class="flex gap-2">
-              <button id="buy-${course.id}" class="flex-1 bg-sky-500 text-white py-2 rounded-xl text-sm font-bold shadow hover:bg-sky-600 transition">شراء</button>
-              <button id="detail-${course.id}" class="bg-gray-100 text-gray-600 px-4 py-2 rounded-xl text-sm font-bold hover:bg-gray-200 transition"><i class="fa-solid fa-eye"></i></button>
-            </div>
-          </div>`;
-      },
+    function courseCard(course) {
+      const modules = (course.modules || []).length;
+      return `
+        <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 card-item">
+          <div class="flex justify-between items-start mb-2">
+            <h3 class="font-bold text-gray-800">${course.title}</h3>
+            <span class="text-sm font-bold text-sky-600">${course.price > 0 ? '$' + course.price : 'مجاني'}</span>
+          </div>
+          <p class="text-xs text-gray-500 line-clamp-2 mb-2">${course.desc || ''}</p>
+          <div class="flex items-center gap-2 text-xs text-gray-400 mb-2">
+            <i class="fa-solid fa-user"></i> ${course.instructor || 'مجهول'}
+            <span class="mx-1">•</span>
+            <i class="fa-solid fa-layer-group"></i> ${modules} أجزاء
+          </div>
+          <div class="flex flex-wrap gap-1 mb-3">
+            ${(course.hashtags || []).map(t => `<span class="bg-sky-50 text-sky-600 px-2 py-0.5 rounded-full text-xs font-bold">#${t}</span>`).join('')}
+          </div>
+          <div class="flex gap-2">
+            <button id="buy-${course.id}" class="flex-1 bg-sky-500 text-white py-2 rounded-xl text-sm font-bold shadow">شراء</button>
+            <button id="detail-${course.id}" class="bg-gray-100 text-gray-600 px-4 py-2 rounded-xl text-sm font-bold"><i class="fa-solid fa-eye"></i></button>
+          </div>
+        </div>`;
+    }
 
-      async buyCourse(courseId) {
-        if (!auth.currentUser) { alert('يجب تسجيل الدخول أولاً'); return; }
-        const course = this.courses.find(c => c.id === courseId);
-        if (!course) return;
-        if (course.price > 0) {
-          if (!confirm(`تأكيد شراء "${course.title}" بسعر $${course.price}؟`)) return;
-        }
-        // محاكاة الدفع – في الواقع ستضيف بوابة دفع
-        const purchaseRef = collection(db, this.purchasesCollection);
-        await addDoc(purchaseRef, {
-          userId: auth.currentUser.uid,
-          courseId: course.id,
-          courseTitle: course.title,
-          purchasedAt: new Date(),
-          price: course.price
-        });
-        alert(`تم شراء "${course.title}" بنجاح ✅`);
-        // يمكن الانتقال إلى محتوى الكورس
-      },
+    function articleCard(article) {
+      const excerpt = (article.content || '').substring(0, 80) + '...';
+      return `
+        <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 card-item">
+          <h3 class="font-bold text-gray-800 mb-1">${article.title}</h3>
+          <p class="text-xs text-gray-500 line-clamp-2 mb-2">${excerpt}</p>
+          <div class="flex flex-wrap gap-1 mb-3">
+            ${(article.hashtags || []).map(t => `<span class="bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded-full text-xs font-bold">#${t}</span>`).join('')}
+          </div>
+          <div class="flex justify-end">
+            <button id="detail-${article.id}" class="bg-gray-100 text-gray-600 px-4 py-2 rounded-xl text-sm font-bold"><i class="fa-solid fa-eye"></i> اقرأ</button>
+          </div>
+        </div>`;
+    }
 
-      showCourseDetail(courseId) {
-        const course = this.courses.find(c => c.id === courseId);
-        if (!course) return;
-        const modal = document.getElementById('courseDetailModal');
-        const content = document.getElementById('courseDetailContent');
-        const modules = course.modules || [];
+    // ========== تفاصيل العنصر ==========
+    function showDetail(id) {
+      const data = currentTab === 'courses' ? courses.find(c => c.id === id) : articles.find(a => a.id === id);
+      if (!data) return;
+      const modal = document.getElementById('detailModal');
+      const content = document.getElementById('detailContent');
+      
+      if (currentTab === 'courses') {
+        const modules = data.modules || [];
         content.innerHTML = `
-          <h3 class="text-xl font-black text-gray-800 mb-2">${course.title}</h3>
-          <p class="text-sm text-gray-600 mb-3">${course.desc || ''}</p>
-          <div class="text-xs text-gray-400 mb-4">المدرب: ${course.instructor || 'مجهول'} • ${modules.length} أجزاء • السعر: ${course.price > 0 ? '$' + course.price : 'مجاني'}</div>
+          <h3 class="text-xl font-black text-gray-800 mb-2">${data.title}</h3>
+          <p class="text-sm text-gray-600 mb-3">${data.desc || ''}</p>
+          <div class="text-xs text-gray-400 mb-4">المدرب: ${data.instructor || 'مجهول'} • ${modules.length} أجزاء • السعر: ${data.price > 0 ? '$' + data.price : 'مجاني'}</div>
           <div class="space-y-3">
             ${modules.map((m, i) => `
-              <div class="bg-gray-50 rounded-xl p-3 border border-gray-100">
-                <h4 class="font-bold text-sm text-gray-700">الجزء ${i+1}: ${m.title}</h4>
-                <p class="text-xs text-gray-500 mt-1">${m.content || 'لا يوجد وصف'}</p>
+              <div class="bg-gray-50 rounded-xl p-3 border">
+                <h4 class="font-bold text-sm">الجزء ${i+1}: ${m.title}</h4>
+                <p class="text-xs text-gray-500 mt-1">${m.content || ''}</p>
               </div>`).join('')}
           </div>
-          <button onclick="window.academy.buyCourse('${course.id}')" class="w-full bg-sky-500 text-white py-2 rounded-xl font-bold mt-4 shadow hover:bg-sky-600 transition">${course.price > 0 ? 'شراء الكورس' : 'الانضمام مجاناً'}</button>
+          ${data.price > 0 ? `<button onclick="buyCourse('${data.id}')" class="w-full bg-sky-500 text-white py-2 rounded-xl font-bold mt-4">شراء الكورس</button>` : ''}
         `;
-        modal.classList.add('active');
-      },
-
-      // ========== إدارة إضافة الكورسات ==========
-      openAddModal() {
-        document.getElementById('addCourseModal').classList.add('active');
-        // إعادة ضبط الحقول
-        ['courseTitle','courseInstructor','courseDesc','coursePrice','courseHashtags'].forEach(id => document.getElementById(id).value = '');
-        document.getElementById('modulesContainer').innerHTML = '';
-        this.addModuleField();
-      },
-      closeAddModal() {
-        document.getElementById('addCourseModal').classList.remove('active');
-      },
-
-      addModuleField() {
-        const container = document.getElementById('modulesContainer');
-        const index = container.children.length;
-        const div = document.createElement('div');
-        div.className = 'flex gap-2 items-start';
-        div.innerHTML = `
-          <div class="flex-1 flex gap-2">
-            <input placeholder="عنوان الجزء" class="module-title flex-1 bg-gray-100 rounded-lg p-2 text-xs border" data-index="${index}">
-            <input placeholder="وصف مختصر" class="module-content flex-1 bg-gray-100 rounded-lg p-2 text-xs border" data-index="${index}">
+      } else {
+        content.innerHTML = `
+          <h3 class="text-xl font-black text-gray-800 mb-3">${data.title}</h3>
+          <div class="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">${data.content}</div>
+          <div class="flex flex-wrap gap-1 mt-4">
+            ${(data.hashtags || []).map(t => `<span class="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full text-xs font-bold">#${t}</span>`).join('')}
           </div>
-          <button onclick="this.parentElement.remove()" class="text-red-400 hover:text-red-600 text-lg"><i class="fa-solid fa-times"></i></button>
         `;
-        container.appendChild(div);
-      },
+      }
+      modal.classList.add('active');
+    }
 
-      async publishCourse() {
-        if (!auth.currentUser) { alert('يجب تسجيل الدخول'); return; }
-        const title = document.getElementById('courseTitle').value.trim();
-        if (!title) { alert('العنوان مطلوب'); return; }
-        const instructor = document.getElementById('courseInstructor').value.trim() || auth.currentUser.displayName || 'مجهول';
-        const desc = document.getElementById('courseDesc').value.trim();
-        const price = parseFloat(document.getElementById('coursePrice').value) || 0;
-        const hashtagsRaw = document.getElementById('courseHashtags').value;
-        const hashtags = hashtagsRaw ? hashtagsRaw.split(',').map(t => t.trim()).filter(Boolean) : [];
+    // ========== عمليات الشراء (محاكاة) ==========
+    async function buyCourse(courseId) {
+      if (!auth.currentUser) { alert("سجل الدخول أولاً"); return; }
+      const course = courses.find(c => c.id === courseId);
+      if (!course) return;
+      if (course.price > 0 && !confirm(`شراء "${course.title}" بسعر $${course.price}؟`)) return;
+      await addDoc(collection(db, "academy_purchases"), {
+        userId: auth.currentUser.uid,
+        courseId,
+        courseTitle: course.title,
+        price: course.price,
+        purchasedAt: serverTimestamp()
+      });
+      alert("تم الشراء بنجاح ✅");
+    }
+    window.buyCourse = buyCourse;
 
-        // جمع الأجزاء
-        const modules = [];
-        document.querySelectorAll('#modulesContainer .flex').forEach(row => {
-          const titleEl = row.querySelector('.module-title');
-          const contentEl = row.querySelector('.module-content');
-          if (titleEl && titleEl.value.trim()) {
-            modules.push({
-              title: titleEl.value.trim(),
-              content: contentEl ? contentEl.value.trim() : ''
-            });
-          }
-        });
+    // ========== نشر كورس ==========
+    window.openAddCourseModal = () => {
+      document.getElementById('courseModal').classList.add('active');
+      document.getElementById('courseTitle').value = '';
+      document.getElementById('courseInstructor').value = '';
+      document.getElementById('courseDesc').value = '';
+      document.getElementById('coursePrice').value = '0';
+      document.getElementById('courseHashtags').value = '';
+      document.getElementById('courseModulesContainer').innerHTML = '';
+      addCourseModuleField();
+    };
+    window.closeModal = (id) => document.getElementById(id).classList.remove('active');
+    window.addCourseModuleField = () => {
+      const container = document.getElementById('courseModulesContainer');
+      const div = document.createElement('div');
+      div.className = 'flex gap-2 items-start';
+      div.innerHTML = `
+        <div class="flex-1 flex gap-2">
+          <input placeholder="عنوان الجزء" class="module-title flex-1 bg-gray-100 rounded-lg p-2 text-xs border">
+          <input placeholder="وصف مختصر" class="module-content flex-1 bg-gray-100 rounded-lg p-2 text-xs border">
+        </div>
+        <button onclick="this.parentElement.remove()" class="text-red-400">✕</button>`;
+      container.appendChild(div);
+    };
+    window.publishCourse = async () => {
+      if (!auth.currentUser) { alert("سجل الدخول"); return; }
+      const title = document.getElementById('courseTitle').value.trim();
+      if (!title) { alert("العنوان مطلوب"); return; }
+      const instructor = document.getElementById('courseInstructor').value.trim() || auth.currentUser.displayName || 'مجهول';
+      const desc = document.getElementById('courseDesc').value.trim();
+      const price = parseFloat(document.getElementById('coursePrice').value) || 0;
+      const hashtags = document.getElementById('courseHashtags').value.split(',').map(t => t.trim()).filter(Boolean);
+      const modules = [];
+      document.querySelectorAll('#courseModulesContainer .flex').forEach(row => {
+        const t = row.querySelector('.module-title').value.trim();
+        const c = row.querySelector('.module-content').value.trim();
+        if (t) modules.push({ title: t, content: c });
+      });
+      await addDoc(collection(db, "academy_courses"), {
+        title, instructor, desc, price, hashtags, modules, authorId: auth.currentUser.uid, createdAt: serverTimestamp()
+      });
+      closeModal('courseModal');
+      loadData();
+    };
 
-        try {
-          await addDoc(collection(db, this.courseCollection), {
-            title,
-            instructor,
-            desc,
-            price,
-            hashtags,
-            modules,
-            authorId: auth.currentUser.uid,
-            createdAt: new Date()
-          });
-          this.closeAddModal();
-          await this.loadCourses();
-          alert('تم نشر الكورس بنجاح 🎉');
-        } catch (e) {
-          alert('فشل النشر: ' + e.message);
-        }
-      },
+    // ========== نشر مقال ==========
+    window.openAddArticleModal = () => {
+      document.getElementById('articleModal').classList.add('active');
+      document.getElementById('articleTitle').value = '';
+      document.getElementById('articleContent').value = '';
+      document.getElementById('articleHashtags').value = '';
+    };
+    window.publishArticle = async () => {
+      if (!auth.currentUser) { alert("سجل الدخول"); return; }
+      const title = document.getElementById('articleTitle').value.trim();
+      if (!title) { alert("العنوان مطلوب"); return; }
+      const content = document.getElementById('articleContent').value.trim();
+      const hashtags = document.getElementById('articleHashtags').value.split(',').map(t => t.trim()).filter(Boolean);
+      await addDoc(collection(db, "academy_articles"), {
+        title, content, hashtags, authorId: auth.currentUser.uid, authorName: auth.currentUser.displayName, createdAt: serverTimestamp()
+      });
+      closeModal('articleModal');
+      loadData();
+    };
 
-      // ========== وضع البائع ==========
-      toggleSeller() {
-        this.sellerMode = !this.sellerMode;
-        this.toggleSellerUI(this.sellerMode);
-      },
-      toggleSellerUI(show) {
-        const panel = document.getElementById('sellerPanel');
-        const btn = document.getElementById('toggleSellerBtn');
-        if (show) {
-          panel.classList.remove('hidden');
-          btn.classList.add('bg-sky-500','text-white');
-          btn.classList.remove('bg-gray-200','text-gray-600');
-          btn.innerHTML = '<i class="fa-solid fa-store-alt"></i>';
-        } else {
-          panel.classList.add('hidden');
-          btn.classList.remove('bg-sky-500','text-white');
-          btn.classList.add('bg-gray-200','text-gray-600');
-          btn.innerHTML = '<i class="fa-solid fa-store"></i>';
-        }
-      },
+    // ========== تبديل التبويبات والفلترة ==========
+    window.switchTab = (tab) => {
+      currentTab = tab;
+      document.getElementById('tabCourses').classList.toggle('active', tab === 'courses');
+      document.getElementById('tabArticles').classList.toggle('active', tab === 'articles');
+      renderContent();
+      // إخفاء أزرار النشر إذا لم يكن بائع
+      if (sellerMode) {
+        document.getElementById('sellerPanel').classList.remove('hidden');
+      }
+    };
+    window.filterByHashtag = (tag) => {
+      currentFilter = tag;
+      document.querySelectorAll('.hashtag-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.tag === tag);
+        btn.classList.toggle('bg-sky-500', btn.dataset.tag === tag);
+        btn.classList.toggle('text-white', btn.dataset.tag === tag);
+        btn.classList.toggle('bg-gray-200', btn.dataset.tag !== tag);
+        btn.classList.toggle('text-gray-700', btn.dataset.tag !== tag);
+      });
+      renderContent();
+    };
 
-      // ========== فلترة الهاشتاجات ==========
-      renderHashtagButtons() {
-        const buttons = document.querySelectorAll('.hashtag-btn');
-        buttons.forEach(btn => {
-          btn.addEventListener('click', () => {
-            this.currentFilter = btn.dataset.tag;
-            buttons.forEach(b => b.classList.remove('active', 'bg-sky-500', 'text-white'));
-            buttons.forEach(b => b.classList.add('bg-gray-200', 'text-gray-700'));
-            btn.classList.add('active', 'bg-sky-500', 'text-white');
-            btn.classList.remove('bg-gray-200', 'text-gray-700');
-            this.renderCourses();
-          });
-        });
+    // ========== وضع البائع ==========
+    window.toggleSellerMode = () => {
+      sellerMode = !sellerMode;
+      document.getElementById('sellerPanel').classList.toggle('hidden', !sellerMode);
+      const btn = document.getElementById('toggleSellerBtn');
+      if (sellerMode) {
+        btn.classList.add('bg-sky-500','text-white');
+        btn.classList.remove('bg-gray-200','text-gray-600');
+        btn.innerHTML = '<i class="fa-solid fa-store-alt"></i>';
+      } else {
+        btn.classList.remove('bg-sky-500','text-white');
+        btn.classList.add('bg-gray-200','text-gray-600');
+        btn.innerHTML = '<i class="fa-solid fa-store"></i>';
       }
     };
 
     // ========== بدء التشغيل ==========
-    window.academy = academy;
-    academy.init();
+    document.querySelectorAll('.hashtag-btn').forEach(btn => {
+      btn.addEventListener('click', () => filterByHashtag(btn.dataset.tag));
+    });
+    document.getElementById('courseModal').addEventListener('click', e => { if (e.target.id==='courseModal') closeModal('courseModal'); });
+    document.getElementById('articleModal').addEventListener('click', e => { if (e.target.id==='articleModal') closeModal('articleModal'); });
+    document.getElementById('detailModal').addEventListener('click', e => { if (e.target.id==='detailModal') closeModal('detailModal'); });
+    loadData();
   </script>
 </body>
 </html>
