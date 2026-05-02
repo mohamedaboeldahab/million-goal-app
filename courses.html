@@ -1,14 +1,10 @@
-<!-- Shark UP Academy - Final Ultra Stable -->
-
-<!-- استدعاء المكتبات بروابط مباشرة وموثوقة -->
-<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+<!-- Shark UP Academy - Compatible Version -->
 
 <div class="max-w-2xl mx-auto px-4 pt-6 space-y-6 pb-24">
     <!-- Header -->
     <div class="bg-gradient-to-br from-sky-600 to-blue-800 rounded-[2rem] p-6 text-white shadow-xl">
         <h2 class="text-xl font-black italic">SHARK UP ACADEMY</h2>
-        <p id="connStatus" class="text-[9px] mt-2 py-1 px-3 bg-white/10 rounded-full w-fit">⏳ جاري فحص الاتصال...</p>
+        <p id="acadConnStatus" class="text-[9px] mt-2 py-1 px-3 bg-white/10 rounded-full w-fit">⏳ جاري التحقق من المحيط...</p>
     </div>
 
     <!-- Tabs -->
@@ -18,117 +14,120 @@
     </div>
 
     <!-- Content -->
-    <div id="contentGrid" class="grid gap-4 py-4 min-h-[150px]">
-        <div class="text-center py-10 text-gray-400 text-[10px]">في انتظار استجابة السحاب...</div>
+    <div id="academyGrid" class="grid gap-4 py-4 min-h-[150px]">
+        <div class="flex justify-center py-10"><div class="w-6 h-6 border-2 border-sky-500 border-t-transparent rounded-full animate-spin"></div></div>
     </div>
 </div>
 
 <!-- Floating Action Button -->
-<button onclick="academy.openModal()" class="fixed bottom-6 left-6 w-14 h-14 bg-sky-600 text-white shadow-2xl rounded-2xl flex items-center justify-center z-50 active:scale-90 transition-transform">
+<button onclick="academy.openModal()" class="fixed bottom-24 left-6 w-14 h-14 bg-sky-600 text-white shadow-2xl rounded-2xl flex items-center justify-center z-50 active:scale-90 transition-transform">
     <i class="fa-solid fa-plus text-xl"></i>
 </button>
 
 <!-- Add Modal -->
-<div id="addModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-md z-[100] flex items-center justify-center p-6">
+<div id="acadModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-md z-[100] flex items-center justify-center p-6">
     <div class="bg-white w-full max-w-sm rounded-[2rem] p-8 space-y-4 shadow-2xl">
-        <h3 class="font-bold text-gray-800 text-lg">نشر محتوى جديد</h3>
-        <input id="newTitle" class="w-full bg-gray-100 border-none rounded-xl p-4 text-sm" placeholder="عنوان المحتوى">
-        <textarea id="newDesc" class="w-full bg-gray-100 border-none rounded-xl p-4 text-sm" rows="4" placeholder="التفاصيل..."></textarea>
-        <button id="btnSave" onclick="academy.saveData()" class="w-full bg-sky-600 text-white py-4 rounded-xl font-bold shadow-lg">بث الآن</button>
+        <h3 class="font-bold text-gray-800 text-lg">نشر محتوى في الأكاديمية</h3>
+        <input id="acadTitle" class="w-full bg-gray-100 border-none rounded-xl p-4 text-sm" placeholder="عنوان الكورس/المقال">
+        <textarea id="acadDesc" class="w-full bg-gray-100 border-none rounded-xl p-4 text-sm" rows="4" placeholder="اكتب تفاصيل المحتوى هنا..."></textarea>
+        <button id="acadBtnSave" onclick="academy.saveData()" class="w-full bg-sky-600 text-white py-4 rounded-xl font-bold shadow-lg">نشر الآن</button>
         <button onclick="academy.closeModal()" class="w-full text-gray-400 text-xs mt-2">إلغاء</button>
     </div>
 </div>
 
 <script>
-// تعريف كائن الأكاديمية بشكل مباشر وشامل
-const academy = {
-    db: null,
+// نستخدم الـ db المعرف في الـ window من خلال الـ engine الخاص بك
+var academy = {
     currentTab: 'courses',
 
     init() {
-        console.log("Start Initialization...");
-        const config = {
-            apiKey: "AIzaSyB_2ms4K8EPbag7uab9gbDy8eePY6xwpxc",
-            authDomain: "millionaireapp-be931.firebaseapp.com",
-            projectId: "millionaireapp-be931",
-            storageBucket: "millionaireapp-be931.firebasestorage.app",
-            messagingSenderId: "325577904362",
-            appId: "1:325577904362:web:8d85d4547bf22b1d8f4793"
-        };
-
-        try {
-            if (!firebase.apps.length) firebase.initializeApp(config);
-            this.db = firebase.firestore();
-            document.getElementById('connStatus').innerHTML = "● متصل بالسحاب";
-            document.getElementById('connStatus').className = "text-[9px] mt-2 py-1 px-3 bg-emerald-500/20 text-emerald-200 rounded-full w-fit";
+        // التحقق من وجود قاعدة البيانات من الـ engine الأساسي
+        if (window.db) {
+            document.getElementById('acadConnStatus').innerHTML = "● متصل بقاعدة البيانات";
+            document.getElementById('acadConnStatus').className = "text-[9px] mt-2 py-1 px-3 bg-emerald-500/20 text-emerald-200 rounded-full w-fit";
             this.loadData();
-        } catch (e) {
-            document.getElementById('connStatus').innerText = "❌ فشل الاتصال: " + e.message;
+        } else {
+            // محاولة إعادة المحاولة بعد ثانية لو الـ engine لسه بيحمل
+            setTimeout(() => this.init(), 1000);
         }
     },
 
     async loadData() {
-        const grid = document.getElementById('contentGrid');
-        const col = this.currentTab === 'courses' ? "academy_courses" : "academy_articles";
+        const grid = document.getElementById('academyGrid');
+        const collectionName = this.currentTab === 'courses' ? "academy_courses" : "academy_articles";
+        
         try {
-            const snap = await this.db.collection(col).orderBy("createdAt", "desc").limit(12).get();
-            grid.innerHTML = snap.docs.map(doc => `
-                <div class="bg-white p-5 rounded-[1.5rem] border border-gray-100 shadow-sm transition-all">
-                    <h4 class="font-bold text-slate-800 text-sm">${doc.data().title}</h4>
-                    <p class="text-[10px] text-gray-500 mt-2 leading-relaxed">${doc.data().desc}</p>
-                </div>
-            `).join('') || '<div class="text-center py-10 text-gray-400 text-xs">لا يوجد بيانات حالياً</div>';
-        } catch(e) { grid.innerHTML = "خطأ في جلب البيانات"; }
+            // استخدام Firebase v10 syntax المتوافق مع الـ engine
+            const q = window.FirebaseFirestore.query(
+                window.FirebaseFirestore.collection(window.db, collectionName),
+                window.FirebaseFirestore.orderBy("createdAt", "desc")
+            );
+            
+            const snap = await window.FirebaseFirestore.getDocs(q);
+            
+            if (snap.empty) {
+                grid.innerHTML = '<div class="text-center py-10 text-gray-400 text-xs">لا يوجد محتوى في هذا القسم حالياً</div>';
+                return;
+            }
+
+            grid.innerHTML = snap.docs.map(doc => {
+                const data = doc.data();
+                return `
+                    <div class="bg-white p-5 rounded-[1.5rem] border border-gray-100 shadow-sm">
+                        <h4 class="font-bold text-slate-800 text-sm">${data.title}</h4>
+                        <p class="text-[10px] text-gray-500 mt-2 leading-relaxed">${data.desc}</p>
+                    </div>
+                `;
+            }).join('');
+
+        } catch (e) {
+            console.error(e);
+            grid.innerHTML = '<div class="text-center py-10 text-red-400 text-xs">فشل تحميل البيانات</div>';
+        }
     },
 
     switchTab(tab) {
         this.currentTab = tab;
-        document.getElementById('tabCourses').className = tab==='courses' ? 'flex-1 py-3 rounded-xl font-bold text-xs bg-sky-500 text-white' : 'flex-1 py-3 rounded-xl font-bold text-xs text-gray-500';
-        document.getElementById('tabArticles').className = tab==='articles' ? 'flex-1 py-3 rounded-xl font-bold text-xs bg-sky-500 text-white' : 'flex-1 py-3 rounded-xl font-bold text-xs text-gray-500';
+        document.getElementById('tabCourses').className = tab==='courses' ? 'flex-1 py-3 rounded-xl font-bold text-xs bg-sky-500 text-white shadow-sm' : 'flex-1 py-3 rounded-xl font-bold text-xs text-gray-500';
+        document.getElementById('tabArticles').className = tab==='articles' ? 'flex-1 py-3 rounded-xl font-bold text-xs bg-sky-500 text-white shadow-sm' : 'flex-1 py-3 rounded-xl font-bold text-xs text-gray-500';
         this.loadData();
     },
 
-    openModal() { document.getElementById('addModal').classList.remove('hidden'); },
-    closeModal() { document.getElementById('addModal').classList.add('hidden'); },
+    openModal() { document.getElementById('acadModal').classList.remove('hidden'); },
+    closeModal() { document.getElementById('acadModal').classList.add('hidden'); },
 
     async saveData() {
-        const t = document.getElementById('newTitle').value;
-        const d = document.getElementById('newDesc').value;
-        const btn = document.getElementById('btnSave');
+        const t = document.getElementById('acadTitle').value;
+        const d = document.getElementById('acadDesc').value;
+        const btn = document.getElementById('acadBtnSave');
 
-        if(!t || !d) return alert("املأ البيانات");
-        if(!this.db) return alert("القاعدة غير متصلة");
+        if(!t || !d) return alert("الرجاء إدخال العنوان والوصف");
 
         btn.disabled = true;
-        btn.innerText = "جاري البث...";
+        btn.innerText = "جاري الحفظ...";
 
         try {
-            const col = this.currentTab === 'courses' ? "academy_courses" : "academy_articles";
-            await this.db.collection(col).add({
+            const collectionName = this.currentTab === 'courses' ? "academy_courses" : "academy_articles";
+            await window.FirebaseFirestore.addDoc(window.FirebaseFirestore.collection(window.db, collectionName), {
                 title: t,
                 desc: d,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                createdAt: window.FirebaseFirestore.serverTimestamp()
             });
-            alert("تم النشر!");
+            
+            alert("تم النشر بنجاح!");
             this.closeModal();
-            document.getElementById('newTitle').value = "";
-            document.getElementById('newDesc').value = "";
+            document.getElementById('acadTitle').value = "";
+            document.getElementById('acadDesc').value = "";
             this.loadData();
         } catch(e) {
-            alert("حدث خطأ: " + e.message);
+            alert("خطأ: " + e.message);
         } finally {
             btn.disabled = false;
-            btn.innerText = "بث الآن";
+            btn.innerText = "نشر الآن";
         }
     }
 };
 
-// تشغيل التطبيق بمجرد تحميل الصفحة أو السكربتات
-if (typeof firebase !== 'undefined') {
-    academy.init();
-} else {
-    window.addEventListener('load', () => {
-        setTimeout(() => academy.init(), 1000);
-    });
-}
+// تشغيل الفحص
+academy.init();
 </script>
