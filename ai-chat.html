@@ -17,16 +17,6 @@
         </div>
     </div>
 
-    <!-- إعدادات المفتاح (تظهر مرة واحدة) -->
-    <div id="apiKeySetup" class="p-4 bg-white rounded-2xl shadow-lg border mb-2 hidden">
-        <label class="text-xs font-bold text-gray-600 mb-1 block">أدخل Gemini API Key (مجاني من Google AI Studio)</label>
-        <div class="flex gap-2">
-            <input type="text" id="apiKeyInput" placeholder="AIzaSy..." class="flex-1 outline-none text-sm border rounded-lg px-3 py-2">
-            <button onclick="saveApiKey()" class="bg-sky-500 text-white px-4 py-2 rounded-lg text-sm font-bold">حفظ</button>
-        </div>
-        <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-[10px] text-sky-600 underline mt-2 block">اضغط هنا للحصول على مفتاح مجاني</a>
-    </div>
-
     <!-- حقل الإدخال -->
     <div class="p-4 bg-white rounded-2xl shadow-lg border flex gap-2">
         <input type="text" id="aiInput" placeholder="اسأل المستشار..." class="flex-1 outline-none text-sm bg-transparent">
@@ -37,15 +27,8 @@
 </div>
 
 <script>
-    // ========== دوال الذكاء الاصطناعي المدمجة ==========
-    function saveApiKey() {
-        const key = document.getElementById('apiKeyInput').value.trim();
-        if (key) {
-            localStorage.setItem('gemini_api_key', key);
-            document.getElementById('apiKeySetup').classList.add('hidden');
-            showToast('✅ تم حفظ المفتاح بنجاح');
-        }
-    }
+    // ========== المفتاح الثابت ==========
+    const GEMINI_API_KEY = 'AIzaSyAUamuXa-gndq8CZw5DAXdqcxUuOwAsZz0';
 
     async function askAI() {
         const input = document.getElementById('aiInput');
@@ -59,15 +42,8 @@
         // رسالة مؤقتة
         const typingDiv = addMessage('...', 'ai');
 
-        const apiKey = localStorage.getItem('gemini_api_key');
-        if (!apiKey) {
-            document.getElementById('apiKeySetup').classList.remove('hidden');
-            updateMessage(typingDiv, '⚠️ يرجى إدخال Gemini API Key للمتابعة.');
-            return;
-        }
-
         try {
-            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -113,22 +89,4 @@
             if (box) box.scrollTop = box.scrollHeight;
         }
     }
-
-    function showToast(msg) {
-        const t = document.createElement('div');
-        t.className = 'fixed bottom-20 left-4 bg-gray-800 text-white px-4 py-2 rounded-lg text-sm z-50 shadow';
-        t.textContent = msg;
-        document.body.appendChild(t);
-        setTimeout(() => t.remove(), 2000);
-    }
-
-    // عند تحميل الصفحة: أظهر حقل المفتاح إذا لم يكن موجوداً
-    if (!localStorage.getItem('gemini_api_key')) {
-        document.getElementById('apiKeySetup').classList.remove('hidden');
-    }
-
-    // أيضاً اجعل الدوال متاحة عبر window.engine لتعمل مع أزرار التنقل
-    window.engine = window.engine || {};
-    window.engine.askAI = askAI;
-    window.engine.saveApiKey = saveApiKey;
 </script>
