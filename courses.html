@@ -1,10 +1,10 @@
-<!-- Shark UP Academy - Compatible Version -->
+<!-- Shark UP Academy - Independent Version -->
 
 <div class="max-w-2xl mx-auto px-4 pt-6 space-y-6 pb-24">
     <!-- Header -->
     <div class="bg-gradient-to-br from-sky-600 to-blue-800 rounded-[2rem] p-6 text-white shadow-xl">
         <h2 class="text-xl font-black italic">SHARK UP ACADEMY</h2>
-        <p id="acadConnStatus" class="text-[9px] mt-2 py-1 px-3 bg-white/10 rounded-full w-fit">⏳ جاري التحقق من المحيط...</p>
+        <p id="acadStatus" class="text-[9px] mt-2 py-1 px-3 bg-white/10 rounded-full w-fit">⏳ جاري الاتصال بالمحيط...</p>
     </div>
 
     <!-- Tabs -->
@@ -20,114 +20,100 @@
 </div>
 
 <!-- Floating Action Button -->
-<button onclick="academy.openModal()" class="fixed bottom-24 left-6 w-14 h-14 bg-sky-600 text-white shadow-2xl rounded-2xl flex items-center justify-center z-50 active:scale-90 transition-transform">
+<button onclick="academy.openModal()" class="fixed bottom-24 left-6 w-14 h-14 bg-sky-600 text-white shadow-2xl rounded-2xl flex items-center justify-center z-50">
     <i class="fa-solid fa-plus text-xl"></i>
 </button>
 
 <!-- Add Modal -->
 <div id="acadModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-md z-[100] flex items-center justify-center p-6">
-    <div class="bg-white w-full max-w-sm rounded-[2rem] p-8 space-y-4 shadow-2xl">
-        <h3 class="font-bold text-gray-800 text-lg">نشر محتوى في الأكاديمية</h3>
-        <input id="acadTitle" class="w-full bg-gray-100 border-none rounded-xl p-4 text-sm" placeholder="عنوان الكورس/المقال">
-        <textarea id="acadDesc" class="w-full bg-gray-100 border-none rounded-xl p-4 text-sm" rows="4" placeholder="اكتب تفاصيل المحتوى هنا..."></textarea>
+    <div class="bg-white w-full max-w-sm rounded-[2rem] p-8 space-y-4">
+        <h3 class="font-bold text-gray-800 text-lg text-right">نشر محتوى جديد</h3>
+        <input id="acadTitle" class="w-full bg-gray-100 border-none rounded-xl p-4 text-sm text-right" placeholder="العنوان">
+        <textarea id="acadDesc" class="w-full bg-gray-100 border-none rounded-xl p-4 text-sm text-right" rows="4" placeholder="التفاصيل..."></textarea>
         <button id="acadBtnSave" onclick="academy.saveData()" class="w-full bg-sky-600 text-white py-4 rounded-xl font-bold shadow-lg">نشر الآن</button>
-        <button onclick="academy.closeModal()" class="w-full text-gray-400 text-xs mt-2">إلغاء</button>
+        <button onclick="academy.closeModal()" class="w-full text-gray-400 text-xs">إلغاء</button>
     </div>
 </div>
 
-<script>
-// نستخدم الـ db المعرف في الـ window من خلال الـ engine الخاص بك
-var academy = {
-    currentTab: 'courses',
+<script type="module">
+    // استيراد Firebase بشكل مستقل تماماً داخل هذه الصفحة فقط
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getFirestore, collection, addDoc, getDocs, query, orderBy, serverTimestamp } 
+    from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    init() {
-        // التحقق من وجود قاعدة البيانات من الـ engine الأساسي
-        if (window.db) {
-            document.getElementById('acadConnStatus').innerHTML = "● متصل بقاعدة البيانات";
-            document.getElementById('acadConnStatus').className = "text-[9px] mt-2 py-1 px-3 bg-emerald-500/20 text-emerald-200 rounded-full w-fit";
-            this.loadData();
-        } else {
-            // محاولة إعادة المحاولة بعد ثانية لو الـ engine لسه بيحمل
-            setTimeout(() => this.init(), 1000);
-        }
-    },
+    // إعدادات الـ Firebase الخاصة بك
+    const firebaseConfig = {
+        apiKey: "AIzaSy...", // انسخ الـ API Key من كودك الأصلي
+        authDomain: "sharkup-....firebaseapp.com",
+        projectId: "sharkup-...",
+        storageBucket: "sharkup-....appspot.com",
+        messagingSenderId: "...",
+        appId: "..."
+    };
 
-    async loadData() {
-        const grid = document.getElementById('academyGrid');
-        const collectionName = this.currentTab === 'courses' ? "academy_courses" : "academy_articles";
+    // تشغيل الـ Firebase محلياً للصفحة
+    const localApp = initializeApp(firebaseConfig, "AcademyContext"); // اسم فريد لضمان عدم التضارب
+    const localDb = getFirestore(localApp);
+
+    // تعريف كائن الأكاديمية على الـ window ليتمكن الـ HTML من رؤيته
+    window.academy = {
+        currentTab: 'courses',
         
-        try {
-            // استخدام Firebase v10 syntax المتوافق مع الـ engine
-            const q = window.FirebaseFirestore.query(
-                window.FirebaseFirestore.collection(window.db, collectionName),
-                window.FirebaseFirestore.orderBy("createdAt", "desc")
-            );
-            
-            const snap = await window.FirebaseFirestore.getDocs(q);
-            
-            if (snap.empty) {
-                grid.innerHTML = '<div class="text-center py-10 text-gray-400 text-xs">لا يوجد محتوى في هذا القسم حالياً</div>';
-                return;
-            }
-
-            grid.innerHTML = snap.docs.map(doc => {
-                const data = doc.data();
-                return `
-                    <div class="bg-white p-5 rounded-[1.5rem] border border-gray-100 shadow-sm">
-                        <h4 class="font-bold text-slate-800 text-sm">${data.title}</h4>
-                        <p class="text-[10px] text-gray-500 mt-2 leading-relaxed">${data.desc}</p>
-                    </div>
-                `;
-            }).join('');
-
-        } catch (e) {
-            console.error(e);
-            grid.innerHTML = '<div class="text-center py-10 text-red-400 text-xs">فشل تحميل البيانات</div>';
-        }
-    },
-
-    switchTab(tab) {
-        this.currentTab = tab;
-        document.getElementById('tabCourses').className = tab==='courses' ? 'flex-1 py-3 rounded-xl font-bold text-xs bg-sky-500 text-white shadow-sm' : 'flex-1 py-3 rounded-xl font-bold text-xs text-gray-500';
-        document.getElementById('tabArticles').className = tab==='articles' ? 'flex-1 py-3 rounded-xl font-bold text-xs bg-sky-500 text-white shadow-sm' : 'flex-1 py-3 rounded-xl font-bold text-xs text-gray-500';
-        this.loadData();
-    },
-
-    openModal() { document.getElementById('acadModal').classList.remove('hidden'); },
-    closeModal() { document.getElementById('acadModal').classList.add('hidden'); },
-
-    async saveData() {
-        const t = document.getElementById('acadTitle').value;
-        const d = document.getElementById('acadDesc').value;
-        const btn = document.getElementById('acadBtnSave');
-
-        if(!t || !d) return alert("الرجاء إدخال العنوان والوصف");
-
-        btn.disabled = true;
-        btn.innerText = "جاري الحفظ...";
-
-        try {
+        async loadData() {
+            const grid = document.getElementById('academyGrid');
             const collectionName = this.currentTab === 'courses' ? "academy_courses" : "academy_articles";
-            await window.FirebaseFirestore.addDoc(window.FirebaseFirestore.collection(window.db, collectionName), {
-                title: t,
-                desc: d,
-                createdAt: window.FirebaseFirestore.serverTimestamp()
-            });
-            
-            alert("تم النشر بنجاح!");
-            this.closeModal();
-            document.getElementById('acadTitle').value = "";
-            document.getElementById('acadDesc').value = "";
-            this.loadData();
-        } catch(e) {
-            alert("خطأ: " + e.message);
-        } finally {
-            btn.disabled = false;
-            btn.innerText = "نشر الآن";
-        }
-    }
-};
+            grid.innerHTML = '<div class="flex justify-center py-10"><div class="w-6 h-6 border-2 border-sky-500 border-t-transparent rounded-full animate-spin"></div></div>';
 
-// تشغيل الفحص
-academy.init();
+            try {
+                const q = query(collection(localDb, collectionName), orderBy("createdAt", "desc"));
+                const snap = await getDocs(q);
+                
+                if (snap.empty) {
+                    grid.innerHTML = '<div class="text-center py-10 text-gray-400 text-xs">لا يوجد محتوى حالياً</div>';
+                    return;
+                }
+
+                grid.innerHTML = snap.docs.map(doc => `
+                    <div class="bg-white p-5 rounded-[1.5rem] border border-gray-100 shadow-sm text-right">
+                        <h4 class="font-bold text-slate-800 text-sm">${doc.data().title}</h4>
+                        <p class="text-[10px] text-gray-500 mt-2">${doc.data().desc}</p>
+                    </div>
+                `).join('');
+            } catch (e) {
+                console.error(e);
+                grid.innerHTML = '<p class="text-center text-red-500 text-xs">خطأ في التحميل</p>';
+            }
+        },
+
+        switchTab(tab) {
+            this.currentTab = tab;
+            document.getElementById('tabCourses').className = tab==='courses' ? 'flex-1 py-3 rounded-xl font-bold text-xs bg-sky-500 text-white shadow-sm' : 'flex-1 py-3 rounded-xl font-bold text-xs text-gray-500';
+            document.getElementById('tabArticles').className = tab==='articles' ? 'flex-1 py-3 rounded-xl font-bold text-xs bg-sky-500 text-white shadow-sm' : 'flex-1 py-3 rounded-xl font-bold text-xs text-gray-500';
+            this.loadData();
+        },
+
+        openModal() { document.getElementById('acadModal').classList.remove('hidden'); },
+        closeModal() { document.getElementById('acadModal').classList.add('hidden'); },
+
+        async saveData() {
+            const t = document.getElementById('acadTitle').value;
+            const d = document.getElementById('acadDesc').value;
+            if(!t || !d) return alert("املا البيانات");
+
+            try {
+                const collectionName = this.currentTab === 'courses' ? "academy_courses" : "academy_articles";
+                await addDoc(collection(localDb, collectionName), {
+                    title: t,
+                    desc: d,
+                    createdAt: serverTimestamp()
+                });
+                this.closeModal();
+                this.loadData();
+            } catch(e) { alert("حدث خطأ"); }
+        }
+    };
+
+    // التشغيل المبدئي
+    document.getElementById('acadStatus').innerText = "● متصل (نظام مستقل)";
+    window.academy.loadData();
 </script>
