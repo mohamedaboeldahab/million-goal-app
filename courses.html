@@ -1,153 +1,233 @@
-<!-- محتوى صفحة الأكاديمية (يُحقن داخل <main id="app-content">) -->
-<div class="space-y-6">
-  <!-- رأس الصفحة -->
-  <div class="bg-gradient-to-r from-sky-500 to-sky-600 rounded-3xl p-6 text-white shadow-xl">
-    <h2 class="text-2xl font-black mb-2">📚 الأكاديمية</h2>
-    <p class="opacity-90 text-sm">رحلتك إلى الحرية المالية تبدأ من هنا – دورات عملية، شروحات مبسطة، وخطط تطبيقية.</p>
-    <div class="mt-4 flex items-center gap-2 text-sky-100 text-xs">
+<!-- ========== محتوى صفحة الأكاديمية ========== -->
+<div id="academy-root" class="space-y-4">
+  <!-- الهيدر -->
+  <div class="bg-gradient-to-r from-sky-500 to-sky-600 rounded-3xl p-5 text-white shadow-xl">
+    <h2 class="text-2xl font-black mb-1">📚 أكاديمية Shark UP</h2>
+    <p class="opacity-90 text-sm">تعلم، انشر كورساتك، وابدأ بيع خبراتك المالية</p>
+    <div class="mt-3 flex items-center gap-2 text-sky-100 text-xs">
       <i class="fa-solid fa-graduation-cap"></i>
-      <span>أكثر من ٣٠ درسًا تفاعليًا</span>
+      <span id="courses-count">0 كورس متاح</span>
     </div>
   </div>
 
-  <!-- قسم: أساسيات البيزنس -->
-  <div>
-    <div class="flex items-center gap-2 mb-3">
-      <div class="w-8 h-8 bg-sky-100 rounded-xl flex items-center justify-center"><i class="fa-solid fa-briefcase text-sky-600"></i></div>
-      <h3 class="font-bold text-lg text-gray-800">أساسيات البيزنس</h3>
-    </div>
-    <div class="grid gap-3">
-      <div class="bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition cursor-pointer flex items-center justify-between" onclick="window.engine.openLesson('business-idea')">
-        <div>
-          <h4 class="font-semibold text-gray-800">١. كيف تبدأ مشروعك من الصفر</h4>
-          <p class="text-xs text-gray-500 mt-1">توليد الأفكار، دراسة الجدوى، التسجيل القانوني</p>
-        </div>
-        <i class="fa-solid fa-chevron-left text-gray-400"></i>
-      </div>
-      <div class="bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition cursor-pointer flex items-center justify-between">
-        <div>
-          <h4 class="font-semibold text-gray-800">٢. بناء نموذج العمل التجاري (Business Model Canvas)</h4>
-          <p class="text-xs text-gray-500 mt-1">شرائح العملاء، القيمة المقترحة، القنوات</p>
-        </div>
-        <i class="fa-solid fa-chevron-left text-gray-400"></i>
-      </div>
-      <div class="bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition cursor-pointer flex items-center justify-between">
-        <div>
-          <h4 class="font-semibold text-gray-800">٣. الإدارة المالية لرواد الأعمال</h4>
-          <p class="text-xs text-gray-500 mt-1">التدفق النقدي، الميزانية، نقطة التعادل</p>
-        </div>
-        <i class="fa-solid fa-chevron-left text-gray-400"></i>
-      </div>
-    </div>
+  <!-- شريط الهاشتاجات (فلترة المواضيع) -->
+  <div class="flex flex-wrap gap-2 items-center">
+    <button onclick="filterCourses('all')" class="hashtag-btn bg-sky-500 text-white px-3 py-1.5 rounded-full text-xs font-semibold shadow" data-filter="all">الكل</button>
+    <button onclick="filterCourses('بيزنس')" class="hashtag-btn bg-gray-100 text-gray-700 px-3 py-1.5 rounded-full text-xs font-semibold" data-filter="بيزنس">#بيزنس</button>
+    <button onclick="filterCourses('استثمار')" class="hashtag-btn bg-gray-100 text-gray-700 px-3 py-1.5 rounded-full text-xs font-semibold" data-filter="استثمار">#استثمار</button>
+    <button onclick="filterCourses('مشاريع')" class="hashtag-btn bg-gray-100 text-gray-700 px-3 py-1.5 rounded-full text-xs font-semibold" data-filter="مشاريع">#مشاريع</button>
+    <button onclick="filterCourses('تسويق')" class="hashtag-btn bg-gray-100 text-gray-700 px-3 py-1.5 rounded-full text-xs font-semibold" data-filter="تسويق">#تسويق</button>
+    <button onclick="filterCourses('عملات_رقمية')" class="hashtag-btn bg-gray-100 text-gray-700 px-3 py-1.5 rounded-full text-xs font-semibold" data-filter="عملات_رقمية">#عملات_رقمية</button>
+    <button onclick="filterCourses('ريادة_أعمال')" class="hashtag-btn bg-gray-100 text-gray-700 px-3 py-1.5 rounded-full text-xs font-semibold" data-filter="ريادة_أعمال">#ريادة_أعمال</button>
   </div>
 
-  <!-- قسم: المال والاستثمار -->
-  <div>
-    <div class="flex items-center gap-2 mb-3">
-      <div class="w-8 h-8 bg-green-100 rounded-xl flex items-center justify-center"><i class="fa-solid fa-sack-dollar text-green-600"></i></div>
-      <h3 class="font-bold text-lg text-gray-800">المال والاستثمار</h3>
-    </div>
-    <div class="grid gap-3">
-      <div class="bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition cursor-pointer flex items-center justify-between">
-        <div>
-          <h4 class="font-semibold text-gray-800">١. مدخل إلى عالم الاستثمار</h4>
-          <p class="text-xs text-gray-500 mt-1">أنواع الأصول، المخاطرة والعائد، التوقيت</p>
-        </div>
-        <i class="fa-solid fa-chevron-left text-gray-400"></i>
-      </div>
-      <div class="bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition cursor-pointer flex items-center justify-between">
-        <div>
-          <h4 class="font-semibold text-gray-800">٢. الأسهم من الألف إلى الياء</h4>
-          <p class="text-xs text-gray-500 mt-1">التحليل الأساسي والفني، بناء المحفظة</p>
-        </div>
-        <i class="fa-solid fa-chevron-left text-gray-400"></i>
-      </div>
-      <div class="bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition cursor-pointer flex items-center justify-between">
-        <div>
-          <h4 class="font-semibold text-gray-800">٣. العملات الرقمية والتقنية المالية</h4>
-          <p class="text-xs text-gray-500 mt-1">البلوكشين، المحافظ، تداول العملات بأمان</p>
-        </div>
-        <i class="fa-solid fa-chevron-left text-gray-400"></i>
-      </div>
-      <div class="bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition cursor-pointer flex items-center justify-between">
-        <div>
-          <h4 class="font-semibold text-gray-800">٤. صناديق المؤشرات والاستثمار طويل المدى</h4>
-          <p class="text-xs text-gray-500 mt-1">ETFs، خطة الاستثمار المنتظم، الفائدة المركبة</p>
-        </div>
-        <i class="fa-solid fa-chevron-left text-gray-400"></i>
+  <!-- زر إضافة كورس (يظهر فقط عند تفعيل وضع البائع) -->
+  <div id="seller-tools" class="hidden">
+    <button onclick="openAddCourseModal()" class="w-full bg-sky-500 text-white py-3 rounded-2xl font-bold shadow-lg hover:bg-sky-600 transition flex items-center justify-center gap-2">
+      <i class="fa-solid fa-plus-circle"></i> إضافة كورس جديد
+    </button>
+  </div>
+
+  <!-- حاوية الكورسات -->
+  <div id="courses-container" class="grid gap-3">
+    <!-- الكورسات تُضاف هنا ديناميكيًا -->
+  </div>
+
+  <!-- دليل سريع إذا لم تكن هناك كورسات -->
+  <div id="empty-state" class="text-center py-10 hidden">
+    <i class="fa-solid fa-book-open text-6xl text-gray-300 mb-4"></i>
+    <p class="text-gray-500 font-semibold">لا توجد كورسات بعد</p>
+    <p class="text-gray-400 text-sm">قم بتفعيل وضع البائع لإضافة أول كورس</p>
+  </div>
+
+  <!-- مودال إضافة كورس جديد -->
+  <div id="add-course-modal" class="fixed inset-0 bg-black/50 z-[200] hidden items-center justify-center p-4">
+    <div class="bg-white w-full max-w-md rounded-3xl p-6 space-y-4 shadow-2xl">
+      <h3 class="text-xl font-black text-gray-800">🎥 أضف كورسك للبيع</h3>
+      <input id="course-title" type="text" placeholder="عنوان الكورس" class="w-full bg-gray-100 rounded-xl p-3 text-sm border border-gray-200 focus:outline-none focus:border-sky-400">
+      <input id="course-instructor" type="text" placeholder="اسم المدرّب" class="w-full bg-gray-100 rounded-xl p-3 text-sm border border-gray-200 focus:outline-none focus:border-sky-400">
+      <textarea id="course-desc" rows="3" placeholder="وصف مختصر" class="w-full bg-gray-100 rounded-xl p-3 text-sm border border-gray-200 focus:outline-none focus:border-sky-400"></textarea>
+      <input id="course-price" type="number" placeholder="السعر (دولار)" class="w-full bg-gray-100 rounded-xl p-3 text-sm border border-gray-200 focus:outline-none focus:border-sky-400" min="0" step="0.01">
+      <input id="course-hashtags" type="text" placeholder="هاشتاجات مفصولة بفواصل (مثلاً: بيزنس,تسويق)" class="w-full bg-gray-100 rounded-xl p-3 text-sm border border-gray-200 focus:outline-none focus:border-sky-400">
+      <div class="flex gap-2 justify-end">
+        <button onclick="closeAddCourseModal()" class="px-5 py-2 bg-gray-200 rounded-xl font-semibold">إلغاء</button>
+        <button onclick="addCourse()" class="px-5 py-2 bg-sky-500 text-white rounded-xl font-semibold shadow">نشر الكورس</button>
       </div>
     </div>
   </div>
 
-  <!-- قسم: المشاريع وريادة الأعمال -->
-  <div>
-    <div class="flex items-center gap-2 mb-3">
-      <div class="w-8 h-8 bg-amber-100 rounded-xl flex items-center justify-center"><i class="fa-solid fa-rocket text-amber-600"></i></div>
-      <h3 class="font-bold text-lg text-gray-800">المشاريع وريادة الأعمال</h3>
-    </div>
-    <div class="grid gap-3">
-      <div class="bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition cursor-pointer flex items-center justify-between">
-        <div>
-          <h4 class="font-semibold text-gray-800">١. كيف تختار فكرة مشروع ناجحة</h4>
-          <p class="text-xs text-gray-500 mt-1">تحليل السوق، تحديد المشكلة، قياس الطلب</p>
-        </div>
-        <i class="fa-solid fa-chevron-left text-gray-400"></i>
-      </div>
-      <div class="bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition cursor-pointer flex items-center justify-between">
-        <div>
-          <h4 class="font-semibold text-gray-800">٢. خطة العمل الاحترافية</h4>
-          <p class="text-xs text-gray-500 mt-1">كتابة الخطة التنفيذية، الجدول الزمني، الميزانية</p>
-        </div>
-        <i class="fa-solid fa-chevron-left text-gray-400"></i>
-      </div>
-      <div class="bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition cursor-pointer flex items-center justify-between">
-        <div>
-          <h4 class="font-semibold text-gray-800">٣. تمويل المشاريع الصغيرة</h4>
-          <p class="text-xs text-gray-500 mt-1">المستثمرين الملائكة، رأس المال الجريء، التمويل الجماعي</p>
-        </div>
-        <i class="fa-solid fa-chevron-left text-gray-400"></i>
-      </div>
-    </div>
-  </div>
-
-  <!-- قسم: التسويق والمبيعات -->
-  <div>
-    <div class="flex items-center gap-2 mb-3">
-      <div class="w-8 h-8 bg-purple-100 rounded-xl flex items-center justify-center"><i class="fa-solid fa-bullhorn text-purple-600"></i></div>
-      <h3 class="font-bold text-lg text-gray-800">التسويق والمبيعات</h3>
-    </div>
-    <div class="grid gap-3">
-      <div class="bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition cursor-pointer flex items-center justify-between">
-        <div>
-          <h4 class="font-semibold text-gray-800">١. التسويق الرقمي من الصفر</h4>
-          <p class="text-xs text-gray-500 mt-1">تحسين محركات البحث، الإعلانات، المحتوى</p>
-        </div>
-        <i class="fa-solid fa-chevron-left text-gray-400"></i>
-      </div>
-      <div class="bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition cursor-pointer flex items-center justify-between">
-        <div>
-          <h4 class="font-semibold text-gray-800">٢. استراتيجيات المبيعات الذكية</h4>
-          <p class="text-xs text-gray-500 mt-1">فهم العميل، إغلاق الصفقة، بناء العلاقات</p>
-        </div>
-        <i class="fa-solid fa-chevron-left text-gray-400"></i>
-      </div>
-      <div class="bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition cursor-pointer flex items-center justify-between">
-        <div>
-          <h4 class="font-semibold text-gray-800">٣. بناء العلامة التجارية الشخصية</h4>
-          <p class="text-xs text-gray-500 mt-1">السوشيال ميديا، الاستشارات، التواجد الاحترافي</p>
-        </div>
-        <i class="fa-solid fa-chevron-left text-gray-400"></i>
-      </div>
-    </div>
-  </div>
-
-  <!-- قسم: أدوات ومراجع سريعة -->
-  <div class="bg-sky-50 rounded-3xl p-5 text-center">
-    <i class="fa-solid fa-lightbulb text-3xl text-sky-500 mb-3"></i>
-    <h3 class="font-bold text-gray-800 text-lg mb-1">🎯 نصائح سريعة قبل أن تبدأ</h3>
-    <p class="text-gray-600 text-sm">خصص ٢٠ دقيقة يوميًا للتعلم، طبق كل درس على أرض الواقع، ولا تخف من الفشل فهو جزء من الرحلة.</p>
-    <button class="mt-4 bg-sky-500 text-white px-6 py-2 rounded-full font-semibold shadow hover:bg-sky-600 transition">
-      ابدأ الآن مجانًا
+  <!-- زر تفعيل/إيقاف وضع البائع (أسفل الشاشة) -->
+  <div class="fixed bottom-24 right-4 z-30">
+    <button id="toggle-seller-btn" onclick="toggleSellerMode()" class="w-14 h-14 bg-gray-200 rounded-2xl flex items-center justify-center text-gray-600 text-xl shadow-lg hover:bg-gray-300 transition" title="وضع البائع">
+      <i class="fa-solid fa-store"></i>
     </button>
   </div>
 </div>
+
+<script>
+  (function() {
+    // ========== التخزين المحلي ==========
+    const STORAGE_KEY = 'shark_academy_courses';
+    let courses = [];
+    let currentFilter = 'all';
+    let sellerMode = false;
+
+    function loadCourses() {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        courses = saved ? JSON.parse(saved) : [];
+      } catch (e) {
+        courses = [];
+      }
+    }
+
+    function saveCourses() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(courses));
+    }
+
+    // ========== عرض الكورسات ==========
+    function renderCourses() {
+      const container = document.getElementById('courses-container');
+      const emptyState = document.getElementById('empty-state');
+      const countSpan = document.getElementById('courses-count');
+      if (!container) return;
+
+      // فلترة
+      let filtered = courses;
+      if (currentFilter !== 'all') {
+        filtered = courses.filter(c => c.hashtags && c.hashtags.some(tag => tag.toLowerCase().includes(currentFilter.toLowerCase())));
+      }
+
+      container.innerHTML = '';
+      if (filtered.length === 0) {
+        emptyState.classList.remove('hidden');
+      } else {
+        emptyState.classList.add('hidden');
+      }
+
+      filtered.forEach((course, index) => {
+        const realIndex = courses.indexOf(course);
+        const card = document.createElement('div');
+        card.className = 'bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition flex flex-col gap-2';
+        card.innerHTML = `
+          <div class="flex justify-between items-start">
+            <h4 class="font-semibold text-gray-800">${course.title}</h4>
+            <span class="text-sm font-bold text-sky-600">${course.price > 0 ? '$' + course.price : 'مجاني'}</span>
+          </div>
+          <p class="text-xs text-gray-500 line-clamp-2">${course.desc || ''}</p>
+          <div class="flex items-center gap-1 text-xs text-gray-400">
+            <i class="fa-solid fa-user"></i>
+            <span>${course.instructor || 'مجهول'}</span>
+          </div>
+          <div class="flex flex-wrap gap-1 mt-1">
+            ${(course.hashtags || []).map(t => `<span class="bg-sky-50 text-sky-600 px-2 py-0.5 rounded-full text-xs font-semibold">#${t}</span>`).join('')}
+          </div>
+          <div class="flex gap-2 mt-2">
+            <button onclick="buyCourse(${realIndex})" class="flex-1 bg-sky-500 text-white py-2 rounded-xl text-sm font-bold shadow hover:bg-sky-600 transition">
+              شراء
+            </button>
+            ${sellerMode ? `<button onclick="deleteCourse(${realIndex})" class="bg-red-100 text-red-600 px-3 py-2 rounded-xl text-sm"><i class="fa-solid fa-trash"></i></button>` : ''}
+          </div>
+        `;
+        container.appendChild(card);
+      });
+
+      countSpan.textContent = courses.length + ' كورس';
+    }
+
+    // ========== فلترة ==========
+    window.filterCourses = function(tag) {
+      currentFilter = tag;
+      // تحديث أزرار الهاشتاق
+      document.querySelectorAll('.hashtag-btn').forEach(btn => {
+        if (btn.dataset.filter === tag) {
+          btn.classList.add('bg-sky-500', 'text-white');
+          btn.classList.remove('bg-gray-100', 'text-gray-700');
+        } else {
+          btn.classList.remove('bg-sky-500', 'text-white');
+          btn.classList.add('bg-gray-100', 'text-gray-700');
+        }
+      });
+      renderCourses();
+    };
+
+    // ========== إضافة كورس ==========
+    window.openAddCourseModal = function() {
+      document.getElementById('add-course-modal').style.display = 'flex';
+    };
+    window.closeAddCourseModal = function() {
+      document.getElementById('add-course-modal').style.display = 'none';
+      clearModalFields();
+    };
+    function clearModalFields() {
+      ['course-title','course-instructor','course-desc','course-price','course-hashtags'].forEach(id => {
+        const el = document.getElementById(id); if (el) el.value = '';
+      });
+    }
+    window.addCourse = function() {
+      const title = document.getElementById('course-title')?.value.trim();
+      const instructor = document.getElementById('course-instructor')?.value.trim() || 'مجهول';
+      const desc = document.getElementById('course-desc')?.value.trim();
+      const price = parseFloat(document.getElementById('course-price')?.value) || 0;
+      const hashtagsRaw = document.getElementById('course-hashtags')?.value;
+      if (!title) { alert('يرجى إدخال عنوان الكورس'); return; }
+      const hashtags = hashtagsRaw ? hashtagsRaw.split(',').map(t => t.trim()).filter(t => t) : [];
+      courses.push({ title, instructor, desc, price, hashtags });
+      saveCourses();
+      closeAddCourseModal();
+      renderCourses();
+    };
+
+    // ========== شراء كورس ==========
+    window.buyCourse = function(index) {
+      const course = courses[index];
+      if (!course) return;
+      if (course.price <= 0) {
+        alert(`تم تسجيلك في الكورس المجاني "${course.title}" بنجاح ✅`);
+      } else {
+        if (confirm(`تأكيد شراء "${course.title}" بسعر $${course.price}؟`)) {
+          // محاكاة عملية دفع
+          alert(`شكراً لك! تم شراء الكورس "${course.title}" بنجاح. سيظهر في محفظتك.`);
+          // يمكن حفظ الكورسات المشتراة في localStorage
+        }
+      }
+    };
+
+    // ========== حذف كورس (وضع البائع) ==========
+    window.deleteCourse = function(index) {
+      if (confirm('هل أنت متأكد من حذف هذا الكورس؟')) {
+        courses.splice(index, 1);
+        saveCourses();
+        renderCourses();
+      }
+    };
+
+    // ========== وضع البائع ==========
+    function toggleSellerMode() {
+      sellerMode = !sellerMode;
+      const toolsDiv = document.getElementById('seller-tools');
+      const toggleBtn = document.getElementById('toggle-seller-btn');
+      if (sellerMode) {
+        toolsDiv.classList.remove('hidden');
+        toggleBtn.classList.remove('bg-gray-200','text-gray-600');
+        toggleBtn.classList.add('bg-sky-500','text-white');
+        toggleBtn.innerHTML = '<i class="fa-solid fa-store-alt"></i>';
+      } else {
+        toolsDiv.classList.add('hidden');
+        toggleBtn.classList.add('bg-gray-200','text-gray-600');
+        toggleBtn.classList.remove('bg-sky-500','text-white');
+        toggleBtn.innerHTML = '<i class="fa-solid fa-store"></i>';
+      }
+      renderCourses();
+    }
+    window.toggleSellerMode = toggleSellerMode;
+
+    // ========== بدء التشغيل ==========
+    loadCourses();
+    renderCourses();
+    // إخفاء المودال عند الضغط خارجه
+    document.getElementById('add-course-modal')?.addEventListener('click', function(e) {
+      if (e.target === this) closeAddCourseModal();
+    });
+  })();
+</script>
