@@ -33,15 +33,9 @@ window.engine = {
     _currentPostType: 'post',
     _activeBites: [],
     _storyIndex: 0,
-    _storyTimer: null,
-    _storyTouchMoved: false,
-    _storyTarget: null,
-    _storyTouchStart: null,
-    _storyTouchEnd: null,
-    _storyClick: null,
 
     async init() {
-        try { await setPersistence(auth, browserLocalPersistence); } catch (e) { console.error("Persistence error", e); }
+        try { await setPersistence(auth, browserLocalPersistence); } catch (e) { console.error(e); }
         setInterval(() => this.deleteExpiredBites(), 600000);
         this.deleteExpiredBites();
 
@@ -53,8 +47,8 @@ window.engine = {
                 if (nav) nav.classList.remove('hidden');
                 const userBtn = document.getElementById('userBtn');
                 this.getOrCreateUserProfile().then(profile => {
-                    const photo = profile.photoURL || user.photoURL;
-                    if (userBtn) userBtn.innerHTML = `<img src="${photo}" class="w-full h-full object-cover rounded-2xl">`;
+                    const photo = profile.photoURL || user.photoURL || '';
+                    if (userBtn) userBtn.innerHTML = `<img src="${photo}?sz=48" class="w-full h-full object-cover rounded-2xl">`;
                 });
                 this.loadPage('home');
             } else {
@@ -91,8 +85,7 @@ window.engine = {
             const response = await fetch(`${pageName}.html`);
             const html = await response.text();
             content.innerHTML = html;
-            const scripts = content.querySelectorAll('script');
-            scripts.forEach(oldScript => {
+            content.querySelectorAll('script').forEach(oldScript => {
                 const newScript = document.createElement('script');
                 newScript.textContent = oldScript.textContent;
                 oldScript.replaceWith(newScript);
@@ -103,7 +96,6 @@ window.engine = {
                     this.activateCharCounter();
                     this.updateTypeButtons();
                     this.updateCreatorAvatar();
-                    this.initStoryClicks();
                 }, 50);
             } else if (pageName === 'profile') {
                 setTimeout(() => {
@@ -119,7 +111,7 @@ window.engine = {
         const img = document.getElementById('creatorAvatar');
         if (!img || !auth.currentUser) return;
         const profile = await this.getOrCreateUserProfile();
-        img.src = profile.photoURL || auth.currentUser.photoURL || '';
+        img.src = (profile.photoURL || auth.currentUser.photoURL || '') + '?sz=50';
     },
 
     async deleteExpiredBites() {
@@ -137,8 +129,12 @@ window.engine = {
         const postBtn = document.getElementById('typePostBtn');
         const biteBtn = document.getElementById('typeBiteBtn');
         if (!postBtn || !biteBtn) return;
-        postBtn.className = this._currentPostType === 'post' ? 'flex-1 py-2 rounded-lg font-bold text-sm bg-sky-500 text-white shadow' : 'flex-1 py-2 rounded-lg font-bold text-sm bg-gray-200 text-gray-600 shadow';
-        biteBtn.className = this._currentPostType === 'bite' ? 'flex-1 py-2 rounded-lg font-bold text-sm bg-sky-500 text-white shadow' : 'flex-1 py-2 rounded-lg font-bold text-sm bg-gray-200 text-gray-600 shadow';
+        postBtn.className = this._currentPostType === 'post' ?
+            'flex-1 py-2 rounded-lg font-bold text-sm bg-sky-500 text-white shadow' :
+            'flex-1 py-2 rounded-lg font-bold text-sm bg-gray-200 text-gray-600 shadow';
+        biteBtn.className = this._currentPostType === 'bite' ?
+            'flex-1 py-2 rounded-lg font-bold text-sm bg-sky-500 text-white shadow' :
+            'flex-1 py-2 rounded-lg font-bold text-sm bg-gray-200 text-gray-600 shadow';
     },
 
     activateCharCounter() {
@@ -147,48 +143,10 @@ window.engine = {
         if (!input || !countSpan) return;
         const max = parseInt(input.getAttribute('maxlength')) || 600;
         input.addEventListener('input', () => {
-            const current = input.value.length;
-            countSpan.textContent = `${current}/${max} حرف`;
-            countSpan.className = current >= max - 30 ? 'text-xs text-red-500 font-bold' : 'text-xs text-gray-400 font-medium';
+            const len = input.value.length;
+            countSpan.textContent = `${len}/${max} حرف`;
+            countSpan.className = len >= max - 30 ? 'text-xs text-red-500 font-bold' : 'text-xs text-gray-400 font-medium';
         });
-    },
-
-    initStoryClicks() {
-        const row = document.getElementById('storiesRow');
-        if (!row) return;
-        
-        row.removeEventListener('touchstart', this._storyTouchStart);
-        row.removeEventListener('touchend', this._storyTouchEnd);
-        row.removeEventListener('click', this._storyClick);
-        
-        this._storyTouchMoved = false;
-        
-        this._storyTouchStart = (e) => {
-            this._storyTouchMoved = false;
-            this._storyTarget = e.target.closest('[data-story-index]');
-        };
-        
-        this._storyTouchEnd = (e) => {
-            if (!this._storyTouchMoved && this._storyTarget) {
-                e.preventDefault();
-                const index = parseInt(this._storyTarget.dataset.storyIndex);
-                if (!isNaN(index)) this.openStoryPlayer(index);
-            }
-            this._storyTarget = null;
-        };
-        
-        this._storyClick = (e) => {
-            const target = e.target.closest('[data-story-index]');
-            if (target) {
-                const index = parseInt(target.dataset.storyIndex);
-                if (!isNaN(index)) this.openStoryPlayer(index);
-            }
-        };
-        
-        row.addEventListener('touchstart', this._storyTouchStart, { passive: false });
-        row.addEventListener('touchmove', () => { this._storyTouchMoved = true; });
-        row.addEventListener('touchend', this._storyTouchEnd);
-        row.addEventListener('click', this._storyClick);
     },
 
     async handleVote(postId, type) {
@@ -207,11 +165,17 @@ window.engine = {
         if (!input?.value.trim()) return;
         const profile = await this.getOrCreateUserProfile();
         const displayName = profile.displayName || auth.currentUser.displayName;
-        const photoURL = profile.photoURL || auth.currentUser.photoURL;
+        const photoURL = (profile.photoURL || auth.currentUser.photoURL || '') + '?sz=50';
         await addDoc(collection(db, "posts"), {
-            content: input.value, authorName: displayName, authorPhoto: photoURL,
-            authorId: auth.currentUser.uid, supportCount: 0, opposeCount: 0, voters: [],
-            createdAt: serverTimestamp(), type: this._currentPostType
+            content: input.value,
+            authorName: displayName,
+            authorPhoto: photoURL,
+            authorId: auth.currentUser.uid,
+            supportCount: 0,
+            opposeCount: 0,
+            voters: [],
+            createdAt: serverTimestamp(),
+            type: this._currentPostType
         });
         input.value = '';
         this.renderStories();
@@ -234,50 +198,35 @@ window.engine = {
         this._activeBites = this.getActiveBites();
         row.innerHTML = '';
         if (this._activeBites.length === 0) return;
-        const html = this._activeBites.map((bite, index) => `
-            <div class="flex flex-col items-center gap-1 flex-shrink-0"
-                 data-story-index="${index}"
-                 style="cursor:pointer; position:relative; z-index:5;">
+        row.innerHTML = this._activeBites.map((bite, index) => `
+            <div class="flex flex-col items-center gap-1 flex-shrink-0" data-story-index="${index}" style="cursor:pointer">
                 <div class="w-16 h-16 rounded-full bg-gradient-to-tr from-sky-400 to-blue-500 p-0.5 shadow-md">
-                    <img src="${bite.data.authorPhoto}" 
-                         class="w-full h-full rounded-full object-cover border-2 border-white">
+                    <img src="${bite.data.authorPhoto}" class="w-full h-full rounded-full object-cover border-2 border-white">
                 </div>
-                <span class="text-[10px] font-bold text-gray-700 text-center truncate w-16">
-                    ${bite.data.authorName}
-                </span>
+                <span class="text-[10px] font-bold text-gray-700 text-center truncate w-16">${bite.data.authorName}</span>
             </div>
         `).join('');
-        row.innerHTML = html;
     },
 
     closeStory() {
         const player = document.getElementById('storyPlayer');
-        if (player) {
-            player.style.display = 'none';
-            player.classList.add('hidden');
-        }
+        if (player) player.classList.remove('active');
     },
 
     openStoryPlayer(index) {
+        this._activeBites = this.getActiveBites();
+        if (this._activeBites.length === 0) return;
         this._storyIndex = index;
         const player = document.getElementById('storyPlayer');
         if (player) {
-            player.classList.remove('hidden');
-            player.style.display = 'flex';
-            player.style.position = 'fixed';
-            player.style.top = '0';
-            player.style.left = '0';
-            player.style.width = '100%';
-            player.style.height = '100%';
-            player.style.zIndex = '999999';
-            player.style.background = 'black';
+            player.classList.add('active');
             this.showCurrentStory();
         }
     },
 
     showCurrentStory() {
         const player = document.getElementById('storyPlayer');
-        if (!player || player.style.display !== 'flex') return;
+        if (!player || !player.classList.contains('active')) return;
         if (this._storyIndex < 0 || this._storyIndex >= this._activeBites.length) {
             this.closeStory();
             return;
@@ -313,9 +262,7 @@ window.engine = {
         const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
         this._currentSnapUnsubscribe = onSnapshot(q, (snapshot) => {
             this._allPosts = snapshot.docs.map(doc => ({ id: doc.id, data: doc.data() }));
-            if (this._visibleCount > this._allPosts.length) {
-                this._visibleCount = this._allPosts.length;
-            }
+            if (this._visibleCount > this._allPosts.length) this._visibleCount = this._allPosts.length;
             this.renderVisiblePosts();
             this.renderStories();
         });
@@ -329,7 +276,7 @@ window.engine = {
         feed.innerHTML = postsToShow.map(({ id, data: p }) => {
             const postId = id;
             let dateStr = '';
-            try { dateStr = p.createdAt?.toDate().toLocaleString('ar-EG'); } catch(e) { dateStr = '---'; }
+            try { dateStr = p.createdAt?.toDate().toLocaleString('ar-EG'); } catch (e) { dateStr = '---'; }
             return `
             <div class="bg-white rounded-2xl p-4 mb-4 shadow-sm border border-gray-100">
                 <div class="flex items-center gap-3 mb-3">
@@ -354,6 +301,7 @@ window.engine = {
                 </div>
             </div>`;
         }).join('');
+
         const oldBtn = document.getElementById('loadMorePostsBtn');
         if (oldBtn) oldBtn.remove();
         if (normalPosts.length > this._visibleCount) {
@@ -361,9 +309,7 @@ window.engine = {
             loadMoreBtn.id = 'loadMorePostsBtn';
             loadMoreBtn.className = 'text-center mt-4 mb-8';
             const remaining = normalPosts.length - this._visibleCount;
-            loadMoreBtn.innerHTML = `<button class="bg-sky-500 text-white px-6 py-2 rounded-full font-bold text-sm shadow hover:bg-sky-600 active:scale-95 transition">
-                تحميل المزيد (${remaining} منشور)
-            </button>`;
+            loadMoreBtn.innerHTML = `<button class="bg-sky-500 text-white px-6 py-2 rounded-full font-bold text-sm shadow hover:bg-sky-600 active:scale-95 transition">تحميل المزيد (${remaining} منشور)</button>`;
             loadMoreBtn.onclick = () => {
                 this._visibleCount = Math.min(this._visibleCount + 10, normalPosts.length);
                 this.renderVisiblePosts();
@@ -411,7 +357,7 @@ window.engine = {
 
     postHTML(postId, p) {
         let dateStr = '';
-        try { dateStr = p.createdAt?.toDate().toLocaleString('ar-EG'); } catch(e) { dateStr = '---'; }
+        try { dateStr = p.createdAt?.toDate().toLocaleString('ar-EG'); } catch (e) { dateStr = '---'; }
         return `
         <div class="bg-white rounded-2xl p-4 mb-4 shadow-sm border border-gray-100">
             <div class="flex items-center gap-3 mb-3">
@@ -448,15 +394,17 @@ window.engine = {
                 document.getElementById('tab-about').classList.toggle('hidden', target !== 'about');
             });
         });
+
         const avatarImg = document.getElementById('profileAvatar');
         const nameEl = document.getElementById('profileName');
         const emailEl = document.getElementById('profileEmail');
         const bioEl = document.getElementById('profileBio');
         const aboutEl = document.getElementById('aboutBio');
+
         if (avatarImg && nameEl) {
             this.getOrCreateUserProfile().then(profile => {
                 const u = auth.currentUser;
-                avatarImg.src = profile.photoURL || u.photoURL || '';
+                avatarImg.src = (profile.photoURL || u.photoURL || '') + '?sz=50';
                 nameEl.textContent = profile.displayName || u.displayName || 'مستخدم';
                 const bio = profile.bio || '🦈 مؤسس في Shark Hub';
                 if (bioEl) bioEl.textContent = bio;
@@ -464,15 +412,16 @@ window.engine = {
                 if (emailEl) emailEl.textContent = u.email || '';
             });
         }
+
         const editBtn = document.getElementById('editProfileBtn');
         const saveBtn = document.getElementById('saveProfileBtn');
         if (editBtn && saveBtn) {
-            editBtn.onclick = () => {
+            editBtn.addEventListener('click', () => {
                 if (nameEl) { nameEl.contentEditable = 'true'; nameEl.classList.add('bg-yellow-50','px-2','rounded','outline-none'); }
                 if (bioEl) { bioEl.contentEditable = 'true'; bioEl.classList.add('bg-yellow-50','px-2','rounded','outline-none'); }
                 editBtn.classList.add('hidden'); saveBtn.classList.remove('hidden');
-            };
-            saveBtn.onclick = async () => {
+            });
+            saveBtn.addEventListener('click', async () => {
                 if (nameEl) { nameEl.contentEditable = 'false'; nameEl.classList.remove('bg-yellow-50','px-2','rounded','outline-none'); }
                 if (bioEl) { bioEl.contentEditable = 'false'; bioEl.classList.remove('bg-yellow-50','px-2','rounded','outline-none'); }
                 editBtn.classList.remove('hidden'); saveBtn.classList.add('hidden');
@@ -481,8 +430,9 @@ window.engine = {
                 let ok = false;
                 try { await this.updateUserProfile({ displayName: n, bio: b }); ok = true; if (aboutEl) aboutEl.textContent = b; } catch(e) {}
                 this.showToast(ok ? 'تم حفظ البيانات ☁️' : 'تم حفظ البيانات محلياً ⚠️');
-            };
+            });
         }
+
         document.getElementById('avatarOverlay')?.addEventListener('click', () => document.getElementById('avatarFileInput').click());
         document.getElementById('avatarFileInput')?.addEventListener('change', (e) => {
             const file = e.target.files[0];
@@ -512,7 +462,12 @@ window.engine = {
         const ref = doc(db, "users", uid);
         const snap = await getDoc(ref);
         if (snap.exists()) return snap.data();
-        const defaultProfile = { displayName: auth.currentUser.displayName || '', photoURL: auth.currentUser.photoURL || '', bio: '', createdAt: serverTimestamp() };
+        const defaultProfile = {
+            displayName: auth.currentUser.displayName || '',
+            photoURL: auth.currentUser.photoURL || '',
+            bio: '',
+            createdAt: serverTimestamp()
+        };
         await setDoc(ref, defaultProfile);
         return defaultProfile;
     },
@@ -521,15 +476,19 @@ window.engine = {
         const uid = auth.currentUser.uid;
         await updateDoc(doc(db, "users", uid), updates);
         const userBtn = document.getElementById('userBtn');
-        if (updates.photoURL && userBtn) userBtn.innerHTML = `<img src="${updates.photoURL}" class="w-full h-full object-cover rounded-2xl">`;
+        if (updates.photoURL && userBtn) userBtn.innerHTML = `<img src="${updates.photoURL}?sz=48" class="w-full h-full object-cover rounded-2xl">`;
     },
 
     async addComment(postId) {
         const input = document.getElementById(`comm_${postId}`);
         if (!input?.value.trim()) return;
-        await addDoc(collection(db, `posts/${postId}/comments`), { text: input.value, userName: auth.currentUser.displayName, createdAt: serverTimestamp() });
+        await addDoc(collection(db, `posts/${postId}/comments`), {
+            text: input.value,
+            userName: auth.currentUser.displayName,
+            createdAt: serverTimestamp()
+        });
         input.value = '';
     }
 };
-window.engine = engine;
-engine.init();
+
+window.engine.init();
