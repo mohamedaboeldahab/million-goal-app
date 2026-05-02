@@ -1,79 +1,190 @@
-<div class="flex flex-col h-[75vh]">
-    <!-- رأس المستشار -->
-    <div class="bg-sky-50 p-4 rounded-2xl mb-4 border border-sky-100 flex items-center gap-3">
-        <div class="w-10 h-10 bg-sky-500 rounded-full flex items-center justify-center text-white">
-            <i class="fa-solid fa-robot"></i>
-        </div>
-        <div>
-            <h4 class="font-black text-sm text-sky-900">المستشار المالي (Shark AI)</h4>
-            <p class="text-[10px] text-sky-600">اسألني عن أي استثمار أو خطة مالية</p>
-        </div>
-    </div>
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shark AI - المستشار المالي الذكي</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap');
+        body { font-family: 'Cairo', sans-serif; background-color: #f1f5f9; }
+        .chat-box { height: calc(100vh - 220px); min-height: 400px; }
+        .dot-typing { animation: blink 1.4s infinite both; }
+        @keyframes blink { 0% { opacity: .2; } 20% { opacity: 1; } 100% { opacity: .2; } }
+    </style>
+</head>
+<body class="p-2 sm:p-4">
 
-    <!-- مربع الدردشة -->
-    <div id="chatBox" class="flex-1 overflow-y-auto space-y-4 px-2 pb-4">
-        <div class="bg-white p-4 rounded-2xl rounded-tr-none shadow-sm text-sm text-slate-700 max-w-[80%] ml-auto">
-            مرحباً! أنا مستشارك المالي. صف لي موقفك المالي وسأساعدك.
+<div class="max-w-2xl mx-auto bg-white shadow-2xl rounded-3xl overflow-hidden border border-slate-200">
+    <!-- Header -->
+    <div class="bg-gradient-to-r from-sky-600 to-blue-700 p-4 text-white flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <div class="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm border border-white/30">
+                <i class="fa-solid fa-sack-dollar text-2xl"></i>
+            </div>
+            <div>
+                <h1 class="font-black text-lg leading-none">Shark AI</h1>
+                <span class="text-[10px] opacity-80 uppercase tracking-wider font-bold">Financial Advisor v2.0</span>
+            </div>
         </div>
-    </div>
-
-    <!-- حقل الإدخال -->
-    <div class="p-4 bg-white rounded-2xl shadow-lg border flex gap-2">
-        <input type="text" id="aiInput" placeholder="اسأل المستشار..." class="flex-1 outline-none text-sm bg-transparent">
-        <button onclick="askAI()" class="bg-sky-500 text-white w-10 h-10 rounded-xl flex items-center justify-center">
-            <i class="fa-solid fa-paper-plane"></i>
+        <button onclick="toggleSettings()" class="text-white/80 hover:text-white transition-colors">
+            <i class="fa-solid fa-gear text-xl"></i>
         </button>
+    </div>
+
+    <!-- API Key Settings (Hidden by default) -->
+    <div id="settingsPanel" class="hidden bg-slate-50 p-4 border-b border-slate-200 transition-all">
+        <label class="block text-xs font-bold text-slate-600 mb-2">إعدادات Gemini API Key:</label>
+        <div class="flex gap-2">
+            <input type="password" id="apiKeyInput" placeholder="ألصق المفتاح هنا..." 
+                   class="flex-1 border rounded-xl px-3 py-2 text-sm outline-none focus:border-sky-500 shadow-sm">
+            <button onclick="saveApiKey()" class="bg-sky-600 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-md active:scale-95 transition-transform">حفظ</button>
+        </div>
+        <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-[10px] text-sky-600 underline mt-2 block italic">اضغط هنا للحصول على مفتاح مجاني من جوجل</a>
+    </div>
+
+    <!-- Chat Area -->
+    <div id="chatBox" class="chat-box overflow-y-auto p-4 space-y-4 bg-slate-50/50">
+        <!-- AI Welcome Message -->
+        <div class="flex items-start gap-2">
+            <div class="bg-white p-4 rounded-2xl rounded-tr-none shadow-sm border border-slate-100 text-sm text-slate-700 max-w-[85%] leading-relaxed">
+                مرحباً بك في **Shark AI**! 🦈 <br>
+                أنا جاهز لمساعدتك في تحليل استثماراتك، إدارة ميزانيتك، أو شرح مفاهيم السوق المالي. <br>
+                <span class="text-xs text-sky-600 font-bold">بماذا نبدأ اليوم؟</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Input Area -->
+    <div class="p-4 bg-white border-t border-slate-100">
+        <div class="relative flex items-center gap-2">
+            <input type="text" id="userInput" onkeypress="handleKey(event)"
+                   placeholder="اكتب سؤالك المالي هنا..." 
+                   class="flex-1 bg-slate-100 border-none rounded-2xl px-5 py-4 text-sm outline-none focus:ring-2 focus:ring-sky-500/50 transition-all">
+            
+            <button onclick="sendMessage()" id="sendBtn" class="bg-sky-600 hover:bg-sky-700 text-white w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg shadow-sky-200 transition-all active:scale-90">
+                <i class="fa-solid fa-paper-plane"></i>
+            </button>
+        </div>
+        <p class="text-[10px] text-center text-slate-400 mt-3 font-medium">
+            <i class="fa-solid fa-shield-halved ml-1"></i> معلوماتك مشفرة محلياً والردود للاستشارة فقط.
+        </p>
     </div>
 </div>
 
-<!-- 1. تحميل مكتبة Puter.js -->
-<script src="https://js.puter.com/v2/"></script>
-
 <script>
-    async function askAI() {
-        const input = document.getElementById('aiInput');
-        const question = input?.value.trim();
-        if (!question) return;
+    let chatHistory = [];
+    let currentKey = localStorage.getItem('shark_ai_key') || '';
 
-        // عرض سؤال المستخدم
-        addMessage(question, 'user');
-        input.value = '';
-        const typingDiv = addMessage('...', 'ai');
+    // إظهار لوحة الإعدادات إذا لم يوجد مفتاح
+    if (!currentKey) {
+        document.getElementById('settingsPanel').classList.remove('hidden');
+    }
 
-        try {
-            // 2. استدعاء النموذج مجاناً
-            const response = await puter.ai.chat(
-                `[INST] أنت مستشار مالي خبير اسمه "Shark AI". تتحدث بالعربية فقط. تعطي إجابات دقيقة، مفصلة، ومفيدة. تقدم تحليلات ونصائح مخصصة بناءً على وصف المستخدم لموقفه المالي. تجيب بأسلوب واضح ومحترف. الآن أجب عن السؤال التالي: ${question} [/INST]`,
-                { model: "google/gemini-2.5-flash" } // أو "gpt-4.1-nano" أو "claude-sonnet-4"
-            );
+    function toggleSettings() {
+        document.getElementById('settingsPanel').classList.toggle('hidden');
+    }
 
-            updateMessage(typingDiv, response.message.content);
-
-        } catch (error) {
-            console.error(error);
-            updateMessage(typingDiv, '❌ حدث خطأ. تأكد من اتصالك بالإنترنت.');
+    function saveApiKey() {
+        const key = document.getElementById('apiKeyInput').value.trim();
+        if (key) {
+            localStorage.setItem('shark_ai_key', key);
+            currentKey = key;
+            alert('✅ تم حفظ المفتاح بنجاح!');
+            toggleSettings();
         }
     }
 
-    function addMessage(text, sender) {
-        const box = document.getElementById('chatBox');
-        if (!box) return null;
+    function handleKey(e) { if (e.key === 'Enter') sendMessage(); }
+
+    async function sendMessage() {
+        const input = document.getElementById('userInput');
+        const text = input.value.trim();
+        if (!text || !currentKey) {
+            if (!currentKey) toggleSettings();
+            return;
+        }
+
+        // إضافة رسالة المستخدم
+        addMessageToUI(text, 'user');
+        input.value = '';
+        const typingDiv = addMessageToUI('<span class="dot-typing">جاري تحليل بيانات السوق...</span>', 'ai');
+        
+        // تجهيز السياق
+        chatHistory.push({ role: "user", parts: [{ text: text }] });
+
+        // محاولة الاتصال بالروابط المختلفة
+        const endpoints = [
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${currentKey}`,
+            `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${currentKey}`
+        ];
+
+        let success = false;
+        for (let url of endpoints) {
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: chatHistory,
+                        generationConfig: { temperature: 0.7, maxOutputTokens: 1000 }
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.candidates) {
+                    const aiReply = data.candidates[0].content.parts[0].text;
+                    updateAIMessage(typingDiv, aiReply);
+                    chatHistory.push({ role: "model", parts: [{ text: aiReply }] });
+                    success = true;
+                    break;
+                } else if (data.error && (data.error.status === "PERMISSION_DENIED" || data.error.code === 400)) {
+                    updateAIMessage(typingDiv, "🔑 خطأ: يبدو أن مفتاح API غير صحيح. يرجى التأكد منه في الإعدادات.");
+                    toggleSettings();
+                    success = true;
+                    break;
+                }
+            } catch (err) {
+                console.error("Link failed, trying next...");
+            }
+        }
+
+        if (!success) {
+            updateAIMessage(typingDiv, "❌ فشل الاتصال بكافة الخوادم. تأكد من جودة الإنترنت وصلاحية المفتاح.");
+        }
+
+        // الحفاظ على سياق معقول (آخر 10 رسائل)
+        if (chatHistory.length > 10) chatHistory = chatHistory.slice(-10);
+    }
+
+    function addMessageToUI(text, sender) {
+        const chatBox = document.getElementById('chatBox');
+        const wrapper = document.createElement('div');
+        wrapper.className = sender === 'ai' ? 'flex items-start gap-2' : 'flex items-start gap-2 justify-end';
+
         const div = document.createElement('div');
-        const isAI = sender === 'ai';
-        div.className = isAI
-            ? 'bg-white p-4 rounded-2xl rounded-tr-none shadow-sm text-sm text-slate-700 max-w-[80%]'
-            : 'bg-sky-500 text-white p-4 rounded-2xl rounded-tl-none shadow-sm text-sm max-w-[80%] ml-auto';
-        div.textContent = text;
-        box.appendChild(div);
-        box.scrollTop = box.scrollHeight;
+        div.className = sender === 'ai' 
+            ? 'bg-white p-4 rounded-2xl rounded-tr-none shadow-sm border border-slate-100 text-sm text-slate-700 max-w-[85%] leading-relaxed'
+            : 'bg-sky-600 p-4 rounded-2xl rounded-tl-none shadow-md text-sm text-white max-w-[85%] leading-relaxed';
+        
+        div.innerHTML = text;
+        wrapper.appendChild(div);
+        chatBox.appendChild(wrapper);
+        chatBox.scrollTop = chatBox.scrollHeight;
         return div;
     }
 
-    function updateMessage(element, newText) {
-        if (element) {
-            element.textContent = newText;
-            const box = document.getElementById('chatBox');
-            if (box) box.scrollTop = box.scrollHeight;
-        }
+    function updateAIMessage(element, text) {
+        // تنسيق بسيط للردود (Bold)
+        const formatted = text
+            .replace(/\*\*(.*?)\*\*/g, '<strong class="text-sky-900 font-bold">$1</strong>')
+            .replace(/\n/g, '<br>');
+        element.innerHTML = formatted;
+        document.getElementById('chatBox').scrollTop = document.getElementById('chatBox').scrollHeight;
     }
 </script>
+
+</body>
+</html>
