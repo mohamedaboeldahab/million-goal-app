@@ -186,8 +186,8 @@ window.engine = {
         return this._allPosts.filter(p => {
             if (p.data.type !== 'bite') return false;
             const t = p.data.createdAt;
-            if (!t) return true;
-            const time = t.toDate ? t.toDate().getTime() : t.seconds ? t.seconds * 1000 : 0;
+            if (!t) return true; // حديث النشر، لم يكتمل الطابع الزمني بعد
+            const time = t.toDate ? t.toDate().getTime() : (t.seconds ? t.seconds * 1000 : 0);
             return time > cutoff;
         });
     },
@@ -199,13 +199,35 @@ window.engine = {
         row.innerHTML = '';
         if (this._activeBites.length === 0) return;
         row.innerHTML = this._activeBites.map((bite, index) => `
-            <div class="flex flex-col items-center gap-1 flex-shrink-0" data-story-index="${index}" style="cursor:pointer">
+            <div class="flex flex-col items-center gap-1 flex-shrink-0 story-item" data-story-index="${index}" style="cursor:pointer">
                 <div class="w-16 h-16 rounded-full bg-gradient-to-tr from-sky-400 to-blue-500 p-0.5 shadow-md">
                     <img src="${bite.data.authorPhoto}" class="w-full h-full rounded-full object-cover border-2 border-white" loading="lazy">
                 </div>
                 <span class="text-[10px] font-bold text-gray-700 text-center truncate w-16">${bite.data.authorName}</span>
             </div>
         `).join('');
+
+        // إعادة ربط الأحداث بعد حقن العناصر الجديدة
+        this.attachStoryEvents();
+    },
+
+    attachStoryEvents() {
+        document.querySelectorAll('.story-item').forEach(story => {
+            // تجنب تكرار الربط
+            const newStory = story.cloneNode(true);
+            story.parentNode.replaceChild(newStory, story);
+
+            const handler = (e) => {
+                const index = parseInt(newStory.getAttribute('data-story-index'));
+                if (!isNaN(index)) {
+                    e.preventDefault();
+                    engine.openStoryPlayer(index);
+                }
+            };
+
+            newStory.addEventListener('click', handler);
+            newStory.addEventListener('touchend', handler);
+        });
     },
 
     closeStory() {
@@ -215,7 +237,7 @@ window.engine = {
 
     openStoryPlayer(index) {
         this._activeBites = this.getActiveBites();
-        if (this._activeBites.length === 0) return;
+        if (this._activeBites.length === 0 || index < 0 || index >= this._activeBites.length) return;
         this._storyIndex = index;
         const player = document.getElementById('storyPlayer');
         if (player) {
