@@ -25,7 +25,6 @@ const db = getFirestore(app);
 window.db = db;
 const provider = new GoogleAuthProvider();
 
-// ⚠️ تم تصحيح الصورة الافتراضية (إزالة أي علامات اقتباس زائدة)
 const DEFAULT_AVATAR = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='%23e2e8f0'/%3E%3Ctext x='50' y='67' font-size='60' text-anchor='middle' fill='%2394a3b8'%3E🦈%3C/text%3E%3C/svg%3E";
 
 function fixPhotoUrl(url) {
@@ -47,7 +46,8 @@ const bgGradients = {
     gradient6: 'linear-gradient(135deg, #a18cd1, #fbc2eb)',
     gradient7: 'linear-gradient(135deg, #fccb90, #d57eeb)',
     gradient8: 'linear-gradient(135deg, #e0c3fc, #8ec5fc)',
-    gradient9: 'linear-gradient(135deg, #f093fb, #f5576c)'
+    gradient9: 'linear-gradient(135deg, #f093fb, #f5576c)',
+    gradient10: 'linear-gradient(135deg, #fddb92, #d1fdff)'
 };
 
 window.engine = {
@@ -126,12 +126,12 @@ window.engine = {
                     this.renderBgPicker();
                     this.watchStoriesContainer();
                 }, 50);
-           } else if (pageName === 'profile') {
-    setTimeout(() => {
-        this.listenToProfilePosts('userPostsContainer');
-        this.activateProfile();
-    }, 150);
-}
+            } else if (pageName === 'profile') {
+                setTimeout(() => {
+                    this.listenToProfilePosts('userPostsContainer');
+                    this.activateProfile();
+                }, 150);
+            }
             if (typeof setActiveNavLink === 'function') setActiveNavLink(pageName);
         } catch (e) { content.innerHTML = `<div class="text-center py-20 text-slate-400">قريباً..</div>`; }
     },
@@ -535,16 +535,28 @@ window.engine = {
         btn.style.display = 'none';
     },
 
+    // ========== صفحة البروفايل (إصلاح الفهرس) ==========
     listenToProfilePosts(containerId) {
         const userId = auth.currentUser?.uid;
         if (!userId) return;
-        const q = query(collection(db, "posts"), where("authorId", "==", userId), orderBy("createdAt", "desc"));
+        // استعلام بدون orderBy لتجنب الحاجة إلى فهرس مركب
+        const q = query(collection(db, "posts"), where("authorId", "==", userId));
         onSnapshot(q, (snapshot) => {
             const container = document.getElementById(containerId);
             if (!container) return;
-            if (snapshot.empty) { container.innerHTML = '<p class="text-gray-400 text-sm text-center py-8">لا توجد منشورات بعد</p>'; return; }
-            container.innerHTML = snapshot.docs.map(doc => this.postHTML(doc.id, doc.data())).join('');
-            snapshot.docs.forEach(d => this.listenToComments(d.id));
+            if (snapshot.empty) {
+                container.innerHTML = '<p class="text-gray-400 text-sm text-center py-8">لا توجد منشورات بعد</p>';
+                return;
+            }
+            // ترتيب النتائج يدوياً (الأحدث أولاً)
+            const docs = snapshot.docs.map(doc => ({ id: doc.id, data: doc.data() }));
+            docs.sort((a, b) => {
+                const timeA = a.data.createdAt?.toDate?.()?.getTime?.() || 0;
+                const timeB = b.data.createdAt?.toDate?.()?.getTime?.() || 0;
+                return timeB - timeA;
+            });
+            container.innerHTML = docs.map(doc => this.postHTML(doc.id, doc.data())).join('');
+            docs.forEach(d => this.listenToComments(d.id));
         }, error => {
             const container = document.getElementById(containerId);
             if (container) container.innerHTML = '<p class="text-center text-red-500">تعذر تحميل المنشورات</p>';
