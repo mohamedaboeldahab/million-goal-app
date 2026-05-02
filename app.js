@@ -25,7 +25,8 @@ const db = getFirestore(app);
 window.db = db;
 const provider = new GoogleAuthProvider();
 
-const DEFAULT_AVATAR = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="%23e2e8f0"/><text x="50" y="67" font-size="60" text-anchor="middle" fill="%2394a3b8">🦈</text></svg>';
+// ⚠️ تم تصحيح الصورة الافتراضية (إزالة أي علامات اقتباس زائدة)
+const DEFAULT_AVATAR = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='%23e2e8f0'/%3E%3Ctext x='50' y='67' font-size='60' text-anchor='middle' fill='%2394a3b8'%3E🦈%3C/text%3E%3C/svg%3E";
 
 function fixPhotoUrl(url) {
     if (!url) return DEFAULT_AVATAR;
@@ -46,7 +47,8 @@ const bgGradients = {
     gradient6: 'linear-gradient(135deg, #a18cd1, #fbc2eb)',
     gradient7: 'linear-gradient(135deg, #fccb90, #d57eeb)',
     gradient8: 'linear-gradient(135deg, #e0c3fc, #8ec5fc)',
-    gradient9: 'linear-gradient(135deg, #f093fb, #f5576c)'
+    gradient9: 'linear-gradient(135deg, #f093fb, #f5576c)',
+    gradient10: 'linear-gradient(135deg, #fddb92, #d1fdff)'
 };
 
 window.engine = {
@@ -247,9 +249,7 @@ window.engine = {
             input.value = '';
             this._currentBg = null;
             this.renderBgPicker();
-            console.log('✅ تم النشر بنجاح');
         } catch (error) {
-            console.error('❌ فشل النشر:', error);
             this.showToast('❌ فشل النشر: ' + error.message);
         }
     },
@@ -439,11 +439,9 @@ window.engine = {
             if (this._visibleCount > this._allPosts.length) this._visibleCount = this._allPosts.length;
             this.renderVisiblePosts();
             this.renderStories();
-            console.log('🔄 تم تحديث المنشورات:', this._allPosts.length);
         }, error => {
-            console.error('❌ خطأ في تحميل المنشورات:', error);
             const feed = document.getElementById('feedList');
-            if (feed) feed.innerHTML = '<p class="text-center text-red-500">تعذر تحميل المنشورات. تأكد من قواعد الأمان في Firestore.</p>';
+            if (feed) feed.innerHTML = '<p class="text-center text-red-500">تعذر تحميل المنشورات</p>';
         });
     },
 
@@ -471,52 +469,49 @@ window.engine = {
         postsToShow.forEach(({ id }) => this.listenToComments(id));
     },
 
-  postHTML(postId, p) {
-    let dateStr = '';
-    try { dateStr = p.createdAt?.toDate().toLocaleString('ar-EG'); } catch (e) { dateStr = '---'; }
-    const img = fixPhotoUrl(p.authorPhoto);
-    const bg = p.backgroundColor ? bgGradients[p.backgroundColor] : null;
+    postHTML(postId, p) {
+        let dateStr = '';
+        try { dateStr = p.createdAt?.toDate().toLocaleString('ar-EG'); } catch (e) { dateStr = '---'; }
+        const img = fixPhotoUrl(p.authorPhoto);
+        const bg = p.backgroundColor ? bgGradients[p.backgroundColor] : null;
 
-    // بطاقة المنشور بيضاء بالكامل
-    let html = `
-    <div class="bg-white rounded-2xl p-4 mb-4 shadow-sm border border-gray-100">
-        <div class="flex items-center gap-3 mb-3">
-            <img src="${img}" class="w-10 h-10 rounded-full border border-sky-200 object-cover" loading="lazy" onerror="this.src='${DEFAULT_AVATAR}'">
-            <div>
-                <span class="font-extrabold text-gray-800 text-sm">${p.authorName || 'مستخدم'}</span>
-                <div class="text-xs text-gray-400">${dateStr}</div>
+        let html = `
+        <div class="bg-white rounded-2xl p-4 mb-4 shadow-sm border border-gray-100">
+            <div class="flex items-center gap-3 mb-3">
+                <img src="${img}" class="w-10 h-10 rounded-full border border-sky-200 object-cover" loading="lazy" onerror="this.src='${DEFAULT_AVATAR}'">
+                <div>
+                    <span class="font-extrabold text-gray-800 text-sm">${p.authorName || 'مستخدم'}</span>
+                    <div class="text-xs text-gray-400">${dateStr}</div>
+                </div>
+            </div>`;
+
+        if (bg) {
+            html += `
+            <div style="background: ${bg}; border-radius: 16px; padding: 16px; margin-bottom: 16px;">
+                <p class="text-white text-sm leading-relaxed whitespace-pre-wrap" style="text-shadow: 0 1px 2px rgba(0,0,0,0.3);">${p.content}</p>
+            </div>`;
+        } else {
+            html += `
+            <p class="text-gray-700 text-sm leading-relaxed mb-4 whitespace-pre-wrap">${p.content}</p>`;
+        }
+
+        html += `
+            <div class="flex gap-2 mb-3">
+                <button onclick="engine.handleVote('${postId}', 'support')" class="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-sky-400 to-blue-500 text-white font-bold py-2 rounded-xl shadow text-sm"><span class="text-base">🦈</span> أؤيد <span class="bg-white/20 px-2 py-0.5 rounded-full text-sm font-extrabold">${p.supportCount || 0}</span></button>
+                <button onclick="engine.handleVote('${postId}', 'oppose')" class="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-amber-400 to-orange-400 text-white font-bold py-2 rounded-xl shadow text-sm"><span class="text-base">🐟</span> لا أؤيد <span class="bg-white/20 px-2 py-0.5 rounded-full text-sm font-extrabold">${p.opposeCount || 0}</span></button>
+            </div>
+            <div class="border-t border-gray-100 pt-3">
+                <div id="comments_list_${postId}" class="space-y-2 mb-2"></div>
+                <button id="load_more_btn_${postId}" style="display:none;" onclick="engine.loadMoreComments('${postId}')" class="text-sky-600 text-xs font-bold hover:underline w-full text-center py-1">عرض كل التعليقات</button>
+                <div class="flex gap-2 mt-2">
+                    <input type="text" id="comm_${postId}" placeholder="أضف تعليقاً..." class="flex-1 bg-gray-100 rounded-lg px-3 py-1.5 text-xs border border-gray-200 outline-none focus:ring-1 focus:ring-sky-400">
+                    <button onclick="engine.addComment('${postId}')" class="bg-sky-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold"><i class="fa-solid fa-paper-plane"></i></button>
+                </div>
             </div>
         </div>`;
 
-    // إذا كان هناك خلفية، نحيط النص فقط بغطاء متدرج
-    if (bg) {
-        html += `
-        <div style="background: ${bg}; border-radius: 16px; padding: 16px; margin-bottom: 16px;">
-            <p class="text-white text-sm leading-relaxed whitespace-pre-wrap" style="text-shadow: 0 1px 2px rgba(0,0,0,0.3);">${p.content}</p>
-        </div>`;
-    } else {
-        html += `
-        <p class="text-gray-700 text-sm leading-relaxed mb-4 whitespace-pre-wrap">${p.content}</p>`;
-    }
-
-    // أزرار التصويت والتعليقات تبقى على الخلفية البيضاء
-    html += `
-        <div class="flex gap-2 mb-3">
-            <button onclick="engine.handleVote('${postId}', 'support')" class="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-sky-400 to-blue-500 text-white font-bold py-2 rounded-xl shadow text-sm"><span class="text-base">🦈</span> أؤيد <span class="bg-white/20 px-2 py-0.5 rounded-full text-sm font-extrabold">${p.supportCount || 0}</span></button>
-            <button onclick="engine.handleVote('${postId}', 'oppose')" class="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-amber-400 to-orange-400 text-white font-bold py-2 rounded-xl shadow text-sm"><span class="text-base">🐟</span> لا أؤيد <span class="bg-white/20 px-2 py-0.5 rounded-full text-sm font-extrabold">${p.opposeCount || 0}</span></button>
-        </div>
-        <div class="border-t border-gray-100 pt-3">
-            <div id="comments_list_${postId}" class="space-y-2 mb-2"></div>
-            <button id="load_more_btn_${postId}" style="display:none;" onclick="engine.loadMoreComments('${postId}')" class="text-sky-600 text-xs font-bold hover:underline w-full text-center py-1">عرض كل التعليقات</button>
-            <div class="flex gap-2 mt-2">
-                <input type="text" id="comm_${postId}" placeholder="أضف تعليقاً..." class="flex-1 bg-gray-100 rounded-lg px-3 py-1.5 text-xs border border-gray-200 outline-none focus:ring-1 focus:ring-sky-400">
-                <button onclick="engine.addComment('${postId}')" class="bg-sky-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold"><i class="fa-solid fa-paper-plane"></i></button>
-            </div>
-        </div>
-    </div>`;
-
-    return html;
-},
+        return html;
+    },
 
     listenToComments(postId) {
         const q = query(collection(db, `posts/${postId}/comments`), orderBy("createdAt", "asc"));
