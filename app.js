@@ -35,7 +35,7 @@ window.engine = {
     _storyIndex: 0,
 
     async init() {
-        try { await setPersistence(auth, browserLocalPersistence); } catch (e) { console.error(e); }
+        try { await setPersistence(auth, browserLocalPersistence); } catch (e) {}
         setInterval(() => this.deleteExpiredBites(), 600000);
         this.deleteExpiredBites();
 
@@ -47,8 +47,8 @@ window.engine = {
                 if (nav) nav.classList.remove('hidden');
                 const userBtn = document.getElementById('userBtn');
                 this.getOrCreateUserProfile().then(profile => {
-                    const photo = profile.photoURL || user.photoURL || '';
-                    if (userBtn) userBtn.innerHTML = `<img src="${photo}?sz=48" class="w-full h-full object-cover rounded-2xl">`;
+                    const photo = (profile.photoURL || user.photoURL || '') + '?sz=48';
+                    if (userBtn) userBtn.innerHTML = `<img src="${photo}" class="w-full h-full object-cover rounded-2xl" loading="lazy">`;
                 });
                 this.loadPage('home');
             } else {
@@ -129,12 +129,12 @@ window.engine = {
         const postBtn = document.getElementById('typePostBtn');
         const biteBtn = document.getElementById('typeBiteBtn');
         if (!postBtn || !biteBtn) return;
-        postBtn.className = this._currentPostType === 'post' ?
-            'flex-1 py-2 rounded-lg font-bold text-sm bg-sky-500 text-white shadow' :
-            'flex-1 py-2 rounded-lg font-bold text-sm bg-gray-200 text-gray-600 shadow';
-        biteBtn.className = this._currentPostType === 'bite' ?
-            'flex-1 py-2 rounded-lg font-bold text-sm bg-sky-500 text-white shadow' :
-            'flex-1 py-2 rounded-lg font-bold text-sm bg-gray-200 text-gray-600 shadow';
+        postBtn.className = this._currentPostType === 'post'
+            ? 'flex-1 py-2 rounded-lg font-bold text-sm bg-sky-500 text-white shadow'
+            : 'flex-1 py-2 rounded-lg font-bold text-sm bg-gray-200 text-gray-600 shadow';
+        biteBtn.className = this._currentPostType === 'bite'
+            ? 'flex-1 py-2 rounded-lg font-bold text-sm bg-sky-500 text-white shadow'
+            : 'flex-1 py-2 rounded-lg font-bold text-sm bg-gray-200 text-gray-600 shadow';
     },
 
     activateCharCounter() {
@@ -201,7 +201,7 @@ window.engine = {
         row.innerHTML = this._activeBites.map((bite, index) => `
             <div class="flex flex-col items-center gap-1 flex-shrink-0" data-story-index="${index}" style="cursor:pointer">
                 <div class="w-16 h-16 rounded-full bg-gradient-to-tr from-sky-400 to-blue-500 p-0.5 shadow-md">
-                    <img src="${bite.data.authorPhoto}" class="w-full h-full rounded-full object-cover border-2 border-white">
+                    <img src="${bite.data.authorPhoto}" class="w-full h-full rounded-full object-cover border-2 border-white" loading="lazy">
                 </div>
                 <span class="text-[10px] font-bold text-gray-700 text-center truncate w-16">${bite.data.authorName}</span>
             </div>
@@ -235,10 +235,9 @@ window.engine = {
         const content = document.getElementById('storyContent');
         if (content) {
             content.innerHTML = `
-                <img src="${bite.data.authorPhoto}" class="w-20 h-20 rounded-full border-2 border-white/50 mb-4">
+                <img src="${bite.data.authorPhoto}" class="w-20 h-20 rounded-full border-2 border-white/50 mb-4" loading="lazy">
                 <h3 class="font-bold text-xl">${bite.data.authorName}</h3>
-                <p class="text-sm mt-2 text-center max-w-xs">${bite.data.content}</p>
-            `;
+                <p class="text-sm mt-2 text-center max-w-xs">${bite.data.content}</p>`;
         }
     },
 
@@ -280,7 +279,7 @@ window.engine = {
             return `
             <div class="bg-white rounded-2xl p-4 mb-4 shadow-sm border border-gray-100">
                 <div class="flex items-center gap-3 mb-3">
-                    <img src="${p.authorPhoto}" class="w-10 h-10 rounded-full border border-sky-200 object-cover">
+                    <img src="${p.authorPhoto}" class="w-10 h-10 rounded-full border border-sky-200 object-cover" loading="lazy">
                     <div>
                         <span class="font-extrabold text-gray-800 text-sm">${p.authorName}</span>
                         <div class="text-xs text-gray-400">${dateStr}</div>
@@ -361,7 +360,7 @@ window.engine = {
         return `
         <div class="bg-white rounded-2xl p-4 mb-4 shadow-sm border border-gray-100">
             <div class="flex items-center gap-3 mb-3">
-                <img src="${p.authorPhoto}" class="w-10 h-10 rounded-full border border-sky-200 object-cover">
+                <img src="${p.authorPhoto}" class="w-10 h-10 rounded-full border border-sky-200 object-cover" loading="lazy">
                 <div>
                     <span class="font-extrabold text-gray-800 text-sm">${p.authorName}</span>
                     <div class="text-xs text-gray-400">${dateStr}</div>
@@ -476,7 +475,7 @@ window.engine = {
         const uid = auth.currentUser.uid;
         await updateDoc(doc(db, "users", uid), updates);
         const userBtn = document.getElementById('userBtn');
-        if (updates.photoURL && userBtn) userBtn.innerHTML = `<img src="${updates.photoURL}?sz=48" class="w-full h-full object-cover rounded-2xl">`;
+        if (updates.photoURL && userBtn) userBtn.innerHTML = `<img src="${updates.photoURL}?sz=48" class="w-full h-full object-cover rounded-2xl" loading="lazy">`;
     },
 
     async addComment(postId) {
