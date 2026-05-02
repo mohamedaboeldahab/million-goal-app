@@ -3,112 +3,84 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shark AI - Free Edition</title>
+    <title>Shark AI - المستقر</title>
+    <link rel="icon" href="data:,">
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap');
-        body { font-family: 'Cairo', sans-serif; background-color: #f3f4f6; }
-    </style>
 </head>
-<body class="p-4">
+<body class="bg-slate-900 text-white p-4">
 
-<div class="max-w-xl mx-auto bg-white shadow-2xl rounded-3xl overflow-hidden mt-10">
-    <!-- Header -->
-    <div class="bg-gradient-to-r from-blue-600 to-indigo-700 p-6 text-white text-center">
-        <h1 class="text-2xl font-black">Shark AI 🦈</h1>
-        <p class="text-xs opacity-80">الإصدار المجاني المستقر</p>
+<div class="max-w-lg mx-auto mt-10 p-6 bg-slate-800 rounded-3xl shadow-2xl border border-slate-700">
+    <h1 class="text-xl font-black mb-4 border-b border-slate-700 pb-2 text-sky-400">Shark AI V4 🦈</h1>
+    
+    <div id="chatBox" class="h-80 overflow-y-auto mb-4 space-y-3 p-2">
+        <div class="bg-slate-700 p-3 rounded-xl text-sm">تم تحديث الاتصال.. اسألني أي سؤال مالي.</div>
     </div>
 
-    <!-- Chat Box -->
-    <div id="chatBox" class="h-[400px] overflow-y-auto p-6 space-y-4 bg-gray-50">
-        <div class="bg-blue-100 p-4 rounded-2xl rounded-tr-none text-sm text-gray-700">
-            أهلاً بك! أنا أعمل الآن عبر خوادم Hugging Face المجانية. كيف يمكنني مساعدتك؟
-        </div>
-    </div>
-
-    <!-- Input -->
-    <div class="p-4 bg-white border-t">
-        <div class="flex gap-2">
-            <input type="text" id="userInput" onkeypress="if(event.key === 'Enter') askAI()"
-                   placeholder="اكتب سؤالك هنا..." 
-                   class="flex-1 border border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-blue-500">
-            <button onclick="askAI()" id="sendBtn" class="bg-blue-600 text-white px-6 rounded-xl hover:bg-blue-700 transition-all">
-                <i class="fa-solid fa-paper-plane"></i>
-            </button>
-        </div>
+    <div class="flex gap-2">
+        <input type="text" id="userInput" class="flex-1 bg-slate-700 border-none rounded-xl px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-sky-500 text-white" placeholder="اكتب سؤالك...">
+        <button onclick="askAI()" id="sendBtn" class="bg-sky-600 hover:bg-sky-500 px-4 py-2 rounded-xl transition-all">
+            إرسال
+        </button>
     </div>
 </div>
 
 <script>
-    // هذا رابط نموذج Qwen 2.5 وهو جبار في اللغة العربية ومجاني
-    const API_URL = "https://api-inference.huggingface.co/models/Qwen/Qwen2.5-72B-Instruct";
-    
-    // ملاحظة: يفضل وضع الـ Token الخاص بك هنا لضمان عمله دائماً
-    // يمكنك الحصول عليه مجاناً من https://huggingface.co/settings/tokens
-    const HF_TOKEN = "hf_VvGAsLpPzWpLwEYSshfMMLvYvXvXvXvXv"; // ضع التوكن الخاص بك هنا
+    // تنظيف أي Service Worker قديم مسبب للمشاكل
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(registrations => {
+            for(let registration of registrations) { registration.unregister(); }
+        });
+    }
 
     async function askAI() {
         const input = document.getElementById('userInput');
-        const text = input.value.trim();
         const sendBtn = document.getElementById('sendBtn');
+        const text = input.value.trim();
+        if(!text) return;
 
-        if (!text) return;
-
-        addMessage(text, 'user');
+        addMsg(text, 'user');
         input.value = '';
-        const typingDiv = addMessage('جاري التفكير...', 'ai');
+        const loading = addMsg('جاري الاتصال بالسيرفر...', 'ai');
         sendBtn.disabled = true;
 
         try {
-            const response = await fetch(API_URL, {
+            // سنستخدم نموذج Mistral لأنه أكثر استقراراً مع طلبات الـ CORS
+            const response = await fetch("https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.3", {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    // "Authorization": `Bearer ${HF_TOKEN}` // فك التعليق إذا وضعت توكن
-                },
-                body: JSON.stringify({
-                    inputs: `<|im_start|>system\nأنت مستشار مالي ذكي تجيب بالعربية بوضوح.<|im_end|>\n<|im_start|>user\n${text}<|im_end|>\n<|im_start|>assistant`,
-                    parameters: { max_new_tokens: 500, return_full_text: false }
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ 
+                    inputs: `[INST] أنت مستشار مالي ذكي. أجب بالعربية باختصار: ${text} [/INST]`,
+                    parameters: { max_new_tokens: 300 }
                 })
             });
 
             const data = await response.json();
             
-            // في Hugging Face الرد يكون مصفوفة
-            let aiReply = "";
-            if (Array.isArray(data)) {
-                aiReply = data[0].generated_text;
+            if (response.ok) {
+                // معالجة رد Hugging Face
+                let reply = Array.isArray(data) ? data[0].generated_text : data.generated_text;
+                // تنظيف الرد من الـ Instructions
+                reply = reply.split('[/INST]').pop().trim();
+                loading.innerText = reply;
             } else {
-                aiReply = "النظام مشغول حالياً، حاول مرة أخرى بعد لحظات.";
+                loading.innerText = "❌ السيرفر مشغول حالياً (Rate Limit). جرب بعد دقيقة.";
             }
-
-            updateMessage(typingDiv, aiReply);
-
         } catch (error) {
-            updateMessage(typingDiv, "❌ حدث خطأ، تأكد من اتصال الإنترنت.");
+            loading.innerText = "❌ فشل الاتصال. تأكد من إغلاق أي VPN وجرب مرة أخرى.";
         } finally {
             sendBtn.disabled = false;
         }
     }
 
-    function addMessage(text, sender) {
+    function addMsg(t, s) {
+        const d = document.createElement('div');
+        d.className = s === 'ai' ? 'bg-slate-700 p-3 rounded-xl text-sm' : 'bg-sky-600 p-3 rounded-xl text-sm mr-auto w-fit max-w-[80%]';
+        d.innerText = t;
         const box = document.getElementById('chatBox');
-        const div = document.createElement('div');
-        div.className = sender === 'ai' 
-            ? 'bg-blue-100 p-4 rounded-2xl rounded-tr-none text-sm text-gray-700 w-fit max-w-[85%]'
-            : 'bg-blue-600 p-4 rounded-2xl rounded-tl-none text-sm text-white w-fit max-w-[85%] mr-auto';
-        div.innerText = text;
-        box.appendChild(div);
+        box.appendChild(d);
         box.scrollTop = box.scrollHeight;
-        return div;
-    }
-
-    function updateMessage(element, text) {
-        element.innerText = text;
-        document.getElementById('chatBox').scrollTop = document.getElementById('chatBox').scrollHeight;
+        return d;
     }
 </script>
-
 </body>
 </html>
