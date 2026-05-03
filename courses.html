@@ -1,11 +1,11 @@
-<div class="max-w-2xl mx-auto px-4 pt-2 space-y-4 pb-24 text-right" dir="rtl">
+<div class="max-w-2xl mx-auto px-4 pt-2 space-y-3 pb-24 text-right" dir="rtl">
     
     <!-- هيدر أصغر -->
     <div class="relative bg-gradient-to-r from-sky-600 to-blue-700 rounded-2xl p-4 text-white shadow-lg">
         <h2 class="text-lg font-black tracking-tight">🦈 أكاديمية شارك</h2>
     </div>
 
-    <!-- التبويبات (للتصفح فقط) -->
+    <!-- التبويبات الرئيسية -->
     <div class="flex gap-2 bg-gray-100 p-1 rounded-2xl">
         <button id="tabCourses" class="flex-1 py-2.5 rounded-xl font-bold text-xs bg-sky-500 text-white shadow-sm transition" onclick="academy.switchTab('courses')">
             <i class="fa-solid fa-book-open ml-1"></i> كورسات
@@ -18,22 +18,21 @@
         </button>
     </div>
 
+    <!-- أزرار الفئات الفرعية (تُملأ ديناميكياً) -->
+    <div id="subcategoryFilter" class="flex gap-2 overflow-x-auto pb-1"></div>
+
     <!-- قائمة البطاقات -->
     <div id="academyGrid" class="space-y-3 min-h-[150px]"></div>
 
-    <!-- نافذة عرض المحتوى (فيديو أو نص) -->
+    <!-- نافذة عرض المحتوى -->
     <div id="contentModal" class="hidden fixed inset-0 bg-black/90 z-[200] flex items-center justify-center p-4" onclick="if(event.target===this)academy.closeContentModal()">
         <div class="bg-white w-full max-w-lg rounded-2xl overflow-hidden shadow-2xl" style="max-height:90vh;">
-            <!-- رأس النافذة -->
             <div class="flex justify-between items-center p-4 border-b">
                 <h3 id="modalTitle" class="font-black text-gray-800 text-base"></h3>
                 <button onclick="academy.closeContentModal()" class="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
             </div>
-            <!-- فيديو -->
             <div id="modalVideo" class="hidden w-full" style="aspect-ratio: 16/9; background:#000;"></div>
-            <!-- محتوى نصي -->
             <div id="modalContent" class="p-4 text-sm text-gray-700 leading-relaxed whitespace-pre-wrap overflow-y-auto" style="max-height:60vh;"></div>
-            <!-- معلومات المؤلف -->
             <div class="flex items-center gap-2 px-4 pb-4 text-xs text-gray-500">
                 <img id="modalAuthorPhoto" src="" class="w-6 h-6 rounded-full">
                 <span id="modalAuthorName" class="font-bold"></span>
@@ -47,14 +46,14 @@
         <i class="fa-solid fa-plus text-xl"></i>
     </button>
 
-    <!-- نافذة إضافة محتوى (بها اختيار الفئة) -->
+    <!-- نافذة إضافة محتوى -->
     <div id="acadModal" class="hidden fixed inset-0 bg-black/80 z-[200] flex items-center justify-center p-4" onclick="if(event.target===this)academy.closeAddModal()">
-        <div class="bg-white w-full max-w-md rounded-2xl p-5 space-y-4 shadow-2xl">
+        <div class="bg-white w-full max-w-md rounded-2xl p-5 space-y-3 shadow-2xl">
             <h3 class="font-black text-gray-800 text-lg">إضافة محتوى</h3>
             
-            <!-- اختيار الفئة -->
+            <!-- الفئة الرئيسية -->
             <div>
-                <label class="text-xs font-bold text-gray-500 mb-1 block">الفئة</label>
+                <label class="text-xs font-bold text-gray-500 mb-1 block">النوع</label>
                 <select id="acadCategory" class="w-full bg-gray-100 border-none rounded-xl p-3 text-sm">
                     <option value="courses">📚 كورس</option>
                     <option value="articles">📄 مقال</option>
@@ -62,10 +61,22 @@
                 </select>
             </div>
 
+            <!-- الفئة الفرعية -->
+            <div>
+                <label class="text-xs font-bold text-gray-500 mb-1 block">المجال</label>
+                <select id="acadSubcategory" class="w-full bg-gray-100 border-none rounded-xl p-3 text-sm">
+                    <option value="ريادة أعمال">🚀 ريادة أعمال</option>
+                    <option value="استثمار">💰 استثمار</option>
+                    <option value="تسويق">📢 تسويق</option>
+                    <option value="تطوير ذاتي">🧠 تطوير ذاتي</option>
+                    <option value="تقنية">💻 تقنية</option>
+                    <option value="أخرى">📦 أخرى</option>
+                </select>
+            </div>
+
             <input id="acadTitle" class="w-full bg-gray-100 border-none rounded-xl p-3 text-sm" placeholder="عنوان المحتوى">
             <textarea id="acadDesc" class="w-full bg-gray-100 border-none rounded-xl p-3 text-sm" rows="3" placeholder="التفاصيل..."></textarea>
             
-            <!-- حقل الرابط (يظهر تلقائياً عند اختيار فيديو) -->
             <div id="videoLinkGroup" class="hidden">
                 <input id="acadVideoLink" class="w-full bg-gray-100 border-none rounded-xl p-3 text-sm" placeholder="رابط فيديو يوتيوب...">
             </div>
@@ -95,21 +106,18 @@ waitForGlobals(() => {
             /(?:youtu\.be\/)([A-Za-z0-9_-]{11})/,
             /(?:youtube\.com\/shorts\/)([A-Za-z0-9_-]{11})/
         ];
-        for (let p of patterns) {
-            const m = url.match(p);
-            if (m) return m[1];
-        }
-        // fallback: أي 11 حرف متتالية
+        for (let p of patterns) { const m = url.match(p); if (m) return m[1]; }
         const fallback = url.match(/[A-Za-z0-9_-]{11}/);
         return fallback ? fallback[0] : null;
     }
 
     window.academy = {
         currentTab: 'courses',
+        currentSubcategory: 'الكل',
 
-        // تبديل التبويب (للعرض فقط)
         switchTab(tab) {
             this.currentTab = tab;
+            this.currentSubcategory = 'الكل';
             ['courses','articles','videos'].forEach(t => {
                 const btn = document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1));
                 btn.className = t === tab ? 'flex-1 py-2.5 rounded-xl font-bold text-xs bg-sky-500 text-white shadow-sm transition' : 'flex-1 py-2.5 rounded-xl font-bold text-xs text-gray-500 transition';
@@ -117,7 +125,6 @@ waitForGlobals(() => {
             this.loadData();
         },
 
-        // تحميل البطاقات حسب التبويب الحالي
         async loadData() {
             const grid = document.getElementById('academyGrid');
             if (!grid) return;
@@ -129,15 +136,32 @@ waitForGlobals(() => {
             try {
                 const q = query(collection(db, col), orderBy('createdAt', 'desc'));
                 const snap = await getDocs(q);
+                
+                // استخراج الفئات الفرعية الموجودة لبناء الأزرار
+                const subcats = new Set(['الكل']);
+                const docsArray = [];
+                snap.forEach(d => {
+                    const data = d.data();
+                    docsArray.push({ id: d.id, ...data });
+                    if (data.subcategory) subcats.add(data.subcategory);
+                });
+                
                 if (snap.empty) {
-                    const msgs = { courses: '📚 لا توجد كورسات بعد', articles: '📄 لا توجد مقالات بعد', videos: '🎬 لا توجد فيديوهات بعد' };
+                    const msgs = { courses: '📚 لا توجد كورسات', articles: '📄 لا توجد مقالات', videos: '🎬 لا توجد فيديوهات' };
                     grid.innerHTML = `<div class="text-center py-16 text-gray-400 text-sm">${msgs[this.currentTab]}</div>`;
+                    this.renderSubcategoryChips([]);
                     return;
                 }
 
+                // عرض أزرار الفئات الفرعية
+                const subcatsArray = Array.from(subcats);
+                this.renderSubcategoryChips(subcatsArray);
+
+                // تصفية حسب الفئة الفرعية المختارة
+                const filtered = this.currentSubcategory === 'الكل' ? docsArray : docsArray.filter(d => d.subcategory === this.currentSubcategory);
+
                 let html = '';
-                snap.forEach(doc => {
-                    const d = doc.data();
+                filtered.forEach(d => {
                     const title = d.title || 'بدون عنوان';
                     const desc = d.desc || '';
                     const shortDesc = desc.length > 80 ? desc.substring(0,80)+'...' : desc;
@@ -145,6 +169,7 @@ waitForGlobals(() => {
                     const authorPhoto = d.authorPhoto || '';
                     const date = d.createdAt ? new Date(d.createdAt.seconds*1000).toLocaleDateString('ar-EG') : '';
                     const videoLink = d.videoLink || '';
+                    const subcategory = d.subcategory || 'أخرى';
 
                     let icon = '📄';
                     if (this.currentTab === 'courses') icon = '📚';
@@ -152,13 +177,16 @@ waitForGlobals(() => {
 
                     html += `
                     <div class="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm cursor-pointer hover:shadow-md transition"
-                         data-id="${doc.id}" data-title="${title.replace(/"/g,'&quot;')}" data-author="${authorName.replace(/"/g,'&quot;')}"
+                         data-id="${d.id}" data-title="${title.replace(/"/g,'&quot;')}" data-author="${authorName.replace(/"/g,'&quot;')}"
                          data-photo="${authorPhoto.replace(/"/g,'&quot;')}" data-date="${date}" data-video="${videoLink.replace(/"/g,'&quot;')}"
                          data-tab="${this.currentTab}" onclick="academy.openFromElement(this)">
                         <div class="flex items-start gap-3">
                             <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-sky-100 to-blue-100 flex items-center justify-center text-xl flex-shrink-0">${icon}</div>
                             <div class="flex-1 min-w-0">
-                                <h4 class="font-extrabold text-gray-800 text-sm mb-1 line-clamp-1">${title}</h4>
+                                <div class="flex justify-between items-start">
+                                    <h4 class="font-extrabold text-gray-800 text-sm mb-1 line-clamp-1">${title}</h4>
+                                    <span class="text-[10px] bg-gray-100 px-2 py-0.5 rounded-full text-gray-600 whitespace-nowrap mr-2">${subcategory}</span>
+                                </div>
                                 <p class="text-xs text-gray-500 line-clamp-2 mb-2">${shortDesc}</p>
                                 <div class="flex items-center gap-1 text-[10px] text-gray-400">
                                     <img src="${authorPhoto}" class="w-4 h-4 rounded-full" onerror="this.style.display='none'">
@@ -170,10 +198,26 @@ waitForGlobals(() => {
                         </div>
                     </div>`;
                 });
-                grid.innerHTML = html;
+                grid.innerHTML = html || '<div class="text-center py-16 text-gray-400 text-sm">لا يوجد محتوى في هذه الفئة</div>';
             } catch(e) {
                 grid.innerHTML = '<div class="text-center py-16 text-red-400 text-sm">⚠️ فشل الاتصال</div>';
             }
+        },
+
+        renderSubcategoryChips(subcats) {
+            const container = document.getElementById('subcategoryFilter');
+            if (!container) return;
+            let html = '';
+            subcats.forEach(sub => {
+                const active = this.currentSubcategory === sub;
+                html += `<button class="whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-bold transition ${active ? 'bg-sky-500 text-white' : 'bg-gray-100 text-gray-600'}" onclick="academy.filterBySubcategory('${sub}')">${sub === 'الكل' ? '🌐 الكل' : sub}</button>`;
+            });
+            container.innerHTML = html;
+        },
+
+        filterBySubcategory(sub) {
+            this.currentSubcategory = sub;
+            this.loadData();
         },
 
         openFromElement(el) {
@@ -207,7 +251,6 @@ waitForGlobals(() => {
                 const videoID = extractYouTubeID(videoLink);
                 if (videoID) {
                     modalVideo.classList.remove('hidden');
-                    // إضافة iframe مع السماح بملء الشاشة
                     modalVideo.innerHTML = `<iframe class="w-full h-full" src="https://www.youtube.com/embed/${videoID}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="border:0; pointer-events:auto;"></iframe>`;
                     return;
                 } else {
@@ -217,7 +260,6 @@ waitForGlobals(() => {
                 }
             }
 
-            // تحميل النص
             modalContent.textContent = 'جاري التحميل...';
             modalContent.classList.remove('hidden');
             const map = { courses: 'academy_courses', articles: 'academy_articles', videos: 'academy_videos' };
@@ -233,10 +275,8 @@ waitForGlobals(() => {
             document.getElementById('modalVideo').innerHTML = '';
         },
 
-        // نافذة الإضافة (تظهر مع اختيار الفئة)
         openAddModal() {
             document.getElementById('acadModal').classList.remove('hidden');
-            // ضبط الفئة الافتراضية حسب التبويب الحالي
             document.getElementById('acadCategory').value = this.currentTab;
             this.toggleVideoLink();
         },
@@ -250,6 +290,7 @@ waitForGlobals(() => {
 
         async saveData() {
             const category = document.getElementById('acadCategory').value;
+            const subcategory = document.getElementById('acadSubcategory').value;
             const title = document.getElementById('acadTitle').value.trim();
             const desc = document.getElementById('acadDesc').value.trim();
             const videoLink = document.getElementById('acadVideoLink')?.value.trim() || '';
@@ -266,7 +307,7 @@ waitForGlobals(() => {
                 const col = map[category] || 'academy_courses';
 
                 const data = {
-                    title, desc,
+                    title, desc, subcategory,
                     authorName: profile.displayName || user.displayName || 'مستخدم',
                     authorPhoto: profile.photoURL || user.photoURL || '',
                     authorId: user.uid,
@@ -289,10 +330,7 @@ waitForGlobals(() => {
         }
     };
 
-    // مراقبة تغيير الفئة لإظهار حقل الرابط
     document.getElementById('acadCategory').addEventListener('change', () => window.academy.toggleVideoLink());
-
-    // تحميل أولي
     window.academy.loadData();
 });
 </script>
