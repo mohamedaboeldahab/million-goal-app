@@ -20,9 +20,9 @@
 
     <!-- ===== الأزرار ===== -->
     <div class="actions">
-        <button onclick="openAIAdvisor()">🧠 قيّم</button>
-        <button onclick="openFutureSim()">🔮 مستقبلك</button>
-        <button onclick="toggleLeaderboard()">🏆 صدارة</button>
+        <button onclick="engine.openAdvisor()">🧠 قيّم</button>
+        <button onclick="engine.openSimulation()">🔮 مستقبلك</button>
+        <button onclick="engine.toggleLeaderboard()">🏆 صدارة</button>
     </div>
 
     <!-- ===== لوحة الصدارة ===== -->
@@ -31,7 +31,7 @@
     <!-- ===== الإعدادات ===== -->
     <div class="panel settings">
         <div class="row">
-            <select id="goalSelect" onchange="handleGoalChange()">
+            <select id="goalSelect" onchange="engine.setGoal(this.value)">
                 <option value="10000">10,000 ج.م</option>
                 <option value="100000">100,000 ج.م</option>
                 <option value="500000">500,000 ج.م</option>
@@ -43,11 +43,11 @@
         <div id="nextMilestoneInfo" class="next-info">
             🎯 المعسكر القادم: <span id="nextAmount">0</span> ج.م | ⏳ المتبقي: <span id="remainingAmount">0</span> ج.م
         </div>
-        <button onclick="loadEngineData()">📊 تحميل من المحفظة</button>
+        <button onclick="engine.loadFromFirestore()">📊 تحميل من المحفظة</button>
     </div>
 
     <!-- ===== الجبل ===== -->
-    <div class="mountain">
+    <div class="mountain" id="mountainScene">
         <!-- غيوم متحركة -->
         <div class="clouds">
             <div class="cloud cloud1"></div>
@@ -67,8 +67,8 @@
         </div>
         <!-- مسار التسلق (SVG) -->
         <svg class="mountain-path" viewBox="0 0 500 400" preserveAspectRatio="none" id="mountainSvg">
-            <path id="zigzagPath" d="M250,380 L100,320 L400,260 L150,200 L350,140 L200,80 L300,30" fill="none" stroke="#94a3b8" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
-            <path id="progressPath" d="M250,380 L100,320 L400,260 L150,200 L350,140 L200,80 L300,30" fill="none" stroke="#fbbf24" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="1000" stroke-dashoffset="1000" />
+            <path id="mountainPath" d="M250,380 L100,320 L400,260 L150,200 L350,140 L200,80 L300,30" fill="none" stroke="#94a3b8" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+            <path id="progressPath" d="M250,380 L100,320 L400,260 L150,200 L350,140 L200,80 L300,30" fill="none" stroke="#fbbf24" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="1000" stroke-dashoffset="1000" />
         </svg>
         <!-- Avatar المتسلق -->
         <div id="climberAvatar" class="climber">🧗</div>
@@ -83,84 +83,235 @@
 </div>
 
 <script>
-    // ========== STATE ENGINE ==========
-    let state = {
-        goal: 1000000,
-        wealth: 0,
-        streak: 0,
-        sharkMood: 'motivator', // motivator | strict | adventurer
-        lastLoginDate: null
-    };
+// ========== محرك الحالة الموحد ==========
+const state = {
+    goal: 1000000,
+    wealth: 0,
+    streak: 0,
+    sharkMood: 'motivator', // 'motivator', 'strict', 'adventurer'
+    lastLoginDate: null,
+    milestones: []
+};
 
-    // ========== تحميل الحالة من localStorage ==========
-    function loadState() {
-        const saved = localStorage.getItem('sharkMountainState');
-        if (saved) {
-            try {
-                const parsed = JSON.parse(saved);
-                state = { ...state, ...parsed };
-            } catch(e) {}
-        }
-        document.getElementById('goalSelect').value = state.goal;
-        currentGoal = state.goal;
-        currentWealth = state.wealth;
+// دوال مساعدة للحالة
+function updateState(updates) {
+    Object.assign(state, updates);
+    localStorage.setItem('sharkMountainState', JSON.stringify(state));
+    engine.refresh();
+}
+
+function loadState() {
+    const saved = localStorage.getItem('sharkMountainState');
+    if (saved) {
+        try {
+            const parsed = JSON.parse(saved);
+            Object.assign(state, parsed);
+        } catch(e) {}
+    }
+    document.getElementById('goalSelect').value = state.goal;
+    document.getElementById('currentInput').value = state.wealth;
+    updateStreakDisplay();
+}
+
+const engine = {
+    // ========== تحديث شامل ==========
+    refresh() {
+        this.drawMountain();
+        this.updateProgress();
+        this.updateNextMilestone();
+        this.updateAvatar();
         document.getElementById('currentInput').value = state.wealth;
-    }
+    },
 
-    function saveState() {
-        state.goal = currentGoal;
-        state.wealth = currentWealth;
-        localStorage.setItem('sharkMountainState', JSON.stringify(state));
-    }
-
-    // ========== متغيرات ==========
-    let currentGoal = 1000000;
-    let currentWealth = 0;
-    const TOTAL_STAGES = 80;
-    const tips = [
-        "كل قرش تستثمره يرفعك درجة 🚀",
-        "لا تنظر للقمة كحلم، بل كمحطة 🌟",
-        "التوفير المنتظم هو وقود الصعود 💪",
-        "كلما علوت، اشتدت الرياح… اثبت! 💨",
-        "القروش العظيمة تبدأ بزعانف صغيرة 🦈",
-        "العادات اليومية تصنع مليونير الغد 📈",
-    ];
-
-    // ========== Streak ==========
-    function updateStreak() {
-        const today = new Date().toLocaleDateString('en-CA');
-        let last = localStorage.getItem('lastLoginDate');
-        let s = parseInt(localStorage.getItem('loginStreak') || '0');
-        if (last !== today) {
-            const yesterday = new Date(Date.now() - 86400000).toLocaleDateString('en-CA');
-            s = (last === yesterday) ? s + 1 : 1;
-            localStorage.setItem('lastLoginDate', today);
-            localStorage.setItem('loginStreak', s);
+    // ========== توليد 100 مرحلة (نمو أسي) ==========
+    generateMilestones() {
+        const stages = 100;
+        const milestones = [0];
+        for (let i = 1; i < stages; i++) {
+            const ratio = Math.pow(i / stages, 2.5);
+            const amount = Math.round(ratio * state.goal);
+            if (amount > milestones[milestones.length - 1]) milestones.push(amount);
         }
-        state.streak = s;
-        document.getElementById('streakDays').innerText = s;
-        if (s >= 7) document.getElementById('streakBadge').innerHTML = `🔥🔥 ${s} يوم ملتهب!`;
-    }
+        if (milestones[milestones.length - 1] !== state.goal) milestones.push(state.goal);
+        while (milestones.length < stages) {
+            const last = milestones[milestones.length - 1];
+            const prev = milestones[milestones.length - 2] || 0;
+            milestones.splice(milestones.length - 1, 0, Math.round((last + prev) / 2));
+        }
+        state.milestones = milestones.slice(0, stages);
+    },
 
-    // نصائح متحركة وتفاعل القرش
-    setInterval(() => {
-        const tip = tips[Math.floor(Math.random() * tips.length)];
-        document.getElementById('tipText').innerText = tip;
-    }, 6000);
+    // ========== حساب المرحلة الحالية ==========
+    getCurrentIndex() {
+        if (!state.milestones.length) this.generateMilestones();
+        let idx = 0;
+        for (let i = 0; i < state.milestones.length; i++) {
+            if (state.wealth >= state.milestones[i]) idx = i;
+        }
+        return idx;
+    },
 
-    // ========== شخصية القرش ==========
-    function setSharkMood(mood) {
-        state.sharkMood = mood;
-        const msgs = {
-            motivator: "🦈 أنت بطل! كل خطوة تقربك للقمة!",
-            strict: "🦈 الأرقام ما تكذبش... زود مدخراتك!",
-            adventurer: "🦈 خاطر عشان توصل للقمة بسرعة!"
+    // ========== رسم الجبل ==========
+    drawMountain() {
+        if (!state.milestones.length) this.generateMilestones();
+        const pathElement = document.getElementById('mountainPath');
+        const progressPath = document.getElementById('progressPath');
+        const stagesContainer = document.getElementById('stagesContainer');
+        if (!pathElement || !stagesContainer) return;
+
+        const pathLength = pathElement.getTotalLength();
+        if (!pathLength || pathLength === 0) {
+            requestAnimationFrame(() => this.drawMountain());
+            return;
+        }
+
+        const currentIndex = this.getCurrentIndex();
+        const displayEvery = 5; // نعرض نقطة كل 5 مراحل لتجنب التكدس
+
+        stagesContainer.innerHTML = '';
+        state.milestones.forEach((amount, idx) => {
+            if (idx % displayEvery !== 0 && idx !== 0 && idx !== state.milestones.length - 1) return;
+            const fraction = idx / (state.milestones.length - 1);
+            const point = pathElement.getPointAtLength(fraction * pathLength);
+            const completed = state.wealth >= amount;
+            const isCurrent = idx === currentIndex;
+            const label = amount >= 1000 ? (amount/1000).toFixed(1) + 'k' : amount;
+
+            const div = document.createElement('div');
+            div.className = `stage-point ${completed ? 'completed' : ''} ${isCurrent ? 'current' : ''}`;
+            div.style.left = (point.x / 5) + '%';
+            div.style.top = (point.y / 4) + '%';
+            div.innerHTML = `<span class="stage-num">${idx+1}</span><span class="stage-amount">${label}</span>`;
+            div.onclick = () => engine.showStageInfo(idx+1, amount, completed);
+            stagesContainer.appendChild(div);
+        });
+
+        // تحديث مسار التقدم
+        if (progressPath) {
+            const progressFraction = (currentIndex + 1) / state.milestones.length;
+            progressPath.style.strokeDashoffset = pathLength - (pathLength * progressFraction);
+        }
+        // تحديث الأفاتار
+        this.updateAvatar();
+    },
+
+    // ========== تحريك الأفاتار ==========
+    updateAvatar() {
+        const pathElement = document.getElementById('mountainPath');
+        const avatar = document.getElementById('climberAvatar');
+        if (!pathElement || !avatar) return;
+        const pathLength = pathElement.getTotalLength();
+        if (!pathLength) return;
+        const currentIndex = this.getCurrentIndex();
+        const fraction = currentIndex / (state.milestones.length - 1);
+        const point = pathElement.getPointAtLength(fraction * pathLength);
+        avatar.style.left = (point.x / 5) + '%';
+        avatar.style.top = (point.y / 4) + '%';
+    },
+
+    // ========== تحديث شريط التقدم ==========
+    updateProgress() {
+        const currentIndex = this.getCurrentIndex();
+        const progress = ((currentIndex + 1) / state.milestones.length) * 100;
+        document.getElementById('globalProgressFill').style.width = progress + '%';
+        document.getElementById('globalProgressText').innerText = Math.floor(progress) + '%';
+    },
+
+    // ========== تحديث المتبقي ==========
+    updateNextMilestone() {
+        const currentIndex = this.getCurrentIndex();
+        const nextAmount = currentIndex < state.milestones.length - 1 ? state.milestones[currentIndex + 1] : null;
+        const infoDiv = document.getElementById('nextMilestoneInfo');
+        if (nextAmount) {
+            document.getElementById('nextAmount').innerText = nextAmount.toLocaleString();
+            document.getElementById('remainingAmount').innerText = (nextAmount - state.wealth).toLocaleString();
+            infoDiv.style.display = 'block';
+        } else {
+            infoDiv.style.display = 'none';
+        }
+    },
+
+    // ========== تفاصيل المرحلة ==========
+    showStageInfo(num, amount, completed) {
+        const tip = document.getElementById('stageTooltip');
+        tip.classList.remove('hidden');
+        const rem = state.goal - amount;
+        tip.innerHTML = `
+            <b>🏁 مرحلة ${num}</b><br>
+            المبلغ: ${amount.toLocaleString()} ج.م<br>
+            ${completed ? '✅ مكتملة 🦈' : `⏳ المتبقي للقمة: ${rem.toLocaleString()} ج.م`}
+        `;
+        tip.scrollIntoView({ behavior: 'smooth' });
+    },
+
+    // ========== ضبط الهدف ==========
+    setGoal(value) {
+        const goal = parseInt(value);
+        if (isNaN(goal)) return;
+        updateState({ goal });
+    },
+
+    // ========== جلب بيانات المحفظة ==========
+    async loadFromFirestore() {
+        try {
+            const { collection, query, where, getDocs } = window.__firestore_helpers || {};
+            if (getDocs && window.auth?.currentUser) {
+                const q = query(collection(window.db, "assets"), where("userId", "==", window.auth.currentUser.uid));
+                const snapshot = await getDocs(q);
+                let total = 0;
+                snapshot.forEach(doc => { total += Number(doc.data().value) || 0; });
+                updateState({ wealth: Math.floor(total) });
+                engine.sharkTalk('motivator', '🦈 تم تحميل ثروتك! استمر في التسلق.');
+            } else {
+                engine.sharkTalk('strict', '⚠️ تعذر الاتصال بالمحفظة.');
+            }
+        } catch (e) {
+            engine.sharkTalk('strict', '⚠️ خطأ في تحميل المحفظة.');
+            console.error(e);
+        }
+    },
+
+    // ========== نظام القرش الذكي ==========
+    sharkTimeout: null,
+    sharkTalk(mood, message) {
+        if (this.sharkTimeout) clearTimeout(this.sharkTimeout);
+        const tooltip = document.getElementById('sharkTooltip');
+        document.getElementById('sharkMessage').innerText = message;
+        tooltip.classList.remove('hidden');
+        this.sharkTimeout = setTimeout(() => tooltip.classList.add('hidden'), 5000);
+    },
+
+    openAdvisor() {
+        const moods = ['motivator', 'strict', 'adventurer'];
+        const messages = {
+            motivator: '🦈 أنت بطل! كل خطوة تقربك للقمة!',
+            strict: '🦈 الأرقام واضحة... زود استثمارك!',
+            adventurer: '🦈 خاطر عشان توصل للقمة بسرعة!'
         };
-        showSharkTooltip(msgs[mood] || msgs.motivator);
-    }
+        const mood = moods[Math.floor(Math.random() * moods.length)];
+        engine.sharkTalk(mood, messages[mood]);
+    },
 
-    // ========== أدوات ==========
-    function toggleLeaderboard() {
+    openSimulation() {
+        const saving = prompt("كم تدخر شهرياً؟");
+        if (!saving || isNaN(saving)) return;
+        const monthlyRate = 0.015;
+        let months = 0;
+        let simulatedWealth = state.wealth;
+        while (simulatedWealth < state.goal && months < 1200) {
+            simulatedWealth = simulatedWealth * (1 + monthlyRate) + Number(saving);
+            months++;
+        }
+        if (months >= 1200) {
+            engine.sharkTalk('strict', '🦈 الهدف بعيد جداً... جرب تزود دخلك.');
+        } else {
+            const years = Math.floor(months / 12);
+            const remMonths = months % 12;
+            engine.sharkTalk('motivator', `💪 ستصل للقمة خلال ${years} سنة و ${remMonths} شهر.`);
+        }
+    },
+
+    toggleLeaderboard() {
         const p = document.getElementById('leaderboardPanel');
         p.classList.toggle('hidden');
         if (!p.classList.contains('hidden')) {
@@ -174,197 +325,57 @@
             p.innerHTML = html;
         }
     }
+};
 
-    function openAIAdvisor() {
-        const moods = ['motivator', 'strict', 'adventurer'];
-        setSharkMood(moods[Math.floor(Math.random() * moods.length)]);
+// ========== نظام Streak ==========
+function updateStreakDisplay() {
+    const today = new Date().toLocaleDateString('en-CA');
+    let last = localStorage.getItem('lastLoginDate');
+    let s = parseInt(localStorage.getItem('loginStreak') || '0');
+    if (last !== today) {
+        const yesterday = new Date(Date.now() - 86400000).toLocaleDateString('en-CA');
+        s = (last === yesterday) ? s + 1 : 1;
+        localStorage.setItem('lastLoginDate', today);
+        localStorage.setItem('loginStreak', s);
     }
+    state.streak = s;
+    document.getElementById('streakDays').innerText = s;
+    if (s >= 7) document.getElementById('streakBadge').innerHTML = `🔥🔥 ${s} يوم ملتهب!`;
+}
 
-    // ========== محاكاة المستقبل بعائد سنوي 20% (شهري 1.5%) ==========
-    function openFutureSim() {
-        const saving = prompt("كم تدخر شهرياً؟");
-        if (!saving || isNaN(saving)) return;
-        const monthlyRate = 0.015; // 1.5% شهرياً = 20% سنوي تقريباً
-        let months = 0;
-        let simulatedWealth = currentWealth;
-        const maxMonths = 1200; // 100 سنة كحد أقصى
-        while (simulatedWealth < currentGoal && months < maxMonths) {
-            simulatedWealth = simulatedWealth * (1 + monthlyRate) + Number(saving);
-            months++;
-        }
-        if (months >= maxMonths) {
-            showSharkTooltip("🦈 الهدف بعيد جداً... جرب تزود دخلك أو استثمارك.");
-        } else {
-            const years = Math.floor(months / 12);
-            const remMonths = months % 12;
-            showSharkTooltip(`💪 بمعدل ادخار ${saving} ج.م شهرياً وعائد سنوي 20%، ستصل للقمة خلال ${years} سنة و ${remMonths} شهر.`);
-        }
-    }
+// ========== نصائح القرش ==========
+const tips = [
+    "كل قرش تستثمره يرفعك درجة 🚀",
+    "لا تنظر للقمة كحلم، بل كمحطة 🌟",
+    "التوفير المنتظم هو وقود الصعود 💪",
+    "كلما علوت، اشتدت الرياح… اثبت! 💨",
+    "القروش العظيمة تبدأ بزعانف صغيرة 🦈",
+    "العادات اليومية تصنع مليونير الغد 📈",
+];
+setInterval(() => {
+    document.getElementById('tipText').innerText = tips[Math.floor(Math.random() * tips.length)];
+}, 6000);
 
-    function showSharkTooltip(msg) {
-        const tooltip = document.getElementById('sharkTooltip');
-        document.getElementById('sharkMessage').innerText = msg;
-        tooltip.classList.remove('hidden');
-        setTimeout(() => tooltip.classList.add('hidden'), 5000);
-    }
+// ========== بدء التشغيل ==========
+loadState();
+updateStreakDisplay();
+requestAnimationFrame(() => {
+    engine.generateMilestones();
+    engine.refresh();
+    engine.sharkTalk('motivator', '🦈 أهلاً بك في رحلة المليونير! اضغط على المراحل لترى التفاصيل.');
+});
 
-    // ========== توليد المراحل ==========
-    function generateMilestones(goal) {
-        const stages = TOTAL_STAGES;
-        const milestones = [0];
-        for (let i = 1; i < stages; i++) {
-            const ratio = Math.pow(i / stages, 2.5);
-            const amount = Math.round(ratio * goal);
-            if (amount > milestones[milestones.length - 1]) milestones.push(amount);
-        }
-        if (milestones[milestones.length - 1] !== goal) milestones.push(goal);
-        while (milestones.length < stages) {
-            const last = milestones[milestones.length - 1];
-            const prev = milestones[milestones.length - 2] || 0;
-            milestones.splice(milestones.length - 1, 0, Math.round((last + prev) / 2));
-        }
-        return milestones.slice(0, stages);
-    }
+// ========== معالجة تغيير حجم النافذة ==========
+window.addEventListener('resize', () => {
+    engine.refresh();
+});
 
-    // ========== جلب بيانات المحفظة ==========
-    async function loadEngineData() {
-        try {
-            const { collection, query, where, getDocs } = window.__firestore_helpers || {};
-            if (getDocs && window.auth?.currentUser) {
-                const q = query(collection(window.db, "assets"), where("userId", "==", window.auth.currentUser.uid));
-                const snapshot = await getDocs(q);
-                let total = 0;
-                snapshot.forEach(doc => { total += Number(doc.data().value) || 0; });
-                currentWealth = Math.floor(total);
-                document.getElementById('currentInput').value = currentWealth;
-                state.wealth = currentWealth;
-                saveState();
-                setSharkMood('motivator');
-            } else {
-                console.warn('Firestore helpers not available');
-            }
-        } catch (e) {
-            console.error('خطأ في تحميل بيانات المحفظة:', e);
-            showSharkTooltip("⚠️ حدث خطأ أثناء تحميل المحفظة. تأكد من الاتصال.");
-        }
-        drawMountain();
-    }
-
-    // ========== رسم الجبل ==========
-    function drawMountain() {
-        const milestones = generateMilestones(currentGoal);
-        const container = document.getElementById('stagesContainer');
-        const svg = document.getElementById('mountainSvg');
-        const pathElement = document.getElementById('zigzagPath');
-        const progressPathElement = document.getElementById('progressPath');
-        const avatar = document.getElementById('climberAvatar');
-        if (!container || !pathElement) return;
-
-        // حساب المرحلة الحالية
-        let currentIndex = 0;
-        for (let i = 0; i < milestones.length; i++) {
-            if (currentWealth >= milestones[i]) currentIndex = i;
-        }
-
-        const progress = ((currentIndex + 1) / milestones.length) * 100;
-        document.getElementById('globalProgressFill').style.width = progress + '%';
-        document.getElementById('globalProgressText').innerText = Math.floor(progress) + '%';
-
-        // تحديث المتبقي للقمة القادمة
-        const nextAmount = currentIndex < milestones.length - 1 ? milestones[currentIndex + 1] : null;
-        const nextInfo = document.getElementById('nextMilestoneInfo');
-        if (nextAmount) {
-            document.getElementById('nextAmount').innerText = nextAmount.toLocaleString();
-            document.getElementById('remainingAmount').innerText = (nextAmount - currentWealth).toLocaleString();
-            nextInfo.style.display = 'block';
-        } else {
-            nextInfo.style.display = 'none';
-        }
-
-        // حساب مواقع النقاط على المسار باستخدام getPointAtLength
-        const pathLength = pathElement.getTotalLength();
-        if (!pathLength) return;
-
-        // إنشاء نقاط المراحل
-        container.innerHTML = '';
-        milestones.forEach((amount, idx) => {
-            const fraction = idx / (milestones.length - 1);
-            const point = pathElement.getPointAtLength(fraction * pathLength);
-            const completed = currentWealth >= amount;
-            const isCurrent = idx === currentIndex;
-            const isNext = idx === currentIndex + 1;
-            const label = amount >= 1000 ? (amount/1000).toFixed(1) + 'k' : amount;
-
-            const div = document.createElement('div');
-            div.className = `stage-point ${completed ? 'completed' : ''} ${isCurrent ? 'current' : ''} ${isNext ? 'next' : ''}`;
-            div.style.left = point.x + 'px';
-            div.style.top = point.y + 'px';
-            div.innerHTML = `
-                <span class="stage-num">${idx+1}</span>
-                <span class="stage-amount">${label}</span>
-                ${isCurrent ? '<span class="shark-icon">🦈</span>' : ''}
-            `;
-            div.onclick = () => showStageInfo(idx+1, amount, completed);
-            container.appendChild(div);
-        });
-
-        // وضع avatar على النقطة الحالية
-        if (avatar) {
-            const currentPoint = pathElement.getPointAtLength((currentIndex / (milestones.length - 1)) * pathLength);
-            avatar.style.left = currentPoint.x + 'px';
-            avatar.style.top = currentPoint.y + 'px';
-        }
-
-        // تحديث مسار التقدم
-        if (progressPathElement) {
-            const progressFraction = (currentIndex + 1) / milestones.length;
-            progressPathElement.style.transition = 'stroke-dashoffset 0.6s ease';
-            progressPathElement.style.strokeDashoffset = pathLength - (pathLength * progressFraction);
-        }
-
-        // إخفاء tooltip المرحلة
+// إخفاء tooltip المرحلة عند النقر خارجه
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('.stage-point')) {
         document.getElementById('stageTooltip').classList.add('hidden');
-        saveState();
     }
-
-    function showStageInfo(num, amount, completed) {
-        const tip = document.getElementById('stageTooltip');
-        tip.classList.remove('hidden');
-        const rem = currentGoal - amount;
-        tip.innerHTML = `
-            <b>🏁 مرحلة ${num}</b><br>
-            المبلغ: ${amount.toLocaleString()} ج.م<br>
-            ${completed ? '✅ مكتملة 🦈' : `⏳ المتبقي للقمة: ${rem.toLocaleString()} ج.م`}
-        `;
-        tip.scrollIntoView({ behavior: 'smooth' });
-    }
-
-    function handleGoalChange() {
-        currentGoal = parseInt(document.getElementById('goalSelect').value);
-        state.goal = currentGoal;
-        saveState();
-        drawMountain();
-    }
-
-    // ========== بدء التشغيل ==========
-    loadState();
-    updateStreak();
-    
-    if (window.__firestore_helpers && window.auth?.currentUser) {
-        loadEngineData();
-    } else {
-        drawMountain();
-    }
-
-    // تفعيل tooltip القرش عند أول تحميل
-    setTimeout(() => {
-        showSharkTooltip("🦈 أهلاً بك في رحلة المليونير! اضغط على المراحل لترى التفاصيل.");
-    }, 1500);
-
-    // تحديث المسار عند تغيير حجم النافذة
-    window.addEventListener('resize', () => {
-        if (TOTAL_STAGES) drawMountain();
-    });
+});
 </script>
 
 <style>
@@ -444,10 +455,8 @@
     }
     .stage-point.completed { background: linear-gradient(135deg, #0ea5e9, #22c55e); color: white; }
     .stage-point.current { background: #fbbf24; border: 2px solid white; transform: translate(-50%, -50%) scale(1.3); z-index: 10; }
-    .stage-point.next { background: #bae6fd; }
     .stage-num { font-weight: 800; font-size: 11px; }
     .stage-amount { font-size: 7px; }
-    .shark-icon { position: absolute; top: -20px; font-size: 18px; }
 
     /* Climber Avatar */
     .climber { position: absolute; z-index: 10; font-size: 26px; transition: all 0.6s ease; transform: translate(-50%, -50%); filter: drop-shadow(0 4px 4px rgba(0,0,0,0.4)); }
