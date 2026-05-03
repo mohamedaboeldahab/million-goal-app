@@ -12,19 +12,26 @@
     <!-- إعدادات سريعة -->
     <div class="bg-white rounded-2xl p-4 shadow mb-5 border border-gray-100">
         <div class="flex gap-2 items-end flex-wrap">
-            <div class="flex-1 min-w-[120px]">
+            <!-- اختيار الهدف بقائمة منسدلة -->
+            <div class="flex-1 min-w-[140px]">
                 <label class="text-xs font-bold text-gray-500 block mb-1">🎯 الهدف</label>
-                <input type="number" id="goalInput" value="1000000" class="w-full bg-gray-50 border rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-sky-400">
+                <select id="goalSelect" class="w-full bg-gray-50 border rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-sky-400" onchange="handleGoalChange()">
+                    <option value="10000">10,000 ج.م</option>
+                    <option value="100000">100,000 ج.م</option>
+                    <option value="500000">500,000 ج.م</option>
+                    <option value="1000000" selected>1,000,000 ج.م (المليون)</option>
+                    <option value="5000000">5,000,000 ج.م</option>
+                    <option value="custom">✏️ غير ذلك...</option>
+                </select>
+                <input type="number" id="customGoalInput" placeholder="أدخل هدفك" class="mt-2 w-full bg-gray-50 border rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-sky-400 hidden" value="" oninput="buildRoadmap()">
             </div>
+
             <div class="flex-1 min-w-[120px]">
                 <label class="text-xs font-bold text-gray-500 block mb-1">💰 ثروتي الحالية</label>
                 <input type="number" id="currentInput" value="0" class="w-full bg-gray-50 border rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-sky-400" readonly>
             </div>
-            <button onclick="buildRoadmap()" class="bg-sky-500 text-white font-bold py-2.5 px-5 rounded-xl shadow hover:bg-sky-600 active:scale-95 transition">
-                🔁 تحديث
-            </button>
             <button onclick="loadEngineData()" class="bg-gray-100 text-gray-700 font-bold py-2.5 px-4 rounded-xl shadow hover:bg-gray-200 active:scale-95 transition text-sm whitespace-nowrap">
-                📊 تحميل بياناتي
+                📊 تحميل من المحفظة
             </button>
         </div>
     </div>
@@ -39,6 +46,27 @@
 </div>
 
 <script>
+    // متغيرات عالمية
+    let currentGoal = 1000000;
+
+    // معالجة تغيير القائمة المنسدلة
+    function handleGoalChange() {
+        const select = document.getElementById('goalSelect');
+        const customInput = document.getElementById('customGoalInput');
+        if (select.value === 'custom') {
+            customInput.classList.remove('hidden');
+            customInput.focus();
+            // إذا كان هناك قيمة مدخلة مسبقاً نستخدمها
+            if (customInput.value) {
+                currentGoal = parseFloat(customInput.value) || 1000000;
+            }
+        } else {
+            customInput.classList.add('hidden');
+            currentGoal = parseFloat(select.value);
+        }
+        buildRoadmap();
+    }
+
     // توليد 100 معلم من 0 إلى الهدف بقفزات متزايدة (نمو أسي)
     function generateMilestones(goal) {
         const stages = 100;
@@ -62,6 +90,7 @@
         return milestones.slice(0, stages);
     }
 
+    // جلب بيانات المحفظة من Firestore
     async function loadEngineData() {
         try {
             const { collection, query, where, getDocs } = window.__firestore_helpers || {};
@@ -80,19 +109,24 @@
         buildRoadmap();
     }
 
+    // بناء الخريطة
     function buildRoadmap() {
-        const goal = parseFloat(document.getElementById('goalInput').value);
+        // تحديث الهدف من الحقل المخصص إذا كان مفتوحاً
+        const customInput = document.getElementById('customGoalInput');
+        if (!customInput.classList.contains('hidden') && customInput.value) {
+            currentGoal = parseFloat(customInput.value) || currentGoal;
+        }
+
         let currentWealth = parseFloat(document.getElementById('currentInput').value);
-        if (isNaN(goal) || isNaN(currentWealth) || goal <= 0) {
-            alert("أدخل أرقامًا صحيحة");
+        if (isNaN(currentGoal) || isNaN(currentWealth) || currentGoal <= 0) {
             return;
         }
 
-        const milestones = generateMilestones(goal);
+        const milestones = generateMilestones(currentGoal);
         const board = document.getElementById('gameBoard');
         if (!board) return;
 
-        const COLS = 5; // ثابت 5 أعمدة
+        const COLS = 5;
         const totalRows = Math.ceil(milestones.length / COLS);
         let html = '';
 
@@ -130,8 +164,7 @@
     function showStageInfo(num, amount, completed) {
         const tip = document.getElementById('stageTooltip');
         tip.classList.remove('hidden');
-        const goal = parseFloat(document.getElementById('goalInput').value);
-        const remaining = goal - amount;
+        const remaining = currentGoal - amount;
         tip.innerHTML = `
             <div class="flex items-center gap-2 mb-1">
                 <span class="text-lg">🏁</span>
@@ -148,20 +181,18 @@
         document.getElementById('stageTooltip').classList.add('hidden');
     }
 
-    // تحميل أولي تلقائي
+    // بدء أولي
     if (window.__firestore_helpers && window.auth?.currentUser) {
         loadEngineData();
     } else {
-        document.getElementById('currentInput').value = '0';
         buildRoadmap();
     }
 </script>
 
 <style>
-    /* توسعة مساحة الصفحة الرئيسية لهذا المحتوى */
     .roadmap-container {
         padding: 8px;
-        margin: 0 -12px; /* تعويض padding الحاوية الرئيسية */
+        margin: 0 -12px;
     }
 
     .game-board-wrapper {
@@ -195,7 +226,7 @@
         transition: all 0.2s;
         cursor: pointer;
         box-shadow: 0 1px 3px rgba(0,0,0,0.02);
-        font-size: 11px; /* تصغير الخطوط لضمان المساحة */
+        font-size: 11px;
     }
 
     .cell.empty {
