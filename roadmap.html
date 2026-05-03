@@ -48,37 +48,24 @@
 
     <!-- ===== الجبل ===== -->
     <div class="mountain" id="mountainScene">
-        <!-- غيوم متحركة -->
         <div class="clouds">
             <div class="cloud cloud1"></div>
             <div class="cloud cloud2"></div>
             <div class="cloud cloud3"></div>
         </div>
-        <!-- نجوم فوق القمة -->
         <div class="stars">
-            <span class="star">✨</span>
-            <span class="star">✨</span>
-            <span class="star">✨</span>
+            <span class="star">✨</span><span class="star">✨</span><span class="star">✨</span>
         </div>
-        <!-- القمة -->
-        <div class="peak">
-            <span class="crown">👑</span>
-            <span>القمة</span>
-        </div>
-        <!-- مسار التسلق (SVG) -->
+        <div class="peak"><span class="crown">👑</span><span>القمة</span></div>
         <svg class="mountain-path" viewBox="0 0 500 400" preserveAspectRatio="none" id="mountainSvg">
             <path id="mountainPath" d="M250,380 L100,320 L400,260 L150,200 L350,140 L200,80 L300,30" fill="none" stroke="#94a3b8" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
             <path id="progressPath" d="M250,380 L100,320 L400,260 L150,200 L350,140 L200,80 L300,30" fill="none" stroke="#fbbf24" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="1000" stroke-dashoffset="1000" />
         </svg>
-        <!-- Avatar المتسلق -->
         <div id="climberAvatar" class="climber">🧗</div>
-        <!-- Tooltip عائم للقرش -->
         <div id="sharkTooltip" class="shark-tooltip hidden">🦈 <span id="sharkMessage"></span></div>
-        <!-- مراحل الجبل (نقاط) -->
         <div id="stagesContainer" class="stages"></div>
     </div>
 
-    <!-- ===== tooltip ===== -->
     <div id="stageTooltip" class="panel hidden"></div>
 </div>
 
@@ -102,10 +89,7 @@ function updateState(updates) {
 function loadState() {
     const saved = localStorage.getItem('sharkMountainState');
     if (saved) {
-        try {
-            const parsed = JSON.parse(saved);
-            Object.assign(state, parsed);
-        } catch(e) {}
+        try { Object.assign(state, JSON.parse(saved)); } catch(e) {}
     }
     document.getElementById('goalSelect').value = state.goal;
     document.getElementById('currentInput').value = state.wealth;
@@ -130,10 +114,13 @@ const engine = {
             if (amount > milestones[milestones.length - 1]) milestones.push(amount);
         }
         if (milestones[milestones.length - 1] !== state.goal) milestones.push(state.goal);
-        while (milestones.length < stages) {
+        // منع التكرار اللانهائي
+        let safety = 0;
+        while (milestones.length < stages && safety < 200) {
             const last = milestones[milestones.length - 1];
             const prev = milestones[milestones.length - 2] || 0;
             milestones.splice(milestones.length - 1, 0, Math.round((last + prev) / 2));
+            safety++;
         }
         state.milestones = milestones.slice(0, stages);
     },
@@ -161,25 +148,25 @@ const engine = {
         }
 
         const currentIndex = this.getCurrentIndex();
-        // نختار عدد النقاط المعروضة (20 نقطة) موزعة بالتساوي على طول المسار
         const visibleStages = 20;
         const step = Math.max(1, Math.floor(state.milestones.length / visibleStages));
 
         stagesContainer.innerHTML = '';
         for (let i = 0; i < state.milestones.length; i += step) {
-            // نضيف النقطة الأخيرة دائمًا
             if (i >= state.milestones.length - 1 && i > 0) i = state.milestones.length - 1;
             const amount = state.milestones[i];
             const completed = state.wealth >= amount;
             const isCurrent = i === currentIndex;
             const label = amount >= 1000 ? (amount/1000).toFixed(1) + 'k' : amount;
-            const fraction = i / (state.milestones.length - 1);
+            
+            const fraction = state.milestones.length > 1 ? i / (state.milestones.length - 1) : 0;
             const point = pathElement.getPointAtLength(fraction * pathLength);
 
             const div = document.createElement('div');
             div.className = `stage-point ${completed ? 'completed' : ''} ${isCurrent ? 'current' : ''}`;
-            div.style.left = (point.x / 5) + '%';
-            div.style.top = (point.y / 4) + '%';
+            // إصلاح: استخدام px مباشرة داخل حاوية نسبية
+            div.style.left = point.x + 'px';
+            div.style.top = point.y + 'px';
             div.innerHTML = `<span class="stage-num">${i+1}</span><span class="stage-amount">${label}</span>`;
             div.onclick = () => engine.showStageInfo(i+1, amount, completed);
             stagesContainer.appendChild(div);
@@ -188,7 +175,7 @@ const engine = {
         }
 
         if (progressPath) {
-            const progressFraction = (currentIndex + 1) / state.milestones.length;
+            const progressFraction = state.milestones.length > 1 ? (currentIndex + 1) / state.milestones.length : 0;
             progressPath.style.strokeDashoffset = pathLength - (pathLength * progressFraction);
         }
         this.updateAvatar();
@@ -197,17 +184,18 @@ const engine = {
     updateAvatar() {
         const pathElement = document.getElementById('mountainPath');
         const avatar = document.getElementById('climberAvatar');
-        if (!pathElement || !avatar) return;
+        if (!pathElement || !avatar || !state.milestones.length) return;
         const pathLength = pathElement.getTotalLength();
         if (!pathLength) return;
         const currentIndex = this.getCurrentIndex();
-        const fraction = currentIndex / (state.milestones.length - 1);
+        const fraction = state.milestones.length > 1 ? currentIndex / (state.milestones.length - 1) : 0;
         const point = pathElement.getPointAtLength(fraction * pathLength);
-        avatar.style.left = (point.x / 5) + '%';
-        avatar.style.top = (point.y / 4) + '%';
+        avatar.style.left = point.x + 'px';
+        avatar.style.top = point.y + 'px';
     },
 
     updateProgress() {
+        if (!state.milestones.length) return;
         const currentIndex = this.getCurrentIndex();
         const progress = ((currentIndex + 1) / state.milestones.length) * 100;
         document.getElementById('globalProgressFill').style.width = progress + '%';
@@ -215,6 +203,7 @@ const engine = {
     },
 
     updateNextMilestone() {
+        if (!state.milestones.length) return;
         const currentIndex = this.getCurrentIndex();
         const nextAmount = currentIndex < state.milestones.length - 1 ? state.milestones[currentIndex + 1] : null;
         const infoDiv = document.getElementById('nextMilestoneInfo');
@@ -236,7 +225,7 @@ const engine = {
             المبلغ: ${amount.toLocaleString()} ج.م<br>
             ${completed ? '✅ مكتملة 🦈' : `⏳ المتبقي للقمة: ${rem.toLocaleString()} ج.م`}
         `;
-        tip.scrollIntoView({ behavior: 'smooth' });
+        // إصلاح: إزالة scrollIntoView التي كانت تقفز بالصفحة
     },
 
     setGoal(value) {
@@ -268,19 +257,19 @@ const engine = {
     sharkTalk(mood, message) {
         if (this.sharkTimeout) clearTimeout(this.sharkTimeout);
         const tooltip = document.getElementById('sharkTooltip');
+        if (!tooltip) return;
         document.getElementById('sharkMessage').innerText = message;
         tooltip.classList.remove('hidden');
         this.sharkTimeout = setTimeout(() => tooltip.classList.add('hidden'), 5000);
     },
 
     openAdvisor() {
-        const moods = ['motivator', 'strict', 'adventurer'];
         const messages = {
             motivator: '🦈 أنت بطل! كل خطوة تقربك للقمة!',
             strict: '🦈 الأرقام واضحة... زود استثمارك!',
             adventurer: '🦈 خاطر عشان توصل للقمة بسرعة!'
         };
-        const mood = moods[Math.floor(Math.random() * moods.length)];
+        const mood = ['motivator', 'strict', 'adventurer'][Math.floor(Math.random() * 3)];
         engine.sharkTalk(mood, messages[mood]);
     },
 
@@ -330,8 +319,12 @@ function updateStreakDisplay() {
         localStorage.setItem('loginStreak', s);
     }
     state.streak = s;
-    document.getElementById('streakDays').innerText = s;
-    if (s >= 7) document.getElementById('streakBadge').innerHTML = `🔥🔥 ${s} يوم ملتهب!`;
+    const badge = document.getElementById('streakDays');
+    if (badge) badge.innerText = s;
+    if (s >= 7) {
+        const streakBadge = document.getElementById('streakBadge');
+        if (streakBadge) streakBadge.innerHTML = `🔥🔥 ${s} يوم ملتهب!`;
+    }
 }
 
 const tips = [
@@ -343,7 +336,8 @@ const tips = [
     "العادات اليومية تصنع مليونير الغد 📈",
 ];
 setInterval(() => {
-    document.getElementById('tipText').innerText = tips[Math.floor(Math.random() * tips.length)];
+    const tipEl = document.getElementById('tipText');
+    if (tipEl) tipEl.innerText = tips[Math.floor(Math.random() * tips.length)];
 }, 6000);
 
 loadState();
@@ -360,7 +354,8 @@ window.addEventListener('resize', () => {
 
 document.addEventListener('click', (e) => {
     if (!e.target.closest('.stage-point')) {
-        document.getElementById('stageTooltip').classList.add('hidden');
+        const tip = document.getElementById('stageTooltip');
+        if (tip) tip.classList.add('hidden');
     }
 });
 </script>
@@ -392,12 +387,7 @@ document.addEventListener('click', (e) => {
 
     .mountain {
         background: linear-gradient(to top, #1e293b, #334155, #38bdf8);
-        padding: 0 0 20px 0;
-        border-radius: 20px;
-        position: relative;
-        height: 400px;
-        overflow: hidden;
-        margin: 15px 0;
+        padding: 0; border-radius: 20px; position: relative; height: 400px; overflow: hidden; margin: 15px 0;
     }
     .clouds { position: absolute; top: 20px; left: 0; right: 0; display: flex; justify-content: space-around; opacity: 0.4; pointer-events: none; }
     .cloud { width: 60px; height: 20px; background: white; border-radius: 50px; animation: moveCloud 15s linear infinite; }
@@ -419,20 +409,10 @@ document.addEventListener('click', (e) => {
     .stages { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2; }
     .stage-point {
         position: absolute;
-        width: 44px;
-        height: 44px;
-        background: white;
-        border-radius: 22px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        font-size: 10px;
-        color: #0f172a;
-        cursor: pointer;
-        transition: 0.3s;
-        transform: translate(-50%, -50%);
-        box-shadow: 0 3px 8px rgba(0,0,0,0.25);
+        width: 44px; height: 44px; background: white; border-radius: 22px;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        font-size: 10px; color: #0f172a; cursor: pointer; transition: 0.3s;
+        transform: translate(-50%, -50%); box-shadow: 0 3px 8px rgba(0,0,0,0.25);
     }
     .stage-point.completed { background: linear-gradient(135deg, #0ea5e9, #22c55e); color: white; }
     .stage-point.current { background: #fbbf24; border: 3px solid white; transform: translate(-50%, -50%) scale(1.35); z-index: 10; }
@@ -441,18 +421,9 @@ document.addEventListener('click', (e) => {
 
     .climber { position: absolute; z-index: 10; font-size: 30px; transition: all 0.6s ease; transform: translate(-50%, -50%); filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5)); }
     .shark-tooltip {
-        position: fixed;
-        bottom: 100px;
-        left: 10px;
-        background: #1e293b;
-        color: white;
-        padding: 12px;
-        border-radius: 14px;
-        font-size: 14px;
-        z-index: 50;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-        animation: fadeIn 0.3s;
-        max-width: 220px;
+        position: fixed; bottom: 100px; left: 10px; background: #1e293b; color: white;
+        padding: 12px; border-radius: 14px; font-size: 14px; z-index: 50;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.5); animation: fadeIn 0.3s; max-width: 220px;
     }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     .leader-item { font-size: 13px; padding: 4px 0; border-bottom: 1px solid #e2e8f0; }
