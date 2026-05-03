@@ -609,7 +609,8 @@ async updateTotalBalance() {
             </div>`;
         } else {
             html += `
-            <p class="text-gray-700 text-sm leading-relaxed mb-4 whitespace-pre-wrap">${p.content}</p>`;
+            
+           <p class="text-gray-700 text-sm leading-relaxed mb-4 whitespace-pre-wrap break-words overflow-hidden w-full max-w-full">${p.content}</p>`;
         }
 
         html += `
