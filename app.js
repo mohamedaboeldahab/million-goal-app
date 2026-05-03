@@ -770,11 +770,17 @@ async updateTotalBalance() {
     },
 
     async updateUserProfile(updates) {
-        const uid = auth.currentUser.uid;
-        await updateDoc(doc(db, "users", uid), updates);
-        const userBtn = document.getElementById('userBtn');
-        if (updates.photoURL && userBtn) userBtn.innerHTML = `<img src="${fixPhotoUrl(updates.photoURL)}" class="w-full h-full object-cover rounded-2xl" loading="lazy">`;
-    },
+    const uid = auth.currentUser.uid;
+    const ref = doc(db, "users", uid);
+    // استخدام merge: true لدمج البيانات وليس استبدالها بالكامل
+    await setDoc(ref, updates, { merge: true });
+    
+    // تحديث صورة زر المستخدم إذا غُيّرت الصورة
+    const userBtn = document.getElementById('userBtn');
+    if (updates.photoURL && userBtn) {
+        userBtn.innerHTML = `<img src="${fixPhotoUrl(updates.photoURL)}" class="w-full h-full object-cover rounded-2xl" loading="lazy">`;
+    }
+},
 
     async addComment(postId) {
         const input = document.getElementById(`comm_${postId}`);
