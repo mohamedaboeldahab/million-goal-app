@@ -731,19 +731,50 @@ async updateTotalBalance() {
         }
 
         document.getElementById('avatarOverlay')?.addEventListener('click', () => document.getElementById('avatarFileInput').click());
-        document.getElementById('avatarFileInput')?.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = async () => {
-                const dataUrl = reader.result;
-                if (avatarImg) avatarImg.src = dataUrl;
-                let ok = false;
-                try { await this.updateUserProfile({ photoURL: dataUrl }); ok = true; } catch(e) {}
-                this.showToast(ok ? 'تم تغيير الصورة وحفظها ☁️' : 'تم تغيير الصورة (محلياً) ⚠️');
-            };
-            reader.readAsDataURL(file);
-        });
+       document.getElementById('avatarFileInput')?.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // ضغط الصورة إلى أبعاد معقولة (مثلاً 200x200) وتقليل الجودة
+    const reader = new FileReader();
+    reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
+            // إنشاء عنصر canvas لتغيير الحجم
+            const canvas = document.createElement('canvas');
+            const maxSize = 200; // أقصى عرض/ارتفاع
+            let width = img.width;
+            let height = img.height;
+            if (width > height) {
+                if (width > maxSize) {
+                    height *= maxSize / width;
+                    width = maxSize;
+                }
+            } else {
+                if (height > maxSize) {
+                    width *= maxSize / height;
+                    height = maxSize;
+                }
+            }
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+            // استخراج base64 بجودة 0.6
+            const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.6);
+            
+            // عرض الصورة مباشرة
+            if (avatarImg) avatarImg.src = compressedDataUrl;
+            
+            // حفظ في Firestore
+            this.updateUserProfile({ photoURL: compressedDataUrl })
+                .then(() => this.showToast('تم تغيير الصورة وحفظها ☁️'))
+                .catch(() => this.showToast('تعذر حفظ الصورة (حاول مجدداً) ⚠️'));
+        };
+        img.src = event.target.result;
+    };
+    reader.readAsDataURL(file);
+});
     },
 
     showToast(message) {
@@ -769,19 +800,18 @@ async updateTotalBalance() {
         return defaultProfile;
     },
 
-    async updateUserProfile(updates) {
+async updateUserProfile(updates) {
     const uid = auth.currentUser.uid;
     const ref = doc(db, "users", uid);
-    // استخدام merge: true لدمج البيانات وليس استبدالها بالكامل
+    // استخدام merge: true لدمج البيانات
     await setDoc(ref, updates, { merge: true });
     
-    // تحديث صورة زر المستخدم إذا غُيّرت الصورة
+    // تحديث صورة زر المستخدم فوراً إذا تغيّرت
     const userBtn = document.getElementById('userBtn');
     if (updates.photoURL && userBtn) {
         userBtn.innerHTML = `<img src="${fixPhotoUrl(updates.photoURL)}" class="w-full h-full object-cover rounded-2xl" loading="lazy">`;
     }
 },
-
     async addComment(postId) {
         const input = document.getElementById(`comm_${postId}`);
         if (!input?.value.trim()) return;
