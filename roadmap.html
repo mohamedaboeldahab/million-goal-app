@@ -1,211 +1,142 @@
 <div class="roadmap-container">
-    <!-- الهيدر -->
-    <div class="bg-sky-500 rounded-3xl p-6 text-white mb-4 shadow-xl shadow-sky-200">
-        <h2 class="text-2xl font-black mb-1">⛰️ تسلق جبل المليونير</h2>
-        <p class="text-sm opacity-90 font-bold">كل خطوة تصعدك نحو القمة</p>
-        <!-- الشعلة والـ Streak -->
-        <div class="mt-3 flex items-center gap-3 text-xs flex-wrap">
-            <span id="streakBadge" class="bg-white/20 px-2 py-1 rounded-full flex items-center gap-1">
-                🔥 <span id="streakDays">0</span> يوم متواصل
-            </span>
-            <span class="bg-white/20 px-2 py-1 rounded-full">🦈 المرحلة الحالية</span>
-            <span class="bg-white/20 px-2 py-1 rounded-full">✨ مكتملة</span>
+    <!-- ===== الهيدر ===== -->
+    <div class="header">
+        <h2>⛰️ رحلة المليونير</h2>
+        <p>كل خطوة تقربك من القمة</p>
+        <div class="badges">
+            <span id="streakBadge">🔥 <span id="streakDays">0</span> يوم متواصل</span>
+            <span>🦈 في الطريق</span>
         </div>
-        <!-- نصيحة القرش -->
-        <div id="sharkTip" class="mt-2 bg-white/15 backdrop-blur-sm rounded-2xl p-2 text-xs font-bold flex items-center gap-2">
-            <span class="text-2xl">🦈</span>
-            <span id="tipText">حمل بياناتك من المحفظة عشان تشوف تقدمك!</span>
+        <div id="sharkTip" class="tip">
+            🦈 <span id="tipText">حمل بياناتك من المحفظة وشوف تقدمك!</span>
         </div>
     </div>
 
-    <!-- أزرار التحكم والأدوات -->
-    <div class="flex gap-2 overflow-x-auto pb-2 mb-4">
-        <button onclick="openAIAdvisor()" class="bg-white border px-3 py-2 rounded-xl text-xs font-bold shadow-sm whitespace-nowrap">🧠 قيّم وضعي</button>
-        <button onclick="openFutureSim()" class="bg-white border px-3 py-2 rounded-xl text-xs font-bold shadow-sm whitespace-nowrap">🔮 شوف مستقبلك</button>
-        <button onclick="toggleLeaderboard()" class="bg-white border px-3 py-2 rounded-xl text-xs font-bold shadow-sm whitespace-nowrap">🏆 لوحة الصدارة</button>
+    <!-- ===== الأزرار ===== -->
+    <div class="actions">
+        <button onclick="openAIAdvisor()">🧠 قيّم</button>
+        <button onclick="openFutureSim()">🔮 مستقبلك</button>
+        <button onclick="toggleLeaderboard()">🏆 صدارة</button>
     </div>
 
-    <!-- لوحة الصدارة الوهمية -->
-    <div id="leaderboardPanel" class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 mb-4 hidden">
-        <h3 class="font-bold text-sm mb-2 text-slate-700">🏆 لوحة صدارة المستثمرين</h3>
-        <div id="leaderboardList" class="space-y-2 text-xs"></div>
-    </div>
+    <!-- ===== لوحة الصدارة ===== -->
+    <div id="leaderboardPanel" class="panel hidden"></div>
 
-    <!-- إعدادات سريعة -->
-    <div class="bg-white rounded-2xl p-4 shadow mb-4 border border-gray-100">
-        <div class="flex gap-2 items-end flex-wrap">
-            <div class="flex-1 min-w-[140px]">
-                <label class="text-xs font-bold text-gray-500 block mb-1">🎯 الهدف (قمة الجبل)</label>
-                <select id="goalSelect" class="w-full bg-gray-50 border rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-sky-400" onchange="handleGoalChange()">
-                    <option value="10000">10,000 ج.م</option>
-                    <option value="100000">100,000 ج.م</option>
-                    <option value="500000">500,000 ج.م</option>
-                    <option value="1000000" selected>1,000,000 ج.م (المليون)</option>
-                    <option value="5000000">5,000,000 ج.م</option>
-                    <option value="custom">✏️ غير ذلك...</option>
-                </select>
-                <input type="number" id="customGoalInput" placeholder="أدخل هدفك" class="mt-2 w-full bg-gray-50 border rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-sky-400 hidden" value="" oninput="buildRoadmap()">
-            </div>
-
-            <div class="flex-1 min-w-[120px]">
-                <label class="text-xs font-bold text-gray-500 block mb-1">💰 موقعك الحالي</label>
-                <input type="number" id="currentInput" value="0" class="w-full bg-gray-50 border rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-sky-400" readonly>
-            </div>
+    <!-- ===== الإعدادات ===== -->
+    <div class="panel settings">
+        <div class="row">
+            <select id="goalSelect" onchange="handleGoalChange()">
+                <option value="10000">10,000 ج.م</option>
+                <option value="100000">100,000 ج.م</option>
+                <option value="500000">500,000 ج.م</option>
+                <option value="1000000" selected>1,000,000 ج.م</option>
+                <option value="5000000">5,000,000 ج.م</option>
+            </select>
+            <input id="currentInput" value="0" readonly placeholder="ثروتي">
         </div>
-        <div id="nextMilestoneInfo" class="mt-3 flex items-center justify-between bg-sky-50 rounded-xl p-2 text-xs font-bold text-sky-700">
-            <span>🎯 المعسكر القادم: <span id="nextAmount">0</span> ج.م</span>
-            <span>⏳ المتبقي للصعود: <span id="remainingAmount">0</span> ج.م</span>
+        <div id="nextMilestoneInfo" class="next-info">
+            🎯 المعسكر القادم: <span id="nextAmount">0</span> ج.م | ⏳ المتبقي: <span id="remainingAmount">0</span> ج.م
         </div>
-        <button onclick="loadEngineData()" class="mt-3 w-full bg-gray-100 text-gray-700 font-bold py-2.5 px-4 rounded-xl shadow hover:bg-gray-200 active:scale-95 transition text-sm">
-            📊 تحميل من المحفظة
-        </button>
+        <button onclick="loadEngineData()">📊 تحميل من المحفظة</button>
     </div>
 
-    <!-- سلم الصعود -->
-    <div class="climb-container">
-        <div id="climbPath" class="climb-path"></div>
+    <!-- ===== الجبل ===== -->
+    <div class="mountain">
+        <div class="peak">🏁 القمة</div>
+        <div id="path"></div>
     </div>
 
-    <!-- تفاصيل المعسكر عند الضغط -->
-    <div id="stageTooltip" class="bg-white border border-gray-200 rounded-xl p-3 shadow-lg mt-4 hidden text-sm"></div>
-
-    <!-- مودال AI -->
-    <div id="aiModal" class="hidden fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onclick="if(event.target===this)closeAIAdvisor()">
-        <div class="bg-white w-full max-w-sm rounded-2xl p-6 shadow-2xl text-center">
-            <h3 class="font-black text-gray-800 mb-3">اختر شخصية المستشار</h3>
-            <div class="flex justify-around mb-4">
-                <button onclick="getAIFeedback('shark')" class="bg-red-50 p-3 rounded-xl text-2xl">🦈</button>
-                <button onclick="getAIFeedback('accountant')" class="bg-blue-50 p-3 rounded-xl text-2xl">🧠</button>
-                <button onclick="getAIFeedback('adventurer')" class="bg-orange-50 p-3 rounded-xl text-2xl">🔥</button>
-            </div>
-            <p id="aiResponse" class="text-sm text-gray-600 leading-relaxed bg-gray-50 p-3 rounded-xl">اضغط على شخصية لتحليل وضعك</p>
-            <button onclick="closeAIAdvisor()" class="mt-4 text-xs text-gray-400">إغلاق</button>
-        </div>
-    </div>
-
-    <!-- مودال محاكاة المستقبل -->
-    <div id="simModal" class="hidden fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onclick="if(event.target===this)closeFutureSim()">
-        <div class="bg-white w-full max-w-sm rounded-2xl p-6 shadow-2xl text-center">
-            <h3 class="font-black text-gray-800 mb-2">🔮 محاكي المستقبل</h3>
-            <input type="number" id="monthlySaving" placeholder="الادخار الشهري" class="w-full bg-gray-100 rounded-xl p-3 text-sm mb-3">
-            <button onclick="runSimulation()" class="bg-sky-500 text-white w-full py-2 rounded-xl font-bold text-sm">شوف مستقبلك</button>
-            <p id="simResult" class="text-sm text-gray-600 mt-3"></p>
-            <button onclick="closeFutureSim()" class="mt-3 text-xs text-gray-400">إغلاق</button>
-        </div>
-    </div>
+    <!-- ===== tooltip ===== -->
+    <div id="stageTooltip" class="panel hidden"></div>
 </div>
 
 <script>
-    // ========== متغيرات عامة ==========
+    // ========== متغيرات ==========
     let currentGoal = 1000000;
     let currentWealth = 0;
-    const TOTAL_CAMPS = 20;
+    const TOTAL_STAGES = 100;
 
     const tips = [
-        "كل قرش تستثمره هو خطوة نحو القمة! 🚀",
-        "التوفير المنتظم يصنع المعجزات، اصعد! 💪",
-        "لا تنظر للقمة كحلم، بل كمحطة في رحلتك 🌟",
-        "ركز على الخطوة التالية وليس القمة 📈",
+        "كل قرش تستثمره يرفعك درجة 🚀",
+        "لا تنظر للقمة كحلم، بل كمحطة 🌟",
+        "التوفير المنتظم هو وقود الصعود 💪",
+        "كلما علوت، اشتدت الرياح… اثبت! 💨",
         "القروش العظيمة تبدأ بزعانف صغيرة 🦈",
-        "كلما اقتربت من القمة، اشتدت الرياح. اثبت! 💨",
+        "العادات اليومية تصنع مليونير الغد 📈",
     ];
 
-    // ========== نظام Streak ==========
+    // ========== Streak ==========
     function updateStreak() {
         const today = new Date().toLocaleDateString('en-CA');
-        let lastDate = localStorage.getItem('lastLoginDate');
-        let streak = parseInt(localStorage.getItem('loginStreak') || '0');
-        if (lastDate === today) return;
-        const yesterday = new Date(Date.now() - 86400000).toLocaleDateString('en-CA');
-        if (lastDate === yesterday) streak++;
-        else streak = 1;
-        localStorage.setItem('lastLoginDate', today);
-        localStorage.setItem('loginStreak', streak);
-        document.getElementById('streakDays').innerText = streak;
-        if (streak >= 7) {
-            document.getElementById('streakBadge').innerHTML = '🔥🔥 أسبوع ملتهب! <span id="streakDays">' + streak + '</span> يوم';
+        let last = localStorage.getItem('lastLoginDate');
+        let s = parseInt(localStorage.getItem('loginStreak') || '0');
+        if (last !== today) {
+            const yesterday = new Date(Date.now() - 86400000).toLocaleDateString('en-CA');
+            s = (last === yesterday) ? s + 1 : 1;
+            localStorage.setItem('lastLoginDate', today);
+            localStorage.setItem('loginStreak', s);
         }
+        document.getElementById('streakDays').innerText = s;
+        if (s >= 7) document.getElementById('streakBadge').innerHTML = `🔥🔥 ${s} يوم ملتهب!`;
     }
     updateStreak();
-    document.getElementById('streakDays').innerText = localStorage.getItem('loginStreak') || '0';
 
-    function randomTip() {
+    // نصائح متحركة
+    setInterval(() => {
         document.getElementById('tipText').innerText = tips[Math.floor(Math.random() * tips.length)];
-    }
-    setInterval(randomTip, 8000);
+    }, 6000);
 
     // ========== لوحة الصدارة ==========
-    function generateFakeLeaderboard() {
-        const names = ["مستثمر ذكي", "قرش العقار", "ملك الأسهم", "ذئب البورصة", "صائد الفرص"];
-        const list = document.getElementById('leaderboardList');
-        list.innerHTML = '';
-        for (let i = 0; i < 5; i++) {
-            const name = names[Math.floor(Math.random() * names.length)];
-            const amount = Math.floor(Math.random() * 900000 + 100000);
-            list.innerHTML += `<div class="flex justify-between"><span>${i+1}. ${name}</span><span class="font-bold text-sky-600">${amount.toLocaleString()} ج.م</span></div>`;
-        }
-    }
     function toggleLeaderboard() {
-        const panel = document.getElementById('leaderboardPanel');
-        panel.classList.toggle('hidden');
-        if (!panel.classList.contains('hidden')) generateFakeLeaderboard();
+        const p = document.getElementById('leaderboardPanel');
+        p.classList.toggle('hidden');
+        if (!p.classList.contains('hidden')) {
+            const names = ["مستثمر ذكي", "قرش العقار", "ملك الأسهم", "صائد الفرص", "محفظة حديد"];
+            let html = '<h3>🏆 لوحة الصدارة</h3>';
+            for (let i = 0; i < 5; i++) {
+                const name = names[Math.floor(Math.random() * names.length)];
+                const amount = Math.floor(Math.random() * 900000 + 100000);
+                html += `<div class="leader-item">${i+1}. ${name} – <b>${amount.toLocaleString()} ج.م</b></div>`;
+            }
+            p.innerHTML = html;
+        }
     }
 
-    // ========== AI مستشار ==========
-    function openAIAdvisor() { document.getElementById('aiModal').classList.remove('hidden'); }
-    function closeAIAdvisor() { document.getElementById('aiModal').classList.add('hidden'); }
-    function getAIFeedback(type) {
-        const p = document.getElementById('aiResponse');
-        const advice = {
-            shark: ["وضعك ضعيف يا قرش! استثمر بذكاء وإلا ستُفترس.", "أصولك تحتاج تنويع، ركز على الذهب والأسهم."],
-            accountant: ["حسب تحليلي، أنت بحاجة لزيادة مدخراتك 20% شهرياً.", "الأرقام واضحة: التزم بالميزانية."],
-            adventurer: ["المخاطرة المحسوبة تصنع الثروة! جرب العملات الرقمية بحذر.", "لا تخف من الخسارة، تعلم منها وانطلق!"]
-        };
-        const msgs = advice[type] || advice.shark;
-        p.innerText = msgs[Math.floor(Math.random() * msgs.length)];
+    // ========== AI & Simulation (بسيطة) ==========
+    function openAIAdvisor() {
+        const advice = ["🦈 استثمر بذكاء.. القرش ما ينامش!", "🧠 الأرقام واضحة: زود مدخراتك 20%", "🔥 المخاطرة المحسوبة مفتاح الثراء"];
+        alert(advice[Math.floor(Math.random() * advice.length)]);
     }
-
-    // ========== محاكاة المستقبل ==========
-    function openFutureSim() { document.getElementById('simModal').classList.remove('hidden'); }
-    function closeFutureSim() { document.getElementById('simModal').classList.add('hidden'); }
-    function runSimulation() {
-        const saving = parseFloat(document.getElementById('monthlySaving').value);
-        const result = document.getElementById('simResult');
-        if (!saving || saving <= 0) { result.innerText = 'أدخل رقم صحيح'; return; }
+    function openFutureSim() {
+        const saving = prompt("كم تدخر شهرياً؟");
+        if (!saving || isNaN(saving)) return;
         const months = Math.ceil((currentGoal - currentWealth) / saving);
-        if (months <= 0) result.innerText = '🎉 أنت بالفعل تجاوزت هدفك!';
+        if (months <= 0) alert("🎉 أنت بالفعل مليونير!");
         else {
-            const years = Math.floor(months / 12), rem = months % 12;
-            result.innerText = `💪 لو استمريت بادخار ${saving} ج.م شهرياً، ستصل للقمة خلال ${years} سنة و ${rem} شهر.`;
+            const y = Math.floor(months / 12), m = months % 12;
+            alert(`💪 ستصل إلى القمة خلال ${y} سنة و ${m} شهر`);
         }
     }
 
-    // ========== سلم الصعود ==========
-    function handleGoalChange() {
-        const select = document.getElementById('goalSelect');
-        const customInput = document.getElementById('customGoalInput');
-        if (select.value === 'custom') {
-            customInput.classList.remove('hidden');
-            customInput.focus();
-            if (customInput.value) currentGoal = parseFloat(customInput.value) || 1000000;
-        } else {
-            customInput.classList.add('hidden');
-            currentGoal = parseFloat(select.value);
-        }
-        buildClimbPath();
-    }
-
-    function generateCamps(goal) {
-        const camps = [];
-        for (let i = 0; i <= TOTAL_CAMPS; i++) {
-            const ratio = Math.pow(i / TOTAL_CAMPS, 3);
+    // ========== توليد 100 مرحلة (نمو أسي) ==========
+    function generateMilestones(goal) {
+        const stages = TOTAL_STAGES;
+        const milestones = [0];
+        for (let i = 1; i < stages; i++) {
+            const ratio = Math.pow(i / stages, 2.5);
             const amount = Math.round(ratio * goal);
-            if (i === 0 || amount > camps[camps.length - 1]) camps.push(amount);
+            if (amount > milestones[milestones.length - 1]) milestones.push(amount);
         }
-        if (camps[camps.length - 1] !== goal) camps.push(goal);
-        return camps;
+        if (milestones[milestones.length - 1] !== goal) milestones.push(goal);
+        while (milestones.length < stages) {
+            const last = milestones[milestones.length - 1];
+            const prev = milestones[milestones.length - 2] || 0;
+            milestones.splice(milestones.length - 1, 0, Math.round((last + prev) / 2));
+        }
+        return milestones.slice(0, stages);
     }
 
+    // ========== جلب بيانات الأصول من Firestore ==========
     async function loadEngineData() {
         try {
             const { collection, query, where, getDocs } = window.__firestore_helpers || {};
@@ -216,100 +147,115 @@
                 snapshot.forEach(doc => { total += Number(doc.data().value) || 0; });
                 currentWealth = Math.floor(total);
                 document.getElementById('currentInput').value = currentWealth;
-                randomTip();
+                document.getElementById('tipText').innerText = tips[Math.floor(Math.random() * tips.length)];
             }
-        } catch(e) {}
-        buildClimbPath();
+        } catch (e) {}
+        drawMountain();
     }
 
-    function buildClimbPath() {
-        const customInput = document.getElementById('customGoalInput');
-        if (!customInput.classList.contains('hidden') && customInput.value) {
-            currentGoal = parseFloat(customInput.value) || currentGoal;
-        }
-        currentWealth = parseFloat(document.getElementById('currentInput').value) || 0;
-        if (isNaN(currentGoal) || isNaN(currentWealth) || currentGoal <= 0) return;
-
-        const camps = generateCamps(currentGoal);
-        const container = document.getElementById('climbPath');
-        if (!container) return;
-
-        let currentCampIndex = 0;
-        for (let i = camps.length - 1; i >= 0; i--) {
-            if (currentWealth >= camps[i]) { currentCampIndex = i; break; }
+    // ========== رسم الجبل ==========
+    function drawMountain() {
+        const milestones = generateMilestones(currentGoal);
+        const container = document.getElementById('path');
+        let currentIndex = 0;
+        for (let i = 0; i < milestones.length; i++) {
+            if (currentWealth >= milestones[i]) currentIndex = i;
         }
 
-        const nextCamp = camps[currentCampIndex + 1];
-        if (nextCamp) {
-            document.getElementById('nextAmount').innerText = nextCamp.toLocaleString();
-            document.getElementById('remainingAmount').innerText = (nextCamp - currentWealth).toLocaleString();
-            document.getElementById('nextMilestoneInfo').classList.remove('hidden');
+        const nextAmount = currentIndex < milestones.length - 1 ? milestones[currentIndex + 1] : null;
+        if (nextAmount) {
+            document.getElementById('nextAmount').innerText = nextAmount.toLocaleString();
+            document.getElementById('remainingAmount').innerText = (nextAmount - currentWealth).toLocaleString();
+            document.getElementById('nextMilestoneInfo').style.display = 'block';
         } else {
-            document.getElementById('nextMilestoneInfo').classList.add('hidden');
+            document.getElementById('nextMilestoneInfo').style.display = 'none';
         }
 
-        let html = '<div class="climb-mountain">';
-        for (let i = camps.length - 1; i >= 0; i--) {
-            const amount = camps[i];
+        container.innerHTML = '';
+        // نعرض المراحل من القمة إلى الأسفل (لأعلى الجبل)
+        const reversed = [...milestones].reverse();
+        reversed.forEach((amount, idx) => {
+            const realIndex = milestones.length - 1 - idx;
             const completed = currentWealth >= amount;
-            const isCurrent = (i === currentCampIndex);
-            const isNext = (i === currentCampIndex + 1);
-            let label = '';
-            if (i === camps.length - 1) label = '🏁 القمة';
-            else if (i === 0) label = '⛺ معسكر القاعدة';
-            else label = `⛺ معسكر ${i}`;
+            const isCurrent = realIndex === currentIndex;
+            const isNext = realIndex === currentIndex + 1;
 
-            html += `
-                <div class="climb-step ${completed ? 'completed' : ''} ${isCurrent ? 'current' : ''} ${isNext ? 'next' : ''}"
-                     onclick="showCampInfo(${i+1}, ${amount}, ${completed}, '${label}')">
-                    <div class="step-flag">${completed ? '✅' : '🔵'}</div>
-                    <div class="step-info">
-                        <span class="step-label">${label}</span>
-                        <span class="step-amount">${amount.toLocaleString()} ج.م</span>
-                        ${isCurrent ? '<span class="step-shark">🦈</span>' : ''}
-                    </div>
-                    <div class="step-bar" style="width: ${((amount / currentGoal) * 100).toFixed(0)}%"></div>
-                </div>`;
-        }
-        html += '</div>';
-        container.innerHTML = html;
-        hideStageInfo();
+            const div = document.createElement('div');
+            div.className = 'step';
+            if (completed) div.classList.add('completed');
+            if (isCurrent) div.classList.add('current');
+            if (isNext) div.classList.add('next');
+
+            div.innerHTML = `
+                ${isCurrent ? '<span class="shark">🦈</span>' : ''}
+                <span class="step-num">${realIndex + 1}</span>
+                <span class="step-amount">${amount >= 1000 ? (amount/1000).toFixed(1) + 'k' : amount}</span>
+            `;
+            div.onclick = () => {
+                const tip = document.getElementById('stageTooltip');
+                tip.classList.remove('hidden');
+                const rem = currentGoal - amount;
+                tip.innerHTML = `
+                    <b>🏁 مرحلة ${realIndex+1}</b><br>
+                    المبلغ: ${amount.toLocaleString()} ج.م<br>
+                    ${completed ? '✅ مكتملة 🦈' : `⏳ المتبقي للقمة: ${rem.toLocaleString()} ج.م`}
+                `;
+                tip.scrollIntoView({ behavior: 'smooth' });
+            };
+            container.appendChild(div);
+        });
     }
 
-    function showCampInfo(num, amount, completed, label) {
-        const tip = document.getElementById('stageTooltip');
-        tip.classList.remove('hidden');
-        const remaining = currentGoal - amount;
-        tip.innerHTML = `<div class="flex items-center gap-2 mb-1"><span class="text-lg">🏁</span><span class="font-extrabold text-gray-800">${label}</span><span class="text-xs ${completed ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'} px-2 py-0.5 rounded-full">${completed ? '✅ مكتمل' : '⏳ في الطريق'}</span></div>
-        <p class="text-gray-600 text-sm">الارتفاع المالي: <b>${amount.toLocaleString()} ج.م</b></p>
-        ${!completed ? `<p class="text-gray-500 text-sm">المتبقي للصعود: <b>${remaining.toLocaleString()} ج.م</b></p>` : '<p class="text-emerald-600 text-sm">🦈 أنت تتسلق كالمحترفين! استمر!</p>'}`;
-        tip.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    function handleGoalChange() {
+        currentGoal = parseInt(document.getElementById('goalSelect').value);
+        drawMountain();
     }
 
-    function hideStageInfo() { document.getElementById('stageTooltip').classList.add('hidden'); }
-
+    // بدء أولي
     if (window.__firestore_helpers && window.auth?.currentUser) {
         loadEngineData();
     } else {
-        buildClimbPath();
+        drawMountain();
     }
 </script>
 
 <style>
-    .roadmap-container { padding: 8px; margin: 0 -12px; }
-    .climb-container { background: #f1f5f9; border-radius: 24px; padding: 12px; border: 1px solid #e2e8f0; }
-    .climb-mountain { display: flex; flex-direction: column-reverse; gap: 6px; position: relative; padding: 10px 0; }
-    .climb-step { display: flex; align-items: center; gap: 8px; background: white; border-radius: 12px; padding: 8px; border: 1px solid #e2e8f0; cursor: pointer; transition: all 0.3s; position: relative; overflow: hidden; animation: slideIn 0.4s ease forwards; }
-    .climb-step.completed { background: linear-gradient(135deg, #0ea5e9, #0284c7); color: white; border-color: #0284c7; }
-    .climb-step.current { border: 2px solid #fbbf24; transform: scale(1.03); box-shadow: 0 0 20px rgba(251,191,36,0.3); }
-    .climb-step.next { background: #f0f9ff; border-color: #bae6fd; }
-    .step-flag { font-size: 18px; }
-    .step-info { flex: 1; }
-    .step-label { font-weight: 800; font-size: 12px; display: block; }
-    .step-amount { font-size: 10px; opacity: 0.8; }
-    .step-shark { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); font-size: 24px; }
-    .step-bar { position: absolute; bottom: 0; left: 0; height: 3px; background: rgba(14,165,233,0.3); border-radius: 0 0 12px 12px; }
-    .climb-step.completed .step-bar { background: rgba(255,255,255,0.5); }
-    .climb-step.current .step-bar { background: #fbbf24; }
-    @keyframes slideIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
+    body { background: #0f172a; color: white; font-family: 'Tajawal', sans-serif; }
+    .roadmap-container { padding: 10px; max-width: 500px; margin: auto; }
+
+    .header { background: #0284c7; padding: 15px; border-radius: 20px; margin-bottom: 10px; }
+    .header h2 { margin: 0; font-size: 22px; }
+    .header p { margin: 4px 0; font-size: 13px; opacity: 0.9; }
+    .badges { display: flex; gap: 10px; font-size: 12px; margin-top: 8px; }
+    .badges span { background: #ffffff20; padding: 2px 10px; border-radius: 20px; }
+    .tip { background: #ffffff20; padding: 6px 10px; margin-top: 8px; border-radius: 12px; font-size: 13px; }
+
+    .actions { display: flex; gap: 6px; margin-bottom: 10px; }
+    .actions button { flex: 1; background: #1e293b; color: white; border: none; padding: 10px; border-radius: 12px; font-weight: bold; font-size: 12px; cursor: pointer; }
+
+    .panel { background: white; color: #0f172a; padding: 12px; border-radius: 16px; margin: 10px 0; }
+    .hidden { display: none; }
+
+    .settings select, .settings input { width: 100%; padding: 10px; margin: 4px 0; border-radius: 12px; border: 1px solid #e2e8f0; background: #f8fafc; }
+    .settings button { width: 100%; padding: 10px; background: #0ea5e9; color: white; border: none; border-radius: 12px; font-weight: bold; margin-top: 5px; cursor: pointer; }
+    .next-info { background: #e0f2fe; padding: 8px; border-radius: 12px; font-size: 13px; margin: 8px 0; display: none; }
+
+    .mountain { background: linear-gradient(#1e293b, #334155); padding: 16px; border-radius: 20px; }
+    .peak { text-align: center; font-size: 22px; margin-bottom: 12px; }
+
+    #path { display: flex; flex-direction: column; gap: 10px; }
+    .step { width: 75%; padding: 12px; background: white; color: #0f172a; border-radius: 16px; cursor: pointer; position: relative; transition: 0.2s; }
+    .step:nth-child(even) { align-self: flex-start; }
+    .step:nth-child(odd) { align-self: flex-end; }
+
+    .step.completed { background: #22c55e; color: white; }
+    .step.current { border: 3px solid #fbbf24; transform: scale(1.03); box-shadow: 0 0 16px #fbbf2490; }
+    .step.next { background: #bae6fd; }
+
+    .step-num { font-weight: 800; font-size: 16px; display: block; }
+    .step-amount { font-size: 12px; opacity: 0.8; }
+    .shark { position: absolute; right: -15px; top: -15px; font-size: 28px; animation: bounce 0.6s infinite alternate; }
+    @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-6px); } }
+
+    .leader-item { font-size: 13px; padding: 4px 0; border-bottom: 1px solid #e2e8f0; }
 </style>
