@@ -11,18 +11,35 @@
         <button id="tabArticles" class="flex-1 py-3 rounded-xl font-bold text-xs text-gray-500" onclick="academy.switchTab('articles')">المقالات</button>
     </div>
 
-    <!-- محتوى بنفس تصميم المنشورات -->
+    <!-- قائمة البطاقات -->
     <div id="academyGrid" class="space-y-4 min-h-[150px]"></div>
+
+    <!-- نافذة عرض المحتوى الكامل -->
+    <div id="contentModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-md z-[100] flex items-center justify-center p-6">
+        <div class="bg-white w-full max-w-sm rounded-[2rem] p-8 space-y-4 shadow-2xl max-h-[80vh] overflow-y-auto">
+            <div class="flex justify-between items-center">
+                <h3 id="modalTitle" class="font-bold text-gray-800 text-lg"></h3>
+                <button onclick="academy.closeContentModal()" class="text-gray-400 text-2xl">&times;</button>
+            </div>
+            <div class="flex items-center gap-2 text-xs text-gray-500">
+                <img id="modalAuthorPhoto" src="" class="w-6 h-6 rounded-full">
+                <span id="modalAuthorName"></span>
+                <span id="modalDate"></span>
+            </div>
+            <div id="modalContent" class="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap"></div>
+            <button onclick="academy.closeContentModal()" class="w-full bg-sky-500 text-white py-2 rounded-xl font-bold text-sm">إغلاق</button>
+        </div>
+    </div>
 
     <!-- زر النشر العائم -->
     <button onclick="academy.openModal()" class="fixed bottom-24 left-6 w-14 h-14 bg-sky-600 text-white shadow-2xl rounded-2xl flex items-center justify-center z-50 active:scale-90 transition-transform">
         <i class="fa-solid fa-plus text-xl"></i>
     </button>
 
-    <!-- Modal -->
+    <!-- نافذة إضافة المحتوى -->
     <div id="acadModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-md z-[100] flex items-center justify-center p-6">
         <div class="bg-white w-full max-w-sm rounded-[2rem] p-8 space-y-4 shadow-2xl">
-            <h3 class="font-bold text-gray-800 text-lg">نشر محتوى</h3>
+            <h3 class="font-bold text-gray-800 text-lg">نشر محتوى جديد</h3>
             <input id="acadTitle" class="w-full bg-gray-100 border-none rounded-xl p-4 text-sm" placeholder="عنوان المحتوى">
             <textarea id="acadDesc" class="w-full bg-gray-100 border-none rounded-xl p-4 text-sm" rows="4" placeholder="التفاصيل..."></textarea>
             <button id="acadBtnSave" onclick="academy.saveData()" class="w-full bg-sky-600 text-white py-4 rounded-xl font-bold">حفظ ونشر</button>
@@ -32,7 +49,7 @@
 </div>
 
 <script>
-    // انتظار تجهيز window.__firestore_helpers و engine
+    // انتظار تجهيز المتغيرات العامة
     function waitForGlobals(callback) {
         if (window.__firestore_helpers && window.engine && window.engine.postHTML) {
             callback();
@@ -42,7 +59,7 @@
     }
 
     waitForGlobals(() => {
-        const { collection, query, orderBy, getDocs, addDoc, serverTimestamp } = window.__firestore_helpers;
+        const { collection, query, orderBy, getDocs, addDoc, serverTimestamp, doc, getDoc } = window.__firestore_helpers;
         const db = window.db;
         const auth = window.auth;
         const engine = window.engine;
@@ -68,26 +85,58 @@
                     let html = '';
                     snapshot.forEach(doc => {
                         const data = doc.data();
-                        const postData = {
-                            content: data.desc || '',
-                            authorName: data.authorName || 'أكاديمية Shark UP',
-                            authorPhoto: data.authorPhoto || '',
-                            createdAt: data.createdAt || new Date(),
-                            supportCount: data.supportCount || 0,
-                            opposeCount: data.opposeCount || 0,
-                            type: 'article'
-                        };
-                        // تضمين العنوان في المحتوى
-                        if (data.title) {
-                            postData.content = `📌 ${data.title}\n\n${postData.content}`;
-                        }
-                        html += engine.postHTML(doc.id, postData);
+                        const title = data.title || 'بدون عنوان';
+                        const desc = data.desc || '';
+                        const authorName = data.authorName || 'أكاديمية Shark UP';
+                        const authorPhoto = data.authorPhoto || '';
+                        const date = data.createdAt ? new Date(data.createdAt.seconds * 1000).toLocaleDateString('ar-EG') : '';
+
+                        // وصف مختصر (أول 100 حرف)
+                        const shortDesc = desc.length > 100 ? desc.substring(0, 100) + '...' : desc;
+
+                        html += `
+                        <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm cursor-pointer hover:shadow-md transition-shadow"
+                             onclick="academy.openContent('${doc.id}', '${title.replace(/'/g, "\\'")}', '${authorName.replace(/'/g, "\\'")}', '${authorPhoto.replace(/'/g, "\\'")}', '${date}')">
+                            <h4 class="font-bold text-slate-800 text-sm mb-2">${title}</h4>
+                            <p class="text-xs text-gray-500 leading-relaxed mb-3">${shortDesc}</p>
+                            <div class="flex items-center gap-2 text-[10px] text-gray-400">
+                                <img src="${authorPhoto}" class="w-5 h-5 rounded-full" onerror="this.src='${window.engine?.DEFAULT_AVATAR || ''}'">
+                                <span>${authorName}</span>
+                                <span>·</span>
+                                <span>${date}</span>
+                            </div>
+                        </div>`;
                     });
                     grid.innerHTML = html;
                 } catch (e) {
                     grid.innerHTML = '<div class="text-center py-10 text-red-400 text-xs">عفواً، فشل الاتصال بالمحيط</div>';
                     console.error(e);
                 }
+            },
+
+            async openContent(id, title, authorName, authorPhoto, date) {
+                const modal = document.getElementById('contentModal');
+                document.getElementById('modalTitle').textContent = title;
+                document.getElementById('modalAuthorName').textContent = authorName;
+                document.getElementById('modalAuthorPhoto').src = authorPhoto;
+                document.getElementById('modalDate').textContent = date;
+                document.getElementById('modalContent').textContent = 'جاري تحميل المحتوى...';
+                modal.classList.remove('hidden');
+
+                // جلب المحتوى الكامل من Firestore
+                try {
+                    const collectionName = this.currentTab === 'courses' ? 'academy_courses' : 'academy_articles';
+                    const docSnap = await getDoc(doc(db, collectionName, id));
+                    if (docSnap.exists()) {
+                        document.getElementById('modalContent').textContent = docSnap.data().desc || '';
+                    }
+                } catch (e) {
+                    document.getElementById('modalContent').textContent = 'تعذر تحميل المحتوى';
+                }
+            },
+
+            closeContentModal() {
+                document.getElementById('contentModal').classList.add('hidden');
             },
 
             switchTab(tab) {
