@@ -680,5 +680,5 @@ window.engine = {
         input.value = '';
     }
 };
-
+window.__firestore_helpers = { collection, query, orderBy, getDocs, addDoc, serverTimestamp };
 window.engine.init();
