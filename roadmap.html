@@ -1,34 +1,34 @@
-<div class="roadmap-container">
-    <!-- ===== الهيدر ===== -->
+<div class="duolingo-container">
+    <!-- الهيدر -->
     <div class="header">
-        <h2>⛰️ رحلة المليونير</h2>
-        <p>كل خطوة تقربك من القمة</p>
+        <h2>🦈 رحلة المليونير</h2>
+        <p>كل خطوة تقربك من هدفك</p>
         <div class="badges">
-            <span id="streakBadge">🔥 <span id="streakDays">0</span> يوم متواصل</span>
-            <span>🦈 في الطريق</span>
+            <span id="streakBadge">🔥 <span id="streakDays">0</span> يوم</span>
+            <span>🏆 المستوى <span id="currentLevel">1</span></span>
         </div>
         <div id="sharkTip" class="tip">
             🦈 <span id="tipText">حمل بياناتك من المحفظة وشوف تقدمك!</span>
         </div>
     </div>
 
-    <!-- ===== شريط التقدم العالمي ===== -->
+    <!-- شريط التقدم الأفقي -->
     <div class="global-progress">
         <div class="progress-fill" id="globalProgressFill" style="width: 0%;"></div>
         <span class="progress-text" id="globalProgressText">0%</span>
     </div>
 
-    <!-- ===== الأزرار ===== -->
+    <!-- أزرار الأدوات -->
     <div class="actions">
         <button onclick="engine.openAdvisor()">🧠 قيّم</button>
         <button onclick="engine.openSimulation()">🔮 مستقبلك</button>
         <button onclick="engine.toggleLeaderboard()">🏆 صدارة</button>
     </div>
 
-    <!-- ===== لوحة الصدارة ===== -->
+    <!-- لوحة الصدارة -->
     <div id="leaderboardPanel" class="panel hidden"></div>
 
-    <!-- ===== الإعدادات ===== -->
+    <!-- الإعدادات -->
     <div class="panel settings">
         <div class="row">
             <select id="goalSelect" onchange="engine.setGoal(this.value)">
@@ -41,31 +41,24 @@
             <input id="currentInput" value="0" readonly placeholder="ثروتي">
         </div>
         <div id="nextMilestoneInfo" class="next-info">
-            🎯 المعسكر القادم: <span id="nextAmount">0</span> ج.م | ⏳ المتبقي: <span id="remainingAmount">0</span> ج.م
+            🎯 الهدف القادم: <span id="nextAmount">0</span> ج.م | ⏳ المتبقي: <span id="remainingAmount">0</span> ج.م
         </div>
         <button onclick="engine.loadFromFirestore()">📊 تحميل من المحفظة</button>
     </div>
 
-    <!-- ===== الجبل ===== -->
-    <div class="mountain" id="mountainScene">
-        <div class="clouds">
-            <div class="cloud cloud1"></div>
-            <div class="cloud cloud2"></div>
-            <div class="cloud cloud3"></div>
+    <!-- مسار Duolingo العمودي -->
+    <div class="duolingo-path-container">
+        <div id="duolingoPath" class="duolingo-path">
+            <!-- سيتم ملؤه بالمراحل -->
         </div>
-        <div class="stars">
-            <span class="star">✨</span><span class="star">✨</span><span class="star">✨</span>
-        </div>
-        <div class="peak"><span class="crown">👑</span><span>القمة</span></div>
-        <svg class="mountain-path" viewBox="0 0 500 400" preserveAspectRatio="none" id="mountainSvg">
-            <path id="mountainPath" d="M250,380 L100,320 L400,260 L150,200 L350,140 L200,80 L300,30" fill="none" stroke="#94a3b8" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
-            <path id="progressPath" d="M250,380 L100,320 L400,260 L150,200 L350,140 L200,80 L300,30" fill="none" stroke="#fbbf24" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="1000" stroke-dashoffset="1000" />
-        </svg>
+        <!-- الأفاتار يتحرك على الخط -->
         <div id="climberAvatar" class="climber">🧗</div>
-        <div id="sharkTooltip" class="shark-tooltip hidden">🦈 <span id="sharkMessage"></span></div>
-        <div id="stagesContainer" class="stages"></div>
     </div>
 
+    <!-- تلميح القرش -->
+    <div id="sharkTooltip" class="shark-tooltip hidden">🦈 <span id="sharkMessage"></span></div>
+
+    <!-- تفاصيل المرحلة -->
     <div id="stageTooltip" class="panel hidden"></div>
 </div>
 
@@ -82,12 +75,12 @@ const state = {
 
 function updateState(updates) {
     Object.assign(state, updates);
-    localStorage.setItem('sharkMountainState', JSON.stringify(state));
+    localStorage.setItem('sharkDuoState', JSON.stringify(state));
     engine.refresh();
 }
 
 function loadState() {
-    const saved = localStorage.getItem('sharkMountainState');
+    const saved = localStorage.getItem('sharkDuoState');
     if (saved) {
         try { Object.assign(state, JSON.parse(saved)); } catch(e) {}
     }
@@ -98,15 +91,16 @@ function loadState() {
 
 const engine = {
     refresh() {
-        this.drawMountain();
+        this.drawPath();
         this.updateProgress();
         this.updateNextMilestone();
         this.updateAvatar();
         document.getElementById('currentInput').value = state.wealth;
+        document.getElementById('currentLevel').innerText = this.getCurrentIndex() + 1;
     },
 
     generateMilestones() {
-        const stages = 100;
+        const stages = 50; // عدد أقل لتناسب التصميم العمودي
         const milestones = [0];
         for (let i = 1; i < stages; i++) {
             const ratio = Math.pow(i / stages, 2.5);
@@ -114,7 +108,6 @@ const engine = {
             if (amount > milestones[milestones.length - 1]) milestones.push(amount);
         }
         if (milestones[milestones.length - 1] !== state.goal) milestones.push(state.goal);
-        // منع التكرار اللانهائي
         let safety = 0;
         while (milestones.length < stages && safety < 200) {
             const last = milestones[milestones.length - 1];
@@ -134,104 +127,86 @@ const engine = {
         return idx;
     },
 
-    drawMountain() {
+    // رسم مسار Duolingo العمودي
+    drawPath() {
         if (!state.milestones.length) this.generateMilestones();
-        const pathElement = document.getElementById('mountainPath');
-        const progressPath = document.getElementById('progressPath');
-        const stagesContainer = document.getElementById('stagesContainer');
-        if (!pathElement || !stagesContainer) return;
-
-        const pathLength = pathElement.getTotalLength();
-        if (!pathLength || pathLength === 0) {
-            requestAnimationFrame(() => this.drawMountain());
-            return;
-        }
+        const container = document.getElementById('duolingoPath');
+        if (!container) return;
 
         const currentIndex = this.getCurrentIndex();
-        const visibleStages = 20;
-        const step = Math.max(1, Math.floor(state.milestones.length / visibleStages));
-
-        stagesContainer.innerHTML = '';
-        for (let i = 0; i < state.milestones.length; i += step) {
-            if (i >= state.milestones.length - 1 && i > 0) i = state.milestones.length - 1;
-            const amount = state.milestones[i];
+        let html = '<div class="path-line"></div>';
+        
+        state.milestones.forEach((amount, idx) => {
             const completed = state.wealth >= amount;
-            const isCurrent = i === currentIndex;
+            const isCurrent = idx === currentIndex;
+            const isNext = idx === currentIndex + 1;
             const label = amount >= 1000 ? (amount/1000).toFixed(1) + 'k' : amount;
+            const side = idx % 2 === 0 ? 'right' : 'left'; // تناوب اليمين واليسار
             
-            const fraction = state.milestones.length > 1 ? i / (state.milestones.length - 1) : 0;
-            const point = pathElement.getPointAtLength(fraction * pathLength);
-
-            const div = document.createElement('div');
-            div.className = `stage-point ${completed ? 'completed' : ''} ${isCurrent ? 'current' : ''}`;
-            // إصلاح: استخدام px مباشرة داخل حاوية نسبية
-            div.style.left = point.x + 'px';
-            div.style.top = point.y + 'px';
-            div.innerHTML = `<span class="stage-num">${i+1}</span><span class="stage-amount">${label}</span>`;
-            div.onclick = () => engine.showStageInfo(i+1, amount, completed);
-            stagesContainer.appendChild(div);
-
-            if (i >= state.milestones.length - 1) break;
+            html += `
+                <div class="path-node ${side} ${completed ? 'completed' : ''} ${isCurrent ? 'current' : ''} ${isNext ? 'next' : ''}"
+                     onclick="engine.showStageInfo(${idx+1}, ${amount}, ${completed})"
+                     style="top: ${(idx / (state.milestones.length - 1)) * 100}%;">
+                    <div class="node-dot"></div>
+                    <div class="node-card">
+                        <span class="node-num">${idx+1}</span>
+                        <span class="node-amount">${label}</span>
+                        ${isCurrent ? '<span class="node-shark">🦈</span>' : ''}
+                    </div>
+                </div>`;
+        });
+        container.innerHTML = html;
+        
+        // تمرير تلقائي للمرحلة الحالية
+        const currentElement = container.querySelector('.current');
+        if (currentElement) {
+            currentElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
-
-        if (progressPath) {
-            const progressFraction = state.milestones.length > 1 ? (currentIndex + 1) / state.milestones.length : 0;
-            progressPath.style.strokeDashoffset = pathLength - (pathLength * progressFraction);
-        }
-        this.updateAvatar();
-    },
-
-    updateAvatar() {
-        const pathElement = document.getElementById('mountainPath');
-        const avatar = document.getElementById('climberAvatar');
-        if (!pathElement || !avatar || !state.milestones.length) return;
-        const pathLength = pathElement.getTotalLength();
-        if (!pathLength) return;
-        const currentIndex = this.getCurrentIndex();
-        const fraction = state.milestones.length > 1 ? currentIndex / (state.milestones.length - 1) : 0;
-        const point = pathElement.getPointAtLength(fraction * pathLength);
-        avatar.style.left = point.x + 'px';
-        avatar.style.top = point.y + 'px';
     },
 
     updateProgress() {
         if (!state.milestones.length) return;
-        const currentIndex = this.getCurrentIndex();
-        const progress = ((currentIndex + 1) / state.milestones.length) * 100;
+        const idx = this.getCurrentIndex();
+        const progress = ((idx + 1) / state.milestones.length) * 100;
         document.getElementById('globalProgressFill').style.width = progress + '%';
         document.getElementById('globalProgressText').innerText = Math.floor(progress) + '%';
     },
 
     updateNextMilestone() {
         if (!state.milestones.length) return;
-        const currentIndex = this.getCurrentIndex();
-        const nextAmount = currentIndex < state.milestones.length - 1 ? state.milestones[currentIndex + 1] : null;
-        const infoDiv = document.getElementById('nextMilestoneInfo');
-        if (nextAmount) {
-            document.getElementById('nextAmount').innerText = nextAmount.toLocaleString();
-            document.getElementById('remainingAmount').innerText = (nextAmount - state.wealth).toLocaleString();
-            infoDiv.style.display = 'block';
+        const idx = this.getCurrentIndex();
+        const next = idx < state.milestones.length - 1 ? state.milestones[idx + 1] : null;
+        const info = document.getElementById('nextMilestoneInfo');
+        if (next) {
+            document.getElementById('nextAmount').innerText = next.toLocaleString();
+            document.getElementById('remainingAmount').innerText = (next - state.wealth).toLocaleString();
+            info.style.display = 'block';
         } else {
-            infoDiv.style.display = 'none';
+            info.style.display = 'none';
         }
+    },
+
+    updateAvatar() {
+        const container = document.getElementById('duolingoPath');
+        const avatar = document.getElementById('climberAvatar');
+        if (!container || !avatar || !state.milestones.length) return;
+        const idx = this.getCurrentIndex();
+        const percent = (idx / (state.milestones.length - 1)) * 100;
+        avatar.style.top = percent + '%';
     },
 
     showStageInfo(num, amount, completed) {
         const tip = document.getElementById('stageTooltip');
         tip.classList.remove('hidden');
-        const rem = state.goal - amount;
         tip.innerHTML = `
-            <b>🏁 مرحلة ${num}</b><br>
+            <b>🎯 مرحلة ${num}</b><br>
             المبلغ: ${amount.toLocaleString()} ج.م<br>
-            ${completed ? '✅ مكتملة 🦈' : `⏳ المتبقي للقمة: ${rem.toLocaleString()} ج.م`}
+            ${completed ? '✅ مكتملة 🦈' : `⏳ المتبقي: ${(state.goal - amount).toLocaleString()} ج.م`}
         `;
-        // إصلاح: إزالة scrollIntoView التي كانت تقفز بالصفحة
     },
 
     setGoal(value) {
-        const goal = parseInt(value);
-        if (isNaN(goal)) return;
-        updateState({ goal });
+        updateState({ goal: parseInt(value) || 1000000 });
     },
 
     async loadFromFirestore() {
@@ -239,56 +214,51 @@ const engine = {
             const { collection, query, where, getDocs } = window.__firestore_helpers || {};
             if (getDocs && window.auth?.currentUser) {
                 const q = query(collection(window.db, "assets"), where("userId", "==", window.auth.currentUser.uid));
-                const snapshot = await getDocs(q);
+                const snap = await getDocs(q);
                 let total = 0;
-                snapshot.forEach(doc => { total += Number(doc.data().value) || 0; });
+                snap.forEach(d => { total += Number(d.data().value) || 0; });
                 updateState({ wealth: Math.floor(total) });
-                engine.sharkTalk('motivator', '🦈 تم تحميل ثروتك! استمر في التسلق.');
+                engine.sharkTalk('motivator', '🦈 تم تحميل ثروتك!');
             } else {
                 engine.sharkTalk('strict', '⚠️ تعذر الاتصال بالمحفظة.');
             }
         } catch (e) {
-            engine.sharkTalk('strict', '⚠️ خطأ في تحميل المحفظة.');
-            console.error(e);
+            engine.sharkTalk('strict', '⚠️ خطأ في التحميل.');
         }
     },
 
     sharkTimeout: null,
-    sharkTalk(mood, message) {
+    sharkTalk(mood, msg) {
         if (this.sharkTimeout) clearTimeout(this.sharkTimeout);
-        const tooltip = document.getElementById('sharkTooltip');
-        if (!tooltip) return;
-        document.getElementById('sharkMessage').innerText = message;
-        tooltip.classList.remove('hidden');
-        this.sharkTimeout = setTimeout(() => tooltip.classList.add('hidden'), 5000);
+        const el = document.getElementById('sharkTooltip');
+        if (!el) return;
+        document.getElementById('sharkMessage').innerText = msg;
+        el.classList.remove('hidden');
+        this.sharkTimeout = setTimeout(() => el.classList.add('hidden'), 5000);
     },
 
     openAdvisor() {
-        const messages = {
-            motivator: '🦈 أنت بطل! كل خطوة تقربك للقمة!',
-            strict: '🦈 الأرقام واضحة... زود استثمارك!',
-            adventurer: '🦈 خاطر عشان توصل للقمة بسرعة!'
+        const msgs = {
+            motivator: '🦈 أنت بطل! استمر!',
+            strict: '🦈 زود استثمارك!',
+            adventurer: '🦈 خاطر للقمة!'
         };
-        const mood = ['motivator', 'strict', 'adventurer'][Math.floor(Math.random() * 3)];
-        engine.sharkTalk(mood, messages[mood]);
+        const mood = ['motivator','strict','adventurer'][Math.floor(Math.random()*3)];
+        engine.sharkTalk(mood, msgs[mood]);
     },
 
     openSimulation() {
         const saving = prompt("كم تدخر شهرياً؟");
         if (!saving || isNaN(saving)) return;
-        const monthlyRate = 0.015;
-        let months = 0;
-        let simulatedWealth = state.wealth;
-        while (simulatedWealth < state.goal && months < 1200) {
-            simulatedWealth = simulatedWealth * (1 + monthlyRate) + Number(saving);
+        let months = 0, sim = state.wealth;
+        while (sim < state.goal && months < 1200) {
+            sim = sim * 1.015 + Number(saving);
             months++;
         }
-        if (months >= 1200) {
-            engine.sharkTalk('strict', '🦈 الهدف بعيد جداً... جرب تزود دخلك.');
-        } else {
-            const years = Math.floor(months / 12);
-            const remMonths = months % 12;
-            engine.sharkTalk('motivator', `💪 ستصل للقمة خلال ${years} سنة و ${remMonths} شهر.`);
+        if (months >= 1200) engine.sharkTalk('strict', '🦈 الهدف بعيد...');
+        else {
+            const y = Math.floor(months/12), m = months%12;
+            engine.sharkTalk('motivator', `💪 ${y} سنة و ${m} شهر`);
         }
     },
 
@@ -296,14 +266,12 @@ const engine = {
         const p = document.getElementById('leaderboardPanel');
         p.classList.toggle('hidden');
         if (!p.classList.contains('hidden')) {
-            const names = ["مستثمر ذكي", "قرش العقار", "ملك الأسهم", "صائد الفرص", "محفظة حديد"];
-            let html = '<h3>🏆 لوحة الصدارة</h3>';
-            for (let i = 0; i < 5; i++) {
-                const name = names[Math.floor(Math.random() * names.length)];
-                const amount = Math.floor(Math.random() * 900000 + 100000);
-                html += `<div class="leader-item">${i+1}. ${name} – <b>${amount.toLocaleString()} ج.م</b></div>`;
+            const names = ["مستثمر ذكي","قرش العقار","ملك الأسهم","صائد الفرص","محفظة حديد"];
+            let h = '<h3>🏆 لوحة الصدارة</h3>';
+            for (let i=0;i<5;i++) {
+                h += `<div class="leader-item">${i+1}. ${names[Math.floor(Math.random()*5)]} – <b>${Math.floor(Math.random()*900000+100000).toLocaleString()} ج.م</b></div>`;
             }
-            p.innerHTML = html;
+            p.innerHTML = h;
         }
     }
 };
@@ -313,31 +281,23 @@ function updateStreakDisplay() {
     let last = localStorage.getItem('lastLoginDate');
     let s = parseInt(localStorage.getItem('loginStreak') || '0');
     if (last !== today) {
-        const yesterday = new Date(Date.now() - 86400000).toLocaleDateString('en-CA');
-        s = (last === yesterday) ? s + 1 : 1;
+        const yesterday = new Date(Date.now()-86400000).toLocaleDateString('en-CA');
+        s = (last === yesterday) ? s+1 : 1;
         localStorage.setItem('lastLoginDate', today);
         localStorage.setItem('loginStreak', s);
     }
     state.streak = s;
-    const badge = document.getElementById('streakDays');
-    if (badge) badge.innerText = s;
-    if (s >= 7) {
-        const streakBadge = document.getElementById('streakBadge');
-        if (streakBadge) streakBadge.innerHTML = `🔥🔥 ${s} يوم ملتهب!`;
-    }
+    const el = document.getElementById('streakDays');
+    if (el) el.innerText = s;
 }
 
 const tips = [
-    "كل قرش تستثمره يرفعك درجة 🚀",
-    "لا تنظر للقمة كحلم، بل كمحطة 🌟",
-    "التوفير المنتظم هو وقود الصعود 💪",
-    "كلما علوت، اشتدت الرياح… اثبت! 💨",
-    "القروش العظيمة تبدأ بزعانف صغيرة 🦈",
-    "العادات اليومية تصنع مليونير الغد 📈",
+    "كل قرش يرفعك درجة 🚀", "التوفير وقود الصعود 💪",
+    "العادات تصنع مليونير الغد 📈", "القروش العظيمة تبدأ بزعانف صغيرة 🦈"
 ];
 setInterval(() => {
-    const tipEl = document.getElementById('tipText');
-    if (tipEl) tipEl.innerText = tips[Math.floor(Math.random() * tips.length)];
+    const el = document.getElementById('tipText');
+    if (el) el.innerText = tips[Math.floor(Math.random()*tips.length)];
 }, 6000);
 
 loadState();
@@ -345,15 +305,11 @@ updateStreakDisplay();
 requestAnimationFrame(() => {
     engine.generateMilestones();
     engine.refresh();
-    engine.sharkTalk('motivator', '🦈 أهلاً بك في رحلة المليونير! اضغط على المراحل لترى التفاصيل.');
-});
-
-window.addEventListener('resize', () => {
-    engine.refresh();
+    engine.sharkTalk('motivator', '🦈 أهلاً بك! اضغط على المراحل لترى التفاصيل.');
 });
 
 document.addEventListener('click', (e) => {
-    if (!e.target.closest('.stage-point')) {
+    if (!e.target.closest('.path-node')) {
         const tip = document.getElementById('stageTooltip');
         if (tip) tip.classList.add('hidden');
     }
@@ -362,7 +318,7 @@ document.addEventListener('click', (e) => {
 
 <style>
     body { background: #0f172a; color: white; font-family: 'Tajawal', sans-serif; margin: 0; }
-    .roadmap-container { padding: 10px; max-width: 500px; margin: auto; }
+    .duolingo-container { padding: 10px; max-width: 500px; margin: auto; }
 
     .header { background: #0284c7; padding: 15px; border-radius: 20px; margin-bottom: 10px; }
     .header h2 { margin: 0; font-size: 22px; }
@@ -371,8 +327,8 @@ document.addEventListener('click', (e) => {
     .badges span { background: #ffffff20; padding: 2px 10px; border-radius: 20px; }
     .tip { background: #ffffff20; padding: 6px 10px; margin-top: 8px; border-radius: 12px; font-size: 13px; }
 
-    .global-progress { height: 6px; background: #334155; border-radius: 3px; margin: 10px 0; position: relative; overflow: hidden; }
-    .progress-fill { height: 100%; background: linear-gradient(90deg, #0ea5e9, #fbbf24); border-radius: 3px; transition: width 0.4s; }
+    .global-progress { height: 8px; background: #334155; border-radius: 4px; margin: 10px 0; position: relative; overflow: hidden; }
+    .progress-fill { height: 100%; background: linear-gradient(90deg, #0ea5e9, #fbbf24); border-radius: 4px; transition: width 0.5s; }
     .progress-text { position: absolute; right: 5px; top: -18px; font-size: 11px; color: #94a3b8; }
 
     .actions { display: flex; gap: 6px; margin-bottom: 10px; }
@@ -380,51 +336,85 @@ document.addEventListener('click', (e) => {
 
     .panel { background: white; color: #0f172a; padding: 12px; border-radius: 16px; margin: 10px 0; }
     .hidden { display: none; }
-
     .settings select, .settings input { width: 100%; padding: 10px; margin: 4px 0; border-radius: 12px; border: 1px solid #e2e8f0; background: #f8fafc; }
     .settings button { width: 100%; padding: 10px; background: #0ea5e9; color: white; border: none; border-radius: 12px; font-weight: bold; margin-top: 5px; cursor: pointer; }
     .next-info { background: #e0f2fe; padding: 8px; border-radius: 12px; font-size: 13px; margin: 8px 0; display: none; }
 
-    .mountain {
-        background: linear-gradient(to top, #1e293b, #334155, #38bdf8);
-        padding: 0; border-radius: 20px; position: relative; height: 400px; overflow: hidden; margin: 15px 0;
+    /* مسار Duolingo */
+    .duolingo-path-container {
+        position: relative;
+        margin: 20px 0;
+        padding: 20px 0;
+        min-height: 600px;
     }
-    .clouds { position: absolute; top: 20px; left: 0; right: 0; display: flex; justify-content: space-around; opacity: 0.4; pointer-events: none; }
-    .cloud { width: 60px; height: 20px; background: white; border-radius: 50px; animation: moveCloud 15s linear infinite; }
-    .cloud1 { animation-duration: 12s; }
-    .cloud2 { animation-duration: 18s; width: 80px; margin-top: 15px; }
-    .cloud3 { animation-duration: 14s; width: 50px; margin-top: 30px; }
-    @keyframes moveCloud { 0% { transform: translateX(100px); } 100% { transform: translateX(-100px); } }
-
-    .stars { position: absolute; top: 5px; left: 0; right: 0; display: flex; justify-content: center; gap: 25px; font-size: 18px; }
-    .star { animation: twinkle 2s infinite alternate; }
-    @keyframes twinkle { 0% { opacity: 0.3; transform: scale(0.8); } 100% { opacity: 1; transform: scale(1.2); } }
-
-    .peak { position: absolute; top: 5px; left: 50%; transform: translateX(-50%); text-align: center; z-index: 5; }
-    .crown { font-size: 28px; display: block; animation: crownGlow 3s infinite; }
-    @keyframes crownGlow { 0% { text-shadow: 0 0 10px gold; } 50% { text-shadow: 0 0 25px gold, 0 0 40px orange; } 100% { text-shadow: 0 0 10px gold; } }
-
-    .mountain-path { position: absolute; top: 10px; left: 0; width: 100%; height: 100%; z-index: 1; }
-
-    .stages { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2; }
-    .stage-point {
+    .duolingo-path {
+        position: relative;
+        width: 100%;
+        height: 100%;
+    }
+    .path-line {
         position: absolute;
-        width: 44px; height: 44px; background: white; border-radius: 22px;
-        display: flex; flex-direction: column; align-items: center; justify-content: center;
-        font-size: 10px; color: #0f172a; cursor: pointer; transition: 0.3s;
-        transform: translate(-50%, -50%); box-shadow: 0 3px 8px rgba(0,0,0,0.25);
+        left: 50%;
+        top: 0;
+        bottom: 0;
+        width: 4px;
+        background: #334155;
+        transform: translateX(-50%);
+        border-radius: 2px;
     }
-    .stage-point.completed { background: linear-gradient(135deg, #0ea5e9, #22c55e); color: white; }
-    .stage-point.current { background: #fbbf24; border: 3px solid white; transform: translate(-50%, -50%) scale(1.35); z-index: 10; }
-    .stage-num { font-weight: 800; font-size: 13px; }
-    .stage-amount { font-size: 8px; }
+    .path-node {
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        cursor: pointer;
+        transition: 0.3s;
+        z-index: 2;
+    }
+    .path-node.left { flex-direction: row-reverse; left: calc(50% - 60px); }
+    .path-node.right { left: calc(50% + 60px); }
+    .node-dot {
+        width: 12px; height: 12px;
+        background: #334155; border-radius: 50%;
+        border: 2px solid #94a3b8;
+        flex-shrink: 0;
+    }
+    .path-node.completed .node-dot { background: #22c55e; border-color: #22c55e; }
+    .path-node.current .node-dot {
+        background: #fbbf24; border-color: #fbbf24;
+        box-shadow: 0 0 15px #fbbf24; animation: pulse 1s infinite;
+    }
+    .path-node.next .node-dot { background: #bae6fd; border-color: #0ea5e9; }
+    .node-card {
+        background: white; color: #0f172a;
+        padding: 8px 12px; border-radius: 12px;
+        font-size: 11px; font-weight: bold;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        position: relative;
+    }
+    .path-node.completed .node-card { background: #22c55e; color: white; }
+    .path-node.current .node-card { background: #fbbf24; color: #0f172a; }
+    .path-node.next .node-card { background: #e0f2fe; }
+    .node-num { display: block; font-size: 13px; }
+    .node-amount { font-size: 10px; opacity: 0.8; }
+    .node-shark { position: absolute; top: -20px; right: -10px; font-size: 18px; }
 
-    .climber { position: absolute; z-index: 10; font-size: 30px; transition: all 0.6s ease; transform: translate(-50%, -50%); filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5)); }
-    .shark-tooltip {
-        position: fixed; bottom: 100px; left: 10px; background: #1e293b; color: white;
-        padding: 12px; border-radius: 14px; font-size: 14px; z-index: 50;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.5); animation: fadeIn 0.3s; max-width: 220px;
+    .climber {
+        position: absolute; left: 50%; transform: translateX(-50%);
+        font-size: 26px; z-index: 10; transition: top 0.6s ease;
+        filter: drop-shadow(0 4px 4px rgba(0,0,0,0.4));
     }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    .shark-tooltip {
+        position: fixed; bottom: 100px; left: 10px;
+        background: #1e293b; color: white;
+        padding: 12px; border-radius: 14px; font-size: 14px;
+        z-index: 50; box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        animation: fadeIn 0.3s; max-width: 220px;
+    }
+    @keyframes fadeIn { from {opacity:0;transform:translateY(10px)} to {opacity:1;transform:translateY(0)} }
+    @keyframes pulse { 0%{transform:scale(1)} 50%{transform:scale(1.2)} 100%{transform:scale(1)} }
     .leader-item { font-size: 13px; padding: 4px 0; border-bottom: 1px solid #e2e8f0; }
 </style>
