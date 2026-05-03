@@ -37,6 +37,7 @@
                     <span id="modalDate" class="text-xs text-gray-400 mr-2"></span>
                 </div>
             </div>
+            <!-- محتوى النص أو الفيديو -->
             <div id="modalContent" class="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap"></div>
             <div id="modalVideo" class="hidden w-full aspect-video rounded-2xl overflow-hidden"></div>
             <button onclick="academy.closeContentModal()" class="w-full bg-sky-500 text-white py-3 rounded-xl font-bold text-sm hover:bg-sky-600 transition">إغلاق</button>
@@ -79,17 +80,25 @@
         const auth = window.auth;
         const engine = window.engine;
 
+        // استخراج معرف فيديو يوتيوب من الرابط
         function extractYouTubeID(url) {
+            if (!url) return null;
+            // تنظيف الرابط من المسافات
+            url = url.trim();
+            // أنماط مختلفة لروابط يوتيوب
             const patterns = [
-                /(?:https?:\/\/)?(?:www\.)?youtube\.com\/watch\?v=([A-Za-z0-9_-]+)/,
-                /(?:https?:\/\/)?(?:www\.)?youtube\.com\/embed\/([A-Za-z0-9_-]+)/,
-                /(?:https?:\/\/)?youtu\.be\/([A-Za-z0-9_-]+)/
+                /(?:https?:\/\/)?(?:www\.)?youtube\.com\/watch\?v=([A-Za-z0-9_-]{11})/,
+                /(?:https?:\/\/)?(?:www\.)?youtube\.com\/embed\/([A-Za-z0-9_-]{11})/,
+                /(?:https?:\/\/)?youtu\.be\/([A-Za-z0-9_-]{11})/,
+                /(?:https?:\/\/)?(?:www\.)?youtube\.com\/shorts\/([A-Za-z0-9_-]{11})/
             ];
             for (let pattern of patterns) {
                 const match = url.match(pattern);
                 if (match) return match[1];
             }
-            return null;
+            // حاول استخراج أي معرّف مكون من 11 حرفًا
+            const genericMatch = url.match(/[A-Za-z0-9_-]{11}/);
+            return genericMatch ? genericMatch[0] : null;
         }
 
         window.academy = {
@@ -137,12 +146,17 @@
 
                         const shortDesc = desc.length > 80 ? desc.substring(0, 80) + '...' : desc;
 
-                        const escapedTitle = title.replace(/'/g, "\\'").replace(/"/g, '&quot;');
-                        const escapedAuthor = authorName.replace(/'/g, "\\'").replace(/"/g, '&quot;');
-
+                        // تخزين البيانات في attributes لتجنب مشاكل escaping
                         html += `
                         <div class="group bg-white rounded-2xl p-5 border border-gray-100 shadow-sm cursor-pointer hover:shadow-lg hover:border-sky-200 transition-all duration-300 transform hover:-translate-y-1"
-                             onclick="academy.openContent('${docItem.id}', '${escapedTitle}', '${escapedAuthor}', '${authorPhoto.replace(/'/g, "\\'")}', '${date}', '${videoLink.replace(/'/g, "\\'")}', '${this.currentTab}')">
+                             data-id="${docItem.id}"
+                             data-title="${title.replace(/"/g, '&quot;')}"
+                             data-author="${authorName.replace(/"/g, '&quot;')}"
+                             data-photo="${authorPhoto.replace(/"/g, '&quot;')}"
+                             data-date="${date}"
+                             data-video="${videoLink.replace(/"/g, '&quot;')}"
+                             data-tab="${this.currentTab}"
+                             onclick="academy.openContentFromElement(this)">
                             <div class="flex items-start gap-4">
                                 <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-sky-100 to-blue-100 flex items-center justify-center text-2xl flex-shrink-0 shadow-sm">
                                     ${icon}
@@ -167,6 +181,18 @@
                 }
             },
 
+            // دالة جديدة تستقبل العنصر مباشرة
+            openContentFromElement(el) {
+                const id = el.getAttribute('data-id');
+                const title = el.getAttribute('data-title');
+                const authorName = el.getAttribute('data-author');
+                const authorPhoto = el.getAttribute('data-photo');
+                const date = el.getAttribute('data-date');
+                const videoLink = el.getAttribute('data-video');
+                const tabType = el.getAttribute('data-tab');
+                this.openContent(id, title, authorName, authorPhoto, date, videoLink, tabType);
+            },
+
             async openContent(id, title, authorName, authorPhoto, date, videoLink, tabType) {
                 const modal = document.getElementById('contentModal');
                 const modalVideo = document.getElementById('modalVideo');
@@ -178,24 +204,29 @@
                 document.getElementById('modalDate').textContent = date;
                 modal.classList.remove('hidden');
 
+                // إخفاء الكل أولاً
                 modalVideo.classList.add('hidden');
+                modalVideo.innerHTML = '';
                 modalContent.classList.add('hidden');
-                modalContent.textContent = 'جاري التحميل...';
+                modalContent.textContent = '';
 
+                // إذا كان فيديو ولدينا رابط
                 if (tabType === 'videos' && videoLink) {
                     const videoID = extractYouTubeID(videoLink);
+                    console.log('Video link:', videoLink, 'Extracted ID:', videoID);
                     if (videoID) {
                         modalVideo.classList.remove('hidden');
-                        modalVideo.innerHTML = `<iframe class="w-full h-full rounded-2xl" src="https://www.youtube.com/embed/${videoID}" frameborder="0" allowfullscreen></iframe>`;
-                        modalContent.textContent = '';
-                        return;
+                        modalVideo.innerHTML = `<iframe class="w-full h-full rounded-2xl" src="https://www.youtube.com/embed/${videoID}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+                        return; // انتهينا، لا نحتاج لجلب نص
                     } else {
-                        modalContent.textContent = 'الرابط غير صالح أو لا يحتوي على فيديو يوتيوب.';
+                        modalContent.textContent = '⚠️ رابط الفيديو غير صالح أو لا يحتوي على معرف يوتيوب صحيح.';
                         modalContent.classList.remove('hidden');
                         return;
                     }
                 }
 
+                // للمقالات والكورسات: جلب المحتوى النصي من Firestore
+                modalContent.textContent = 'جاري التحميل...';
                 modalContent.classList.remove('hidden');
                 try {
                     const collectionMap = {
