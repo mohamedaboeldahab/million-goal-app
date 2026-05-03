@@ -108,6 +108,13 @@ window.engine = {
         if (!content) return;
         document.querySelectorAll('.nav-link').forEach(l => l.classList.toggle('active', l.dataset.page === pageName));
         content.innerHTML = '<div class="flex justify-center py-20"><div class="w-8 h-8 border-4 border-sky-500 border-t-transparent rounded-full animate-spin"></div></div>';
+
+        // --- إصلاح: تدمير المراقب القديم قبل تحميل الصفحة الجديدة ---
+        if (this._observer) {
+            this._observer.disconnect();
+            this._observer = null;
+        }
+
         try {
             const response = await fetch(`${pageName}.html`);
             const html = await response.text();
@@ -117,6 +124,7 @@ window.engine = {
                 newScript.textContent = oldScript.textContent;
                 oldScript.replaceWith(newScript);
             });
+
             if (pageName === 'home') {
                 setTimeout(() => {
                     this.listenToPosts();
@@ -124,7 +132,7 @@ window.engine = {
                     this.updateTypeButtons();
                     this.updateCreatorAvatar();
                     this.renderBgPicker();
-                    this.watchStoriesContainer();
+                    this.watchStoriesContainer(); // سينشئ observer جديد
                 }, 50);
             } else if (pageName === 'profile') {
                 setTimeout(() => {
@@ -292,9 +300,16 @@ window.engine = {
         return views.includes(userId);
     },
 
+    // --- إصلاح: مراقب القصص يصبح جديداً في كل مرة ---
     watchStoriesContainer() {
         const row = document.getElementById('storiesRow');
-        if (!row || this._observer) return;
+        if (!row) return;
+
+        // تدمير المراقب السابق إن وجد
+        if (this._observer) {
+            this._observer.disconnect();
+            this._observer = null;
+        }
 
         let startX = 0, startY = 0, moved = false;
 
@@ -535,43 +550,31 @@ window.engine = {
         btn.style.display = 'none';
     },
 
-    // ========== صفحة البروفايل (إصلاح الفهرس) ==========
-   listenToProfilePosts(containerId) {
-    const userId = auth.currentUser?.uid;
-    if (!userId) return;
-
-    // استعلام بسيط بدون orderBy لتجنب الحاجة للفهرس
-    const q = query(collection(db, "posts"), where("authorId", "==", userId));
-
-    onSnapshot(q, (snapshot) => {
-        const container = document.getElementById(containerId);
-        if (!container) return;
-
-        if (snapshot.empty) {
-            container.innerHTML = '<p class="text-gray-400 text-sm text-center py-8">لا توجد منشورات بعد</p>';
-            return;
-        }
-
-        // تحويل المستندات إلى كائنات عادية { id, data }
-        const docs = snapshot.docs.map(doc => ({ id: doc.id, data: doc.data() }));
-
-        // ترتيب النتائج يدوياً (الأحدث أولاً)
-        docs.sort((a, b) => {
-            const timeA = a.data.createdAt?.toDate?.()?.getTime?.() || 0;
-            const timeB = b.data.createdAt?.toDate?.()?.getTime?.() || 0;
-            return timeB - timeA;
+    // ========== صفحة البروفايل ==========
+    listenToProfilePosts(containerId) {
+        const userId = auth.currentUser?.uid;
+        if (!userId) return;
+        const q = query(collection(db, "posts"), where("authorId", "==", userId));
+        onSnapshot(q, (snapshot) => {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            if (snapshot.empty) {
+                container.innerHTML = '<p class="text-gray-400 text-sm text-center py-8">لا توجد منشورات بعد</p>';
+                return;
+            }
+            const docs = snapshot.docs.map(doc => ({ id: doc.id, data: doc.data() }));
+            docs.sort((a, b) => {
+                const timeA = a.data.createdAt?.toDate?.()?.getTime?.() || 0;
+                const timeB = b.data.createdAt?.toDate?.()?.getTime?.() || 0;
+                return timeB - timeA;
+            });
+            container.innerHTML = docs.map(doc => this.postHTML(doc.id, doc.data)).join('');
+            docs.forEach(doc => this.listenToComments(doc.id));
+        }, error => {
+            const container = document.getElementById(containerId);
+            if (container) container.innerHTML = '<p class="text-center text-red-500">تعذر تحميل المنشورات</p>';
         });
-
-        // عرض المنشورات باستخدام postHTML (بدون استدعاء دوال خاطئة)
-        container.innerHTML = docs.map(doc => this.postHTML(doc.id, doc.data)).join('');
-
-        // تفعيل التعليقات لكل منشور
-        docs.forEach(doc => this.listenToComments(doc.id));
-    }, error => {
-        const container = document.getElementById(containerId);
-        if (container) container.innerHTML = '<p class="text-center text-red-500">تعذر تحميل المنشورات</p>';
-    });
-},
+    },
 
     activateProfile() {
         document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -680,5 +683,8 @@ window.engine = {
         input.value = '';
     }
 };
+
+// تصدير الدوال المساعدة للملفات الأخرى (مثل courses.html)
 window.__firestore_helpers = { collection, query, orderBy, getDocs, addDoc, serverTimestamp, doc, getDoc };
+
 window.engine.init();
