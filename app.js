@@ -93,7 +93,7 @@ window.engine = {
                 <div class="w-20 h-20 bg-sky-500 rounded-[2rem] flex items-center justify-center mb-6 rotate-12 shadow-2xl">
                     <i class="fa-solid fa-fish-fins text-4xl text-white"></i>
                 </div>
-                <h1 class="text-white text-2xl font-black mb-10 tracking-widest uppercase">Shark Hub</h1>
+                <h1 class="text-white text-2xl font-black mb-10 tracking-widest uppercase">Shark Up</h1>
                 <button onclick="engine.login()" class="bg-white text-slate-900 px-10 py-4 rounded-2xl font-black shadow-2xl flex items-center gap-3 active:scale-95 transition-all">
                     <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20"> دخول القروش
                 </button>`;
@@ -596,7 +596,7 @@ window.engine = {
                 const u = auth.currentUser;
                 avatarImg.src = fixPhotoUrl(profile.photoURL || u.photoURL);
                 nameEl.textContent = profile.displayName || u.displayName || 'مستخدم';
-                const bio = profile.bio || '🦈 مؤسس في Shark Hub';
+                const bio = profile.bio || '🦈 عضو في Shark Up';
                 if (bioEl) bioEl.textContent = bio;
                 if (aboutEl) aboutEl.textContent = bio;
                 if (emailEl) emailEl.textContent = u.email || '';
