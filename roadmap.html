@@ -18,13 +18,13 @@
             </div>
             <div class="flex-1 min-w-[120px]">
                 <label class="text-xs font-bold text-gray-500 block mb-1">💰 ثروتي الحالية</label>
-                <input type="number" id="currentInput" value="0" class="w-full bg-gray-50 border rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-sky-400">
+                <input type="number" id="currentInput" value="0" class="w-full bg-gray-50 border rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-sky-400" readonly>
             </div>
             <button onclick="buildRoadmap()" class="bg-sky-500 text-white font-bold py-2.5 px-5 rounded-xl shadow hover:bg-sky-600 active:scale-95 transition">
                 🔁 تحديث
             </button>
             <button onclick="loadEngineData()" class="bg-gray-100 text-gray-700 font-bold py-2.5 px-4 rounded-xl shadow hover:bg-gray-200 active:scale-95 transition text-sm whitespace-nowrap">
-                📊 تحميل بياناتي
+                📊 تحميل من المحفظة
             </button>
         </div>
     </div>
@@ -39,23 +39,51 @@
 </div>
 
 <script>
-    // توليد المعالم حسب الهدف
+    // توليد 100 معلم من 0 إلى الهدف بقفزات متزايدة (نمو أسي)
     function generateMilestones(goal) {
+        const stages = 100;
         const milestones = [0];
-        let current = 0;
-        const stepSizes = [250, 500, 1000, 2000, 3000, 5000, 10000, 15000, 25000, 50000, 100000, 250000, 500000, 1000000, 2500000, 5000000, 10000000];
-        for (let step of stepSizes) {
-            while (current + step <= goal) {
-                current += step;
-                milestones.push(current);
-                if (current >= goal) break;
+        for (let i = 1; i < stages; i++) {
+            // النسبة المئوية: من 0.01 إلى 1.0 بتوزيع غير خطي (قفزات صغيرة في البداية)
+            const ratio = Math.pow(i / stages, 2.5); // الأس 2.5 يعطي قفزات بطيئة ثم سريعة
+            const amount = Math.round(ratio * goal);
+            // تجنب تكرار القيم
+            if (amount > milestones[milestones.length - 1]) {
+                milestones.push(amount);
             }
-            if (current >= goal) break;
         }
+        // التأكد من وجود الهدف كآخر مرحلة
         if (milestones[milestones.length - 1] !== goal) {
             milestones.push(goal);
         }
-        return milestones;
+        // حشو إذا قل العدد عن 100
+        while (milestones.length < stages) {
+            // إضافة قيم بينية بسيطة
+            const last = milestones[milestones.length - 1];
+            const beforeLast = milestones[milestones.length - 2] || 0;
+            const mid = Math.round((last + beforeLast) / 2);
+            milestones.splice(milestones.length - 1, 0, mid);
+        }
+        return milestones.slice(0, stages);
+    }
+
+    async function loadEngineData() {
+        // جلب إجمالي الأصول من Firestore
+        try {
+            const { collection, query, where, getDocs } = window.__firestore_helpers || {};
+            if (!getDocs || !window.auth?.currentUser) {
+                console.warn("Firestore helpers غير متاحة");
+            } else {
+                const q = query(collection(window.db, "assets"), where("userId", "==", window.auth.currentUser.uid));
+                const snapshot = await getDocs(q);
+                let total = 0;
+                snapshot.forEach(doc => { total += Number(doc.data().value) || 0; });
+                document.getElementById('currentInput').value = Math.floor(total);
+            }
+        } catch (e) {
+            console.error(e);
+        }
+        buildRoadmap();
     }
 
     function buildRoadmap() {
@@ -70,34 +98,33 @@
         const board = document.getElementById('gameBoard');
         if (!board) return;
 
-        const COLS = 5; // 5 خانات في الصف
-        const totalCells = Math.ceil(milestones.length / COLS) * COLS; // جبر العدد لمضاعفات 5
+        const COLS = 5;
         let html = '';
-        for (let i = 0; i < totalCells; i++) {
-            // حساب إحداثيات الشبكة (صف، عمود) ثم التحويل إلى مؤشر المسار المتعرج
+        for (let i = 0; i < milestones.length; i++) {
+            // حساب المسار المتعرج
             const row = Math.floor(i / COLS);
             const col = i % COLS;
             const isReversedRow = (row % 2 === 1);
-            const orderedCol = isReversedRow ? (COLS - 1 - col) : col;
-            const index = row * COLS + orderedCol;
+            const displayCol = isReversedRow ? (COLS - 1 - col) : col;
+            const displayIndex = row * COLS + displayCol;
 
-            if (index >= milestones.length) {
+            if (displayIndex >= milestones.length) {
                 html += '<div class="cell empty"></div>';
                 continue;
             }
 
-            const amount = milestones[index];
+            const amount = milestones[displayIndex];
             const completed = currentWealth >= amount;
-            // المرحلة الحالية: هي آخر مرحلة مكتملة (أو الأولى إذا لا شيء)
-            const isCurrent = (completed && (index === milestones.length - 1 || currentWealth < milestones[index + 1]));
-            const isNext = (!completed && (index === 0 || currentWealth >= milestones[index - 1]));
+            const isCurrent = (completed && (displayIndex === milestones.length - 1 || currentWealth < milestones[displayIndex + 1]));
+            const isNext = (!completed && (displayIndex === 0 || currentWealth >= milestones[displayIndex - 1]));
 
             const amountLabel = amount >= 1000 ? (amount / 1000).toFixed(amount % 1000 === 0 ? 0 : 1) + 'k' : amount;
 
             html += `
                 <div class="cell ${completed ? 'completed' : ''} ${isCurrent ? 'current' : ''} ${isNext ? 'next' : ''}"
-                     onclick="showStageInfo(${index+1}, ${amount}, ${completed})">
-                    <span class="cell-num">${index+1}</span>
+                     onclick="showStageInfo(${displayIndex+1}, ${amount}, ${completed})"
+                     style="order: ${displayIndex};">
+                    <span class="cell-num">${displayIndex+1}</span>
                     <span class="cell-amount">${amountLabel}</span>
                     ${isCurrent ? '<span class="shark">🦈</span>' : ''}
                 </div>`;
@@ -127,21 +154,13 @@
         document.getElementById('stageTooltip').classList.add('hidden');
     }
 
-    function loadEngineData() {
-        if (window.engine) {
-            const assetsTotal = window.engine.assets ? window.engine.assets.reduce((s, a) => s + a.val, 0) : 0;
-            const cash = window.engine.cash || 0;
-            const total = cash + assetsTotal;
-            document.getElementById('currentInput').value = Math.floor(total);
-            if (window.engine.goal) {
-                document.getElementById('goalInput').value = window.engine.goal;
-            }
-        }
+    // تحميل أولي تلقائي
+    if (window.__firestore_helpers && window.auth?.currentUser) {
+        loadEngineData();
+    } else {
+        document.getElementById('currentInput').value = '0';
         buildRoadmap();
     }
-
-    window.addEventListener('load', loadEngineData);
-    if (document.readyState === 'complete') loadEngineData();
 </script>
 
 <style>
