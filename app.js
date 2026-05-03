@@ -143,11 +143,13 @@ window.engine = {
             if (typeof setActiveNavLink === 'function') setActiveNavLink(pageName);
         } catch (e) { content.innerHTML = `<div class="text-center py-20 text-slate-400">قريباً..</div>`; }
     },
+// دالة loadAssets بدون orderBy (ترتيب يدوي)
 async loadAssets(containerId) {
     const userId = auth.currentUser?.uid;
     if (!userId) return;
 
-    const q = query(collection(db, "assets"), where("userId", "==", userId), orderBy("createdAt", "desc"));
+    // استعلام بدون orderBy
+    const q = query(collection(db, "assets"), where("userId", "==", userId));
     const snapshot = await getDocs(q);
     const container = document.getElementById(containerId);
     if (!container) return;
@@ -158,9 +160,12 @@ async loadAssets(containerId) {
         return;
     }
 
+    // تحويل وترتيب يدوي (الأحدث أولاً)
+    const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+    docs.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+
     let html = '';
-    snapshot.forEach(docSnap => {
-        const asset = docSnap.data();
+    docs.forEach(asset => {
         const categoryIcons = {
             'fixed_income': { icon: '🏦', color: 'from-blue-500 to-blue-700', label: 'دخل ثابت' },
             'stocks': { icon: '📈', color: 'from-emerald-500 to-emerald-700', label: 'أسهم' },
@@ -184,7 +189,7 @@ async loadAssets(containerId) {
             </div>
             <div class="text-right">
                 <div class="font-black text-sky-600">${Number(asset.value).toLocaleString()} ج.م</div>
-                <button onclick="engine.deleteAsset('${docSnap.id}')" class="text-red-400 text-xs mt-1 hover:underline">حذف</button>
+                <button onclick="engine.deleteAsset('${asset.id}')" class="text-red-400 text-xs mt-1 hover:underline">حذف</button>
             </div>
         </div>`;
     });
