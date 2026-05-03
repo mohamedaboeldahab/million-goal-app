@@ -1,55 +1,72 @@
 <div class="max-w-2xl mx-auto px-4 pt-6 space-y-6 pb-24 text-right" dir="rtl">
-    <!-- Header -->
-    <div class="bg-gradient-to-br from-sky-600 to-blue-800 rounded-[2rem] p-6 text-white shadow-xl">
-        <h2 class="text-xl font-black italic">SHARK UP ACADEMY</h2>
-        <p id="acadStatus" class="text-[9px] mt-2 py-1 px-3 bg-white/10 rounded-full w-fit">● الأكاديمية نشطة</p>
+    <!-- الهيدر -->
+    <div class="relative bg-gradient-to-br from-sky-600 via-blue-700 to-indigo-800 rounded-[2.5rem] p-8 text-white shadow-2xl overflow-hidden">
+        <div class="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-10 translate-x-10"></div>
+        <div class="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full translate-y-8 -translate-x-8"></div>
+        <h2 class="text-2xl sm:text-3xl font-black tracking-tight relative">مكتبة الموارد</h2>
+        <p class="text-sm text-white/80 mt-1 relative">تعلم، استثمر، وانمُ أعمالك 🚀</p>
     </div>
 
-    <!-- Tabs -->
-    <div class="flex gap-2 bg-gray-100 p-1 rounded-2xl">
-        <button id="tabCourses" class="flex-1 py-3 rounded-xl font-bold text-xs bg-sky-500 text-white shadow-sm" onclick="academy.switchTab('courses')">الكورسات</button>
-        <button id="tabArticles" class="flex-1 py-3 rounded-xl font-bold text-xs text-gray-500" onclick="academy.switchTab('articles')">المقالات</button>
+    <!-- التبويبات (3 أقسام) -->
+    <div class="flex gap-2 bg-gray-100 p-1.5 rounded-2xl">
+        <button id="tabCourses" class="flex-1 py-3 rounded-xl font-bold text-xs bg-sky-500 text-white shadow-sm transition-all duration-200" onclick="academy.switchTab('courses')">
+            <i class="fa-solid fa-book-open ml-1"></i> كورسات
+        </button>
+        <button id="tabArticles" class="flex-1 py-3 rounded-xl font-bold text-xs text-gray-500 transition-all duration-200" onclick="academy.switchTab('articles')">
+            <i class="fa-solid fa-newspaper ml-1"></i> مقالات
+        </button>
+        <button id="tabVideos" class="flex-1 py-3 rounded-xl font-bold text-xs text-gray-500 transition-all duration-200" onclick="academy.switchTab('videos')">
+            <i class="fa-solid fa-play ml-1"></i> فيديوهات
+        </button>
     </div>
 
-    <!-- قائمة البطاقات -->
+    <!-- محتوى البطاقات -->
     <div id="academyGrid" class="space-y-4 min-h-[150px]"></div>
 
     <!-- نافذة عرض المحتوى الكامل -->
-    <div id="contentModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-md z-[100] flex items-center justify-center p-6">
-        <div class="bg-white w-full max-w-sm rounded-[2rem] p-8 space-y-4 shadow-2xl max-h-[80vh] overflow-y-auto">
+    <div id="contentModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-lg rounded-[2.5rem] p-6 space-y-4 shadow-2xl max-h-[85vh] overflow-y-auto">
             <div class="flex justify-between items-center">
-                <h3 id="modalTitle" class="font-bold text-gray-800 text-lg"></h3>
-                <button onclick="academy.closeContentModal()" class="text-gray-400 text-2xl">&times;</button>
+                <h3 id="modalTitle" class="font-black text-gray-800 text-xl"></h3>
+                <button onclick="academy.closeContentModal()" class="text-gray-400 hover:text-gray-600 text-3xl leading-none">&times;</button>
             </div>
-            <div class="flex items-center gap-2 text-xs text-gray-500">
-                <img id="modalAuthorPhoto" src="" class="w-6 h-6 rounded-full">
-                <span id="modalAuthorName"></span>
-                <span id="modalDate"></span>
+            <div class="flex items-center gap-3 text-sm text-gray-500">
+                <img id="modalAuthorPhoto" src="" class="w-8 h-8 rounded-full border-2 border-sky-200">
+                <div>
+                    <span id="modalAuthorName" class="font-bold text-gray-700"></span>
+                    <span id="modalDate" class="text-xs text-gray-400 mr-2"></span>
+                </div>
             </div>
+            <!-- محتوى النص أو الفيديو -->
             <div id="modalContent" class="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap"></div>
-            <button onclick="academy.closeContentModal()" class="w-full bg-sky-500 text-white py-2 rounded-xl font-bold text-sm">إغلاق</button>
+            <div id="modalVideo" class="hidden w-full aspect-video rounded-2xl overflow-hidden"></div>
+            <button onclick="academy.closeContentModal()" class="w-full bg-sky-500 text-white py-3 rounded-xl font-bold text-sm hover:bg-sky-600 transition">إغلاق</button>
         </div>
     </div>
 
-    <!-- زر النشر العائم -->
-    <button onclick="academy.openModal()" class="fixed bottom-24 left-6 w-14 h-14 bg-sky-600 text-white shadow-2xl rounded-2xl flex items-center justify-center z-50 active:scale-90 transition-transform">
+    <!-- زر الإضافة العائم -->
+    <button onclick="academy.openModal()" class="fixed bottom-24 left-6 w-14 h-14 bg-sky-600 text-white shadow-2xl rounded-2xl flex items-center justify-center z-50 active:scale-90 transition-transform hover:bg-sky-700">
         <i class="fa-solid fa-plus text-xl"></i>
     </button>
 
-    <!-- نافذة إضافة المحتوى -->
-    <div id="acadModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-md z-[100] flex items-center justify-center p-6">
-        <div class="bg-white w-full max-w-sm rounded-[2rem] p-8 space-y-4 shadow-2xl">
-            <h3 class="font-bold text-gray-800 text-lg">نشر محتوى جديد</h3>
-            <input id="acadTitle" class="w-full bg-gray-100 border-none rounded-xl p-4 text-sm" placeholder="عنوان المحتوى">
-            <textarea id="acadDesc" class="w-full bg-gray-100 border-none rounded-xl p-4 text-sm" rows="4" placeholder="التفاصيل..."></textarea>
-            <button id="acadBtnSave" onclick="academy.saveData()" class="w-full bg-sky-600 text-white py-4 rounded-xl font-bold">حفظ ونشر</button>
+    <!-- نافذة إضافة محتوى جديد -->
+    <div id="acadModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-lg rounded-[2.5rem] p-6 space-y-4 shadow-2xl">
+            <h3 class="font-black text-gray-800 text-lg">إضافة محتوى جديد</h3>
+            <input id="acadTitle" class="w-full bg-gray-100 border-none rounded-2xl p-4 text-sm" placeholder="عنوان المحتوى">
+            <textarea id="acadDesc" class="w-full bg-gray-100 border-none rounded-2xl p-4 text-sm" rows="4" placeholder="التفاصيل..."></textarea>
+            <!-- حقل رابط يوتيوب (يظهر فقط عند اختيار فيديوهات) -->
+            <div id="videoLinkGroup" class="hidden">
+                <input id="acadVideoLink" class="w-full bg-gray-100 border-none rounded-2xl p-4 text-sm" placeholder="رابط فيديو يوتيوب...">
+                <p class="text-[10px] text-gray-400 mt-1">مثال: https://www.youtube.com/watch?v=xxxx</p>
+            </div>
+            <button id="acadBtnSave" onclick="academy.saveData()" class="w-full bg-sky-600 text-white py-4 rounded-2xl font-bold hover:bg-sky-700 transition">حفظ ونشر</button>
             <button onclick="academy.closeModal()" class="w-full text-gray-400 text-xs mt-2">إلغاء</button>
         </div>
     </div>
 </div>
 
 <script>
-    // انتظار تجهيز المتغيرات العامة
     function waitForGlobals(callback) {
         if (window.__firestore_helpers && window.engine && window.engine.postHTML) {
             callback();
@@ -64,94 +81,180 @@
         const auth = window.auth;
         const engine = window.engine;
 
+        // استخراج معرف فيديو يوتيوب من الرابط
+        function extractYouTubeID(url) {
+            const patterns = [
+                /(?:https?:\/\/)?(?:www\.)?youtube\.com\/watch\?v=([A-Za-z0-9_-]+)/,
+                /(?:https?:\/\/)?(?:www\.)?youtube\.com\/embed\/([A-Za-z0-9_-]+)/,
+                /(?:https?:\/\/)?youtu\.be\/([A-Za-z0-9_-]+)/
+            ];
+            for (let pattern of patterns) {
+                const match = url.match(pattern);
+                if (match) return match[1];
+            }
+            return null;
+        }
+
         window.academy = {
             currentTab: 'courses',
 
             async loadData() {
                 const grid = document.getElementById('academyGrid');
                 if (!grid) return;
-                grid.innerHTML = '<div class="flex justify-center py-10"><div class="w-6 h-6 border-2 border-sky-500 border-t-transparent rounded-full animate-spin"></div></div>';
+                grid.innerHTML = '<div class="flex justify-center py-20"><div class="w-8 h-8 border-4 border-sky-500 border-t-transparent rounded-full animate-spin"></div></div>';
+
+                const collectionMap = {
+                    courses: 'academy_courses',
+                    articles: 'academy_articles',
+                    videos: 'academy_videos'
+                };
+                const collectionName = collectionMap[this.currentTab] || 'academy_courses';
 
                 try {
-                    const collectionName = this.currentTab === 'courses' ? 'academy_courses' : 'academy_articles';
                     const q = query(collection(db, collectionName), orderBy('createdAt', 'desc'));
                     const snapshot = await getDocs(q);
 
                     if (snapshot.empty) {
-                        grid.innerHTML = '<div class="text-center py-10 text-gray-400 text-xs">قريباً.. أول محتوى للأكاديمية</div>';
+                        const emptyMessages = {
+                            courses: '📚 لا توجد كورسات بعد. أضف أول كورس!',
+                            articles: '📄 لا توجد مقالات بعد. أضف مقالاً!',
+                            videos: '🎬 لا توجد فيديوهات بعد. أضف فيديو!'
+                        };
+                        grid.innerHTML = `<div class="text-center py-16 text-gray-400 text-sm">${emptyMessages[this.currentTab] || 'لا يوجد محتوى'}</div>`;
                         return;
                     }
 
                     let html = '';
-                    snapshot.forEach(doc => {
-                        const data = doc.data();
+                    snapshot.forEach(docItem => {
+                        const data = docItem.data();
                         const title = data.title || 'بدون عنوان';
                         const desc = data.desc || '';
-                        const authorName = data.authorName || 'أكاديمية Shark UP';
+                        const authorName = data.authorName || 'Shark UP';
                         const authorPhoto = data.authorPhoto || '';
                         const date = data.createdAt ? new Date(data.createdAt.seconds * 1000).toLocaleDateString('ar-EG') : '';
+                        const videoLink = data.videoLink || '';
 
-                        // وصف مختصر (أول 100 حرف)
-                        const shortDesc = desc.length > 100 ? desc.substring(0, 100) + '...' : desc;
+                        // أيقونة حسب القسم
+                        let icon = '📄';
+                        if (this.currentTab === 'courses') icon = '📚';
+                        else if (this.currentTab === 'videos') icon = '🎬';
+
+                        const shortDesc = desc.length > 80 ? desc.substring(0, 80) + '...' : desc;
+
+                        const escapedTitle = title.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                        const escapedAuthor = authorName.replace(/'/g, "\\'").replace(/"/g, '&quot;');
 
                         html += `
-                        <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm cursor-pointer hover:shadow-md transition-shadow"
-                             onclick="academy.openContent('${doc.id}', '${title.replace(/'/g, "\\'")}', '${authorName.replace(/'/g, "\\'")}', '${authorPhoto.replace(/'/g, "\\'")}', '${date}')">
-                            <h4 class="font-bold text-slate-800 text-sm mb-2">${title}</h4>
-                            <p class="text-xs text-gray-500 leading-relaxed mb-3">${shortDesc}</p>
-                            <div class="flex items-center gap-2 text-[10px] text-gray-400">
-                                <img src="${authorPhoto}" class="w-5 h-5 rounded-full" onerror="this.src='${window.engine?.DEFAULT_AVATAR || ''}'">
-                                <span>${authorName}</span>
-                                <span>·</span>
-                                <span>${date}</span>
+                        <div class="group bg-white rounded-2xl p-5 border border-gray-100 shadow-sm cursor-pointer hover:shadow-lg hover:border-sky-200 transition-all duration-300 transform hover:-translate-y-1"
+                             onclick="academy.openContent('${docItem.id}', '${escapedTitle}', '${escapedAuthor}', '${authorPhoto.replace(/'/g, "\\'")}', '${date}', '${videoLink.replace(/'/g, "\\'")}', '${this.currentTab}')">
+                            <div class="flex items-start gap-4">
+                                <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-sky-100 to-blue-100 flex items-center justify-center text-2xl flex-shrink-0 shadow-sm">
+                                    ${icon}
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <h4 class="font-extrabold text-gray-800 text-base mb-1 line-clamp-1">${title}</h4>
+                                    <p class="text-xs text-gray-500 leading-relaxed mb-3 line-clamp-2">${shortDesc}</p>
+                                    <div class="flex items-center gap-2 text-[10px] text-gray-400">
+                                        <img src="${authorPhoto}" class="w-5 h-5 rounded-full border border-gray-200" onerror="this.style.display='none'">
+                                        <span class="font-bold">${authorName}</span>
+                                        <span>·</span>
+                                        <span>${date}</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>`;
                     });
                     grid.innerHTML = html;
                 } catch (e) {
-                    grid.innerHTML = '<div class="text-center py-10 text-red-400 text-xs">عفواً، فشل الاتصال بالمحيط</div>';
+                    grid.innerHTML = '<div class="text-center py-16 text-red-400 text-sm">⚠️ فشل الاتصال. حاول لاحقاً</div>';
                     console.error(e);
                 }
             },
 
-            async openContent(id, title, authorName, authorPhoto, date) {
+            async openContent(id, title, authorName, authorPhoto, date, videoLink, tabType) {
                 const modal = document.getElementById('contentModal');
+                const modalVideo = document.getElementById('modalVideo');
+                const modalContent = document.getElementById('modalContent');
+
                 document.getElementById('modalTitle').textContent = title;
                 document.getElementById('modalAuthorName').textContent = authorName;
-                document.getElementById('modalAuthorPhoto').src = authorPhoto;
+                document.getElementById('modalAuthorPhoto').src = authorPhoto || '';
                 document.getElementById('modalDate').textContent = date;
-                document.getElementById('modalContent').textContent = 'جاري تحميل المحتوى...';
                 modal.classList.remove('hidden');
 
+                // إخفاء الفيديو والنص مبدئياً
+                modalVideo.classList.add('hidden');
+                modalContent.classList.add('hidden');
+                modalContent.textContent = 'جاري التحميل...';
+
+                // إذا كان فيديو ولدينا رابط
+                if (tabType === 'videos' && videoLink) {
+                    const videoID = extractYouTubeID(videoLink);
+                    if (videoID) {
+                        modalVideo.classList.remove('hidden');
+                        modalVideo.innerHTML = `<iframe class="w-full h-full rounded-2xl" src="https://www.youtube.com/embed/${videoID}" frameborder="0" allowfullscreen></iframe>`;
+                        modalContent.textContent = '';
+                        return; // لا نحتاج لجلب المزيد
+                    } else {
+                        modalContent.textContent = 'الرابط غير صالح أو لا يحتوي على فيديو يوتيوب.';
+                        modalContent.classList.remove('hidden');
+                        return;
+                    }
+                }
+
                 // جلب المحتوى الكامل من Firestore
+                modalContent.classList.remove('hidden');
                 try {
-                    const collectionName = this.currentTab === 'courses' ? 'academy_courses' : 'academy_articles';
-                    const docSnap = await getDoc(doc(db, collectionName, id));
+                    const collectionMap = {
+                        courses: 'academy_courses',
+                        articles: 'academy_articles',
+                        videos: 'academy_videos'
+                    };
+                    const collName = collectionMap[tabType] || 'academy_articles';
+                    const docSnap = await getDoc(doc(db, collName, id));
                     if (docSnap.exists()) {
-                        document.getElementById('modalContent').textContent = docSnap.data().desc || '';
+                        modalContent.textContent = docSnap.data().desc || 'لا يوجد وصف.';
+                    } else {
+                        modalContent.textContent = 'المحتوى غير متوفر.';
                     }
                 } catch (e) {
-                    document.getElementById('modalContent').textContent = 'تعذر تحميل المحتوى';
+                    modalContent.textContent = 'تعذر تحميل المحتوى.';
                 }
             },
 
             closeContentModal() {
                 document.getElementById('contentModal').classList.add('hidden');
+                document.getElementById('modalVideo').innerHTML = '';
             },
 
             switchTab(tab) {
                 this.currentTab = tab;
-                document.getElementById('tabCourses').className = tab === 'courses'
-                    ? 'flex-1 py-3 rounded-xl font-bold text-xs bg-sky-500 text-white shadow-sm'
-                    : 'flex-1 py-3 rounded-xl font-bold text-xs text-gray-500';
-                document.getElementById('tabArticles').className = tab === 'articles'
-                    ? 'flex-1 py-3 rounded-xl font-bold text-xs bg-sky-500 text-white shadow-sm'
-                    : 'flex-1 py-3 rounded-xl font-bold text-xs text-gray-500';
+                // تحديث أزرار التبويب
+                ['courses', 'articles', 'videos'].forEach(t => {
+                    const btn = document.getElementById(`tab${t.charAt(0).toUpperCase() + t.slice(1)}`);
+                    if (t === tab) {
+                        btn.className = 'flex-1 py-3 rounded-xl font-bold text-xs bg-sky-500 text-white shadow-sm transition-all duration-200';
+                    } else {
+                        btn.className = 'flex-1 py-3 rounded-xl font-bold text-xs text-gray-500 transition-all duration-200';
+                    }
+                });
+
+                // إظهار/إخفاء حقل رابط الفيديو في نافذة الإضافة
+                const videoGroup = document.getElementById('videoLinkGroup');
+                if (videoGroup) {
+                    videoGroup.classList.toggle('hidden', tab !== 'videos');
+                }
+
                 this.loadData();
             },
 
             openModal() {
                 document.getElementById('acadModal').classList.remove('hidden');
+                // إظهار حقل الفيديو إذا كنا في تبويب الفيديوهات
+                const videoGroup = document.getElementById('videoLinkGroup');
+                if (videoGroup) {
+                    videoGroup.classList.toggle('hidden', this.currentTab !== 'videos');
+                }
             },
             closeModal() {
                 document.getElementById('acadModal').classList.add('hidden');
@@ -160,6 +263,8 @@
             async saveData() {
                 const title = document.getElementById('acadTitle').value.trim();
                 const desc = document.getElementById('acadDesc').value.trim();
+                const videoLink = document.getElementById('acadVideoLink')?.value.trim() || '';
+
                 if (!title || !desc) return;
 
                 const btn = document.getElementById('acadBtnSave');
@@ -169,9 +274,14 @@
                 try {
                     const user = auth.currentUser;
                     const profile = await engine.getOrCreateUserProfile().catch(() => ({}));
-                    const collectionName = this.currentTab === 'courses' ? 'academy_courses' : 'academy_articles';
+                    const collectionMap = {
+                        courses: 'academy_courses',
+                        articles: 'academy_articles',
+                        videos: 'academy_videos'
+                    };
+                    const collectionName = collectionMap[this.currentTab] || 'academy_courses';
 
-                    await addDoc(collection(db, collectionName), {
+                    const dataToSave = {
                         title: title,
                         desc: desc,
                         authorName: profile.displayName || user.displayName || 'مستخدم',
@@ -179,10 +289,20 @@
                         createdAt: serverTimestamp(),
                         supportCount: 0,
                         opposeCount: 0
-                    });
+                    };
+
+                    // إضافة رابط الفيديو إذا كان موجوداً
+                    if (this.currentTab === 'videos' && videoLink) {
+                        dataToSave.videoLink = videoLink;
+                    }
+
+                    await addDoc(collection(db, collectionName), dataToSave);
 
                     document.getElementById('acadTitle').value = '';
                     document.getElementById('acadDesc').value = '';
+                    if (document.getElementById('acadVideoLink')) {
+                        document.getElementById('acadVideoLink').value = '';
+                    }
                     this.closeModal();
                     this.loadData();
                 } catch (e) {
