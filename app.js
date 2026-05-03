@@ -788,6 +788,5 @@ async updateTotalBalance() {
 };
 
 // تصدير الدوال المساعدة للملفات الأخرى (مثل courses.html)
-window.__firestore_helpers = { collection, query, orderBy, getDocs, addDoc, serverTimestamp, doc, getDoc };
-
+window.__firestore_helpers = { collection, query, orderBy, getDocs, addDoc, serverTimestamp, doc, getDoc, where };
 window.engine.init();
