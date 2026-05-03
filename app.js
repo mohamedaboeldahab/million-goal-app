@@ -143,7 +143,105 @@ window.engine = {
             if (typeof setActiveNavLink === 'function') setActiveNavLink(pageName);
         } catch (e) { content.innerHTML = `<div class="text-center py-20 text-slate-400">قريباً..</div>`; }
     },
+async loadAssets(containerId) {
+    const userId = auth.currentUser?.uid;
+    if (!userId) return;
 
+    const q = query(collection(db, "assets"), where("userId", "==", userId), orderBy("createdAt", "desc"));
+    const snapshot = await getDocs(q);
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    if (snapshot.empty) {
+        container.innerHTML = `<div class="text-center py-10 text-gray-400 text-sm">محفظتك فارغة. أضف أصولك الآن!</div>`;
+        this.updateTotalBalance();
+        return;
+    }
+
+    let html = '';
+    snapshot.forEach(docSnap => {
+        const asset = docSnap.data();
+        const categoryIcons = {
+            'fixed_income': { icon: '🏦', color: 'from-blue-500 to-blue-700', label: 'دخل ثابت' },
+            'stocks': { icon: '📈', color: 'from-emerald-500 to-emerald-700', label: 'أسهم' },
+            'real_estate': { icon: '🏠', color: 'from-amber-500 to-amber-700', label: 'عقار' },
+            'gold': { icon: '🥇', color: 'from-yellow-500 to-yellow-700', label: 'ذهب' },
+            'crypto': { icon: '₿', color: 'from-orange-500 to-orange-700', label: 'عملات رقمية' },
+            'marketing': { icon: '📢', color: 'from-purple-500 to-purple-700', label: 'تسويق' },
+            'business': { icon: '💼', color: 'from-indigo-500 to-indigo-700', label: 'مشروع' },
+            'other': { icon: '📦', color: 'from-gray-500 to-gray-700', label: 'أخرى' }
+        };
+        const cat = categoryIcons[asset.category] || categoryIcons['other'];
+
+        html += `
+        <div class="bg-white rounded-2xl p-4 flex items-center gap-4 shadow-sm border border-gray-100 hover:shadow-md transition">
+            <div class="w-12 h-12 rounded-xl bg-gradient-to-br ${cat.color} flex items-center justify-center text-2xl shadow">
+                ${cat.icon}
+            </div>
+            <div class="flex-1">
+                <h4 class="font-extrabold text-gray-800 text-sm">${asset.name}</h4>
+                <span class="text-xs text-gray-400">${cat.label}</span>
+            </div>
+            <div class="text-right">
+                <div class="font-black text-sky-600">${Number(asset.value).toLocaleString()} ج.م</div>
+                <button onclick="engine.deleteAsset('${docSnap.id}')" class="text-red-400 text-xs mt-1 hover:underline">حذف</button>
+            </div>
+        </div>`;
+    });
+    container.innerHTML = html;
+    this.updateTotalBalance();
+},
+
+// حفظ أصل جديد
+async saveAsset() {
+    const name = document.getElementById('assetName').value.trim();
+    const value = parseFloat(document.getElementById('assetValue').value);
+    const category = document.getElementById('assetCategory').value;
+
+    if (!name || isNaN(value) || value <= 0) {
+        alert('يرجى إدخال اسم وقيمة صحيحة');
+        return;
+    }
+
+    const userId = auth.currentUser.uid;
+    try {
+        await addDoc(collection(db, "assets"), {
+            userId,
+            name,
+            value,
+            category,
+            createdAt: serverTimestamp()
+        });
+        document.getElementById('assetName').value = '';
+        document.getElementById('assetValue').value = '';
+        this.loadAssets('assetsContainer');
+    } catch (error) {
+        this.showToast('❌ حدث خطأ أثناء الحفظ');
+    }
+},
+
+// حذف أصل
+async deleteAsset(assetId) {
+    if (confirm('هل أنت متأكد من حذف هذا الأصل؟')) {
+        await deleteDoc(doc(db, "assets", assetId));
+        this.loadAssets('assetsContainer');
+    }
+},
+
+// تحديث الإجمالي الظاهر
+async updateTotalBalance() {
+    const userId = auth.currentUser?.uid;
+    if (!userId) return;
+
+    const q = query(collection(db, "assets"), where("userId", "==", userId));
+    const snapshot = await getDocs(q);
+    let total = 0;
+    snapshot.forEach(doc => {
+        total += Number(doc.data().value) || 0;
+    });
+    const el = document.getElementById('totalBalance');
+    if (el) el.innerText = total.toLocaleString();
+},
     async updateCreatorAvatar() {
         const img = document.getElementById('creatorAvatar');
         if (!img || !auth.currentUser) return;
