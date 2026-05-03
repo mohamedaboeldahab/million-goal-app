@@ -3,11 +3,32 @@
     <div class="bg-sky-500 rounded-3xl p-6 text-white mb-4 shadow-xl shadow-sky-200">
         <h2 class="text-2xl font-black mb-1">🗺️ رحلة المليونير</h2>
         <p class="text-sm opacity-90 font-bold">كل خطوة تاخدها تقربك من هدفك</p>
-        <!-- بادج النصيحة من القرش -->
-        <div id="sharkTip" class="mt-3 bg-white/15 backdrop-blur-sm rounded-2xl p-2 text-xs font-bold flex items-center gap-2">
+        <!-- الشعلة والـ Streak -->
+        <div class="mt-3 flex items-center gap-3 text-xs flex-wrap">
+            <span id="streakBadge" class="bg-white/20 px-2 py-1 rounded-full flex items-center gap-1">
+                🔥 <span id="streakDays">0</span> يوم متواصل
+            </span>
+            <span class="bg-white/20 px-2 py-1 rounded-full">🦈 المرحلة الحالية</span>
+            <span class="bg-white/20 px-2 py-1 rounded-full">✨ مكتملة</span>
+        </div>
+        <!-- نصيحة القرش -->
+        <div id="sharkTip" class="mt-2 bg-white/15 backdrop-blur-sm rounded-2xl p-2 text-xs font-bold flex items-center gap-2">
             <span class="text-2xl">🦈</span>
             <span id="tipText">حمل بياناتك من المحفظة عشان تشوف تقدمك!</span>
         </div>
+    </div>
+
+    <!-- أزرار التحكم والأدوات -->
+    <div class="flex gap-2 overflow-x-auto pb-2 mb-4">
+        <button onclick="openAIAdvisor()" class="bg-white border px-3 py-2 rounded-xl text-xs font-bold shadow-sm whitespace-nowrap">🧠 قيّم وضعي</button>
+        <button onclick="openFutureSim()" class="bg-white border px-3 py-2 rounded-xl text-xs font-bold shadow-sm whitespace-nowrap">🔮 شوف مستقبلك</button>
+        <button onclick="toggleLeaderboard()" class="bg-white border px-3 py-2 rounded-xl text-xs font-bold shadow-sm whitespace-nowrap">🏆 لوحة الصدارة</button>
+    </div>
+
+    <!-- لوحة الصدارة الوهمية -->
+    <div id="leaderboardPanel" class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 mb-4 hidden">
+        <h3 class="font-bold text-sm mb-2 text-slate-700">🏆 لوحة صدارة المستثمرين</h3>
+        <div id="leaderboardList" class="space-y-2 text-xs"></div>
     </div>
 
     <!-- إعدادات سريعة -->
@@ -31,7 +52,6 @@
                 <input type="number" id="currentInput" value="0" class="w-full bg-gray-50 border rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-sky-400" readonly>
             </div>
         </div>
-        <!-- المتبقي للقفزة القادمة -->
         <div id="nextMilestoneInfo" class="mt-3 flex items-center justify-between bg-sky-50 rounded-xl p-2 text-xs font-bold text-sky-700">
             <span>🎯 الهدف القادم: <span id="nextAmount">0</span> ج.م</span>
             <span>⏳ المتبقي: <span id="remainingAmount">0</span> ج.م</span>
@@ -41,47 +61,145 @@
         </button>
     </div>
 
-    <!-- لوحة اللعبة -->
+    <!-- لوحة اللعبة (مسار الأفعى) -->
     <div class="game-board-wrapper">
         <div id="gameBoard" class="game-board"></div>
     </div>
 
     <!-- تفاصيل المرحلة عند الضغط -->
     <div id="stageTooltip" class="bg-white border border-gray-200 rounded-xl p-3 shadow-lg mt-4 hidden text-sm"></div>
+
+    <!-- مودال AI -->
+    <div id="aiModal" class="hidden fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onclick="if(event.target===this)closeAIAdvisor()">
+        <div class="bg-white w-full max-w-sm rounded-2xl p-6 shadow-2xl text-center">
+            <h3 class="font-black text-gray-800 mb-3">اختر شخصية المستشار</h3>
+            <div class="flex justify-around mb-4">
+                <button onclick="getAIFeedback('shark')" class="bg-red-50 p-3 rounded-xl text-2xl">🦈</button>
+                <button onclick="getAIFeedback('accountant')" class="bg-blue-50 p-3 rounded-xl text-2xl">🧠</button>
+                <button onclick="getAIFeedback('adventurer')" class="bg-orange-50 p-3 rounded-xl text-2xl">🔥</button>
+            </div>
+            <p id="aiResponse" class="text-sm text-gray-600 leading-relaxed bg-gray-50 p-3 rounded-xl">اضغط على شخصية لتحليل وضعك</p>
+            <button onclick="closeAIAdvisor()" class="mt-4 text-xs text-gray-400">إغلاق</button>
+        </div>
+    </div>
+
+    <!-- مودال محاكاة المستقبل -->
+    <div id="simModal" class="hidden fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onclick="if(event.target===this)closeFutureSim()">
+        <div class="bg-white w-full max-w-sm rounded-2xl p-6 shadow-2xl text-center">
+            <h3 class="font-black text-gray-800 mb-2">🔮 محاكي المستقبل</h3>
+            <input type="number" id="monthlySaving" placeholder="الادخار الشهري" class="w-full bg-gray-100 rounded-xl p-3 text-sm mb-3">
+            <button onclick="runSimulation()" class="bg-sky-500 text-white w-full py-2 rounded-xl font-bold text-sm">شوف مستقبلك</button>
+            <p id="simResult" class="text-sm text-gray-600 mt-3"></p>
+            <button onclick="closeFutureSim()" class="mt-3 text-xs text-gray-400">إغلاق</button>
+        </div>
+    </div>
 </div>
 
 <script>
-    // النصائح التشجيعية
+    // ========== متغيرات عامة ==========
+    let currentGoal = 1000000;
+    let currentWealth = 0;
+
     const tips = [
         "كل قرش تستثمره هو خطوة نحو حريتك المالية! 🚀",
         "التوفير المنتظم يصنع المعجزات، استمر! 💪",
         "لا تنظر للمليون كحلم، بل كمحطة في رحلتك 🌟",
         "ركز على العادة اليومية وليس الرقم النهائي 📈",
         "القروش العظيمة تبدأ بزعانف صغيرة 🦈",
-        "أصل اليوم هو ثروة الغد 🏠",
-        "كلما زادت أصولك، اقتربت من هدفك 🎯",
-        "لا تستعجل، الثراء رحلة ممتعة 🗺️"
+        "أصل اليوم هو ثروة الغد 🏠"
     ];
 
-    let currentGoal = 1000000;
-    let currentWealth = 0;
+    // ========== نظام Streak ==========
+    function updateStreak() {
+        const today = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD
+        let lastDate = localStorage.getItem('lastLoginDate');
+        let streak = parseInt(localStorage.getItem('loginStreak') || '0');
 
-    // دالة لتغيير النصيحة كل فترة
-    function randomTip() {
-        const tip = tips[Math.floor(Math.random() * tips.length)];
-        document.getElementById('tipText').innerText = tip;
+        if (lastDate === today) return; // Already logged today
+
+        const yesterday = new Date(Date.now() - 86400000).toLocaleDateString('en-CA');
+        if (lastDate === yesterday) {
+            streak++;
+        } else {
+            streak = 1; // reset
+        }
+
+        localStorage.setItem('lastLoginDate', today);
+        localStorage.setItem('loginStreak', streak);
+        document.getElementById('streakDays').innerText = streak;
+        if (streak >= 7) {
+            document.getElementById('streakBadge').innerHTML = '🔥🔥 أسبوع ملتهب! <span id="streakDays">' + streak + '</span> يوم';
+        }
     }
-    setInterval(randomTip, 8000); // كل 8 ثوانٍ تتغير النصيحة
+    updateStreak();
+    document.getElementById('streakDays').innerText = localStorage.getItem('loginStreak') || '0';
 
+    function randomTip() {
+        document.getElementById('tipText').innerText = tips[Math.floor(Math.random() * tips.length)];
+    }
+    setInterval(randomTip, 8000);
+
+    // ========== لوحة الصدارة ==========
+    function generateFakeLeaderboard() {
+        const names = ["مستثمر ذكي", "قرش العقار", "ملك الأسهم", "ذئب البورصة", "صائد الفرص", "محفظة حديد", "خبير الذهب"];
+        const list = document.getElementById('leaderboardList');
+        list.innerHTML = '';
+        for (let i = 0; i < 5; i++) {
+            const name = names[Math.floor(Math.random() * names.length)];
+            const amount = Math.floor(Math.random() * 900000 + 100000);
+            list.innerHTML += `<div class="flex justify-between"><span>${i+1}. ${name}</span><span class="font-bold text-sky-600">${amount.toLocaleString()} ج.م</span></div>`;
+        }
+    }
+    function toggleLeaderboard() {
+        const panel = document.getElementById('leaderboardPanel');
+        panel.classList.toggle('hidden');
+        if (!panel.classList.contains('hidden')) generateFakeLeaderboard();
+    }
+
+    // ========== AI مستشار ==========
+    function openAIAdvisor() { document.getElementById('aiModal').classList.remove('hidden'); }
+    function closeAIAdvisor() { document.getElementById('aiModal').classList.add('hidden'); }
+
+    function getAIFeedback(type) {
+        const p = document.getElementById('aiResponse');
+        const advice = {
+            shark: ["وضعك ضعيف يا قرش! استثمر بذكاء وإلا ستُفترس.", "أصولك تحتاج تنويع، ركز على الذهب والأسهم."],
+            accountant: ["حسب تحليلي، أنت بحاجة لزيادة مدخراتك 20% شهرياً.", "الأرقام واضحة: التزم بالميزانية."],
+            adventurer: ["المخاطرة المحسوبة تصنع الثروة! جرب العملات الرقمية بحذر.", "لا تخف من الخسارة، تعلم منها وانطلق!"]
+        };
+        const msgs = advice[type] || advice.shark;
+        p.innerText = msgs[Math.floor(Math.random() * msgs.length)];
+    }
+
+    // ========== محاكاة المستقبل ==========
+    function openFutureSim() { document.getElementById('simModal').classList.remove('hidden'); }
+    function closeFutureSim() { document.getElementById('simModal').classList.add('hidden'); }
+
+    function runSimulation() {
+        const saving = parseFloat(document.getElementById('monthlySaving').value);
+        const result = document.getElementById('simResult');
+        if (!saving || saving <= 0) {
+            result.innerText = 'أدخل رقم صحيح';
+            return;
+        }
+        const months = Math.ceil((currentGoal - currentWealth) / saving);
+        if (months <= 0) {
+            result.innerText = '🎉 أنت بالفعل تجاوزت هدفك!';
+        } else {
+            const years = Math.floor(months / 12);
+            const rem = months % 12;
+            result.innerText = `💪 لو استمريت بادخار ${saving} ج.م شهرياً، ستصل لهدفك خلال ${years} سنة و ${rem} شهر.`;
+        }
+    }
+
+    // ========== الخريطة (المسار المتعرج) ==========
     function handleGoalChange() {
         const select = document.getElementById('goalSelect');
         const customInput = document.getElementById('customGoalInput');
         if (select.value === 'custom') {
             customInput.classList.remove('hidden');
             customInput.focus();
-            if (customInput.value) {
-                currentGoal = parseFloat(customInput.value) || 1000000;
-            }
+            if (customInput.value) currentGoal = parseFloat(customInput.value) || 1000000;
         } else {
             customInput.classList.add('hidden');
             currentGoal = parseFloat(select.value);
@@ -95,18 +213,13 @@
         for (let i = 1; i < stages; i++) {
             const ratio = Math.pow(i / stages, 2.5);
             const amount = Math.round(ratio * goal);
-            if (amount > milestones[milestones.length - 1]) {
-                milestones.push(amount);
-            }
+            if (amount > milestones[milestones.length - 1]) milestones.push(amount);
         }
-        if (milestones[milestones.length - 1] !== goal) {
-            milestones.push(goal);
-        }
+        if (milestones[milestones.length - 1] !== goal) milestones.push(goal);
         while (milestones.length < stages) {
             const last = milestones[milestones.length - 1];
-            const beforeLast = milestones[milestones.length - 2] || 0;
-            const mid = Math.round((last + beforeLast) / 2);
-            milestones.splice(milestones.length - 1, 0, mid);
+            const prev = milestones[milestones.length - 2] || 0;
+            milestones.splice(milestones.length - 1, 0, Math.round((last + prev) / 2));
         }
         return milestones.slice(0, stages);
     }
@@ -114,20 +227,16 @@
     async function loadEngineData() {
         try {
             const { collection, query, where, getDocs } = window.__firestore_helpers || {};
-            if (!getDocs || !window.auth?.currentUser) {
-                console.warn("Firestore helpers غير متاحة");
-            } else {
+            if (getDocs && window.auth?.currentUser) {
                 const q = query(collection(window.db, "assets"), where("userId", "==", window.auth.currentUser.uid));
                 const snapshot = await getDocs(q);
                 let total = 0;
                 snapshot.forEach(doc => { total += Number(doc.data().value) || 0; });
                 currentWealth = Math.floor(total);
                 document.getElementById('currentInput').value = currentWealth;
-                randomTip(); // تغيير النصيحة بعد التحميل
+                randomTip();
             }
-        } catch (e) {
-            console.error(e);
-        }
+        } catch(e) {}
         buildRoadmap();
     }
 
@@ -136,7 +245,6 @@
         if (!customInput.classList.contains('hidden') && customInput.value) {
             currentGoal = parseFloat(customInput.value) || currentGoal;
         }
-
         currentWealth = parseFloat(document.getElementById('currentInput').value) || 0;
         if (isNaN(currentGoal) || isNaN(currentWealth) || currentGoal <= 0) return;
 
@@ -144,16 +252,10 @@
         const board = document.getElementById('gameBoard');
         if (!board) return;
 
-        // العثور على المرحلة القادمة (أول مرحلة غير مكتملة)
         let nextMilestone = null;
         for (let i = 0; i < milestones.length; i++) {
-            if (currentWealth < milestones[i]) {
-                nextMilestone = milestones[i];
-                break;
-            }
+            if (currentWealth < milestones[i]) { nextMilestone = milestones[i]; break; }
         }
-
-        // تحديث واجهة المتبقي
         if (nextMilestone) {
             document.getElementById('nextAmount').innerText = nextMilestone.toLocaleString();
             document.getElementById('remainingAmount').innerText = (nextMilestone - currentWealth).toLocaleString();
@@ -165,32 +267,26 @@
         const COLS = 5;
         const totalRows = Math.ceil(milestones.length / COLS);
         let html = '';
-
         for (let row = 0; row < totalRows; row++) {
             for (let col = 0; col < COLS; col++) {
                 const isReversedRow = (row % 2 === 1);
                 const displayCol = isReversedRow ? (COLS - 1 - col) : col;
                 const displayIndex = row * COLS + displayCol;
-
                 if (displayIndex >= milestones.length) {
                     html += '<div class="cell empty"></div>';
                     continue;
                 }
-
                 const amount = milestones[displayIndex];
                 const completed = currentWealth >= amount;
                 const isCurrent = (completed && (displayIndex === milestones.length - 1 || currentWealth < milestones[displayIndex + 1]));
                 const isNext = (!completed && (displayIndex === 0 || currentWealth >= milestones[displayIndex - 1]));
+                const label = amount >= 1000 ? (amount / 1000).toFixed(amount % 1000 === 0 ? 0 : 1) + 'k' : amount;
 
-                const amountLabel = amount >= 1000 ? (amount / 1000).toFixed(amount % 1000 === 0 ? 0 : 1) + 'k' : amount;
-
-                html += `
-                    <div class="cell ${completed ? 'completed' : ''} ${isCurrent ? 'current' : ''} ${isNext ? 'next' : ''}"
+                html += `<div class="cell ${completed ? 'completed' : ''} ${isCurrent ? 'current' : ''} ${isNext ? 'next' : ''}"
                          onclick="showStageInfo(${displayIndex+1}, ${amount}, ${completed})">
-                        <span class="cell-num">${displayIndex+1}</span>
-                        <span class="cell-amount">${amountLabel}</span>
-                        ${isCurrent ? '<span class="shark">🦈</span>' : ''}
-                    </div>`;
+                         <span class="cell-num">${displayIndex+1}</span>
+                         <span class="cell-amount">${label}</span>
+                         ${isCurrent ? '<span class="shark">🦈</span>' : ''}</div>`;
             }
         }
         board.innerHTML = html;
@@ -201,23 +297,14 @@
         const tip = document.getElementById('stageTooltip');
         tip.classList.remove('hidden');
         const remaining = currentGoal - amount;
-        tip.innerHTML = `
-            <div class="flex items-center gap-2 mb-1">
-                <span class="text-lg">🏁</span>
-                <span class="font-extrabold text-gray-800">المرحلة ${num}</span>
-                <span class="text-xs ${completed ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'} px-2 py-0.5 rounded-full">${completed ? '✅ مكتملة' : '⏳ قيد التقدم'}</span>
-            </div>
-            <p class="text-gray-600 text-sm">المبلغ: <b>${amount.toLocaleString()} ج.م</b></p>
-            ${!completed ? `<p class="text-gray-500 text-sm">المتبقي للقفزة القادمة: <b>${remaining.toLocaleString()} ج.م</b></p>` : '<p class="text-emerald-600 text-sm">🦈 أنت ملك القروش! استمر!</p>'}
-        `;
+        tip.innerHTML = `<div class="flex items-center gap-2 mb-1"><span class="text-lg">🏁</span><span class="font-extrabold text-gray-800">المرحلة ${num}</span><span class="text-xs ${completed ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'} px-2 py-0.5 rounded-full">${completed ? '✅ مكتملة' : '⏳ قيد التقدم'}</span></div>
+        <p class="text-gray-600 text-sm">المبلغ: <b>${amount.toLocaleString()} ج.م</b></p>
+        ${!completed ? `<p class="text-gray-500 text-sm">المتبقي: <b>${remaining.toLocaleString()} ج.م</b></p>` : '<p class="text-emerald-600 text-sm">🦈 أنت ملك القروش! استمر!</p>'}`;
         tip.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 
-    function hideStageInfo() {
-        document.getElementById('stageTooltip').classList.add('hidden');
-    }
+    function hideStageInfo() { document.getElementById('stageTooltip').classList.add('hidden'); }
 
-    // بدء أولي
     if (window.__firestore_helpers && window.auth?.currentUser) {
         loadEngineData();
     } else {
@@ -226,127 +313,22 @@
 </script>
 
 <style>
-    .roadmap-container {
-        padding: 8px;
-        margin: 0 -12px;
-    }
-
-    .game-board-wrapper {
-        background: #f8fafc;
-        border-radius: 20px;
-        padding: 8px;
-        border: 1px solid #e2e8f0;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.03);
-        overflow-x: visible;
-    }
-
-    .game-board {
-        display: grid;
-        grid-template-columns: repeat(5, 1fr);
-        gap: 4px;
-        width: 100%;
-    }
-
-    .cell {
-        aspect-ratio: 1 / 1;
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
-        border-radius: 12px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        color: #64748b;
-        font-weight: 600;
-        position: relative;
-        transition: all 0.2s;
-        cursor: pointer;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.02);
-        font-size: 11px;
-        animation: fadeIn 0.3s ease;
-    }
-
-    @keyframes fadeIn {
-        from { opacity: 0; transform: scale(0.8); }
-        to { opacity: 1; transform: scale(1); }
-    }
-
-    .cell.completed {
-        background: linear-gradient(135deg, #0ea5e9, #0284c7);
-        border-color: #0284c7;
-        color: white;
-        box-shadow: 0 4px 12px rgba(14,165,233,0.4);
-        animation: pulseCompleted 2s infinite;
-    }
-
-    @keyframes pulseCompleted {
-        0% { box-shadow: 0 0 5px rgba(14,165,233,0.4); }
-        50% { box-shadow: 0 0 20px rgba(14,165,233,0.6); }
-        100% { box-shadow: 0 0 5px rgba(14,165,233,0.4); }
-    }
-
-    .cell.current {
-        border: 2px solid #fbbf24;
-        transform: scale(1.08);
-        box-shadow: 0 0 16px rgba(251,191,36,0.6);
-        animation: pulse 1s infinite;
-    }
-
-    @keyframes pulse {
-        0% { transform: scale(1.05); }
-        50% { transform: scale(1.12); }
-        100% { transform: scale(1.05); }
-    }
-
-    .cell.next {
-        background: #f0f9ff;
-        border-color: #bae6fd;
-        color: #0369a1;
-    }
-
-    .cell.empty {
-        background: transparent;
-        border: none;
-        box-shadow: none;
-        cursor: default;
-    }
-
-    .cell-num {
-        font-size: 15px;
-        font-weight: 800;
-        line-height: 1;
-    }
-
-    .cell-amount {
-        font-size: 8px;
-        font-weight: 700;
-        margin-top: 1px;
-        opacity: 0.9;
-    }
-
-    .shark {
-        position: absolute;
-        bottom: -10px;
-        font-size: 18px;
-        filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
-        animation: bounce 0.6s infinite alternate;
-    }
-
-    @keyframes bounce {
-        from { transform: translateY(0); }
-        to { transform: translateY(-4px); }
-    }
-
-    .cell:not(.current) .shark {
-        display: none;
-    }
-
-    #sharkTip {
-        animation: slideIn 0.5s ease;
-    }
-
-    @keyframes slideIn {
-        from { opacity: 0; transform: translateY(-10px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
+    .roadmap-container { padding: 8px; margin: 0 -12px; }
+    .game-board-wrapper { background: #f8fafc; border-radius: 20px; padding: 8px; border: 1px solid #e2e8f0; box-shadow: 0 4px 12px rgba(0,0,0,0.03); overflow-x: visible; }
+    .game-board { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; width: 100%; }
+    .cell { aspect-ratio: 1 / 1; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #64748b; font-weight: 600; position: relative; transition: all 0.2s; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.02); font-size: 11px; animation: fadeIn 0.3s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
+    .cell.completed { background: linear-gradient(135deg, #0ea5e9, #0284c7); border-color: #0284c7; color: white; box-shadow: 0 4px 12px rgba(14,165,233,0.4); animation: pulseCompleted 2s infinite; }
+    @keyframes pulseCompleted { 0% { box-shadow: 0 0 5px rgba(14,165,233,0.4); } 50% { box-shadow: 0 0 20px rgba(14,165,233,0.6); } 100% { box-shadow: 0 0 5px rgba(14,165,233,0.4); } }
+    .cell.current { border: 2px solid #fbbf24; transform: scale(1.08); box-shadow: 0 0 16px rgba(251,191,36,0.6); animation: pulse 1s infinite; }
+    @keyframes pulse { 0% { transform: scale(1.05); } 50% { transform: scale(1.12); } 100% { transform: scale(1.05); } }
+    .cell.next { background: #f0f9ff; border-color: #bae6fd; color: #0369a1; }
+    .cell.empty { background: transparent; border: none; box-shadow: none; cursor: default; }
+    .cell-num { font-size: 15px; font-weight: 800; line-height: 1; }
+    .cell-amount { font-size: 8px; font-weight: 700; margin-top: 1px; opacity: 0.9; }
+    .shark { position: absolute; bottom: -10px; font-size: 18px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3)); animation: bounce 0.6s infinite alternate; }
+    @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-4px); } }
+    .cell:not(.current) .shark { display: none; }
+    #sharkTip { animation: slideIn 0.5s ease; }
+    @keyframes slideIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
 </style>
