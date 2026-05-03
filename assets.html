@@ -1,24 +1,57 @@
 <div class="space-y-6">
+    <!-- بطاقة إجمالي المحفظة -->
     <div class="bg-slate-900 text-white rounded-[2rem] p-8 shadow-2xl relative overflow-hidden">
         <div class="relative z-10">
-            <p class="text-sky-400 font-bold mb-1">إجمالي قيمة القروش</p>
-            <h2 id="totalBalance" class="text-4xl font-black">0.00</h2>
-            <p class="text-xs mt-2 opacity-60">جنية مصري (تقديري)</p>
+            <p class="text-sky-400 font-bold mb-1">إجمالي قيمة المحفظة</p>
+            <h2 id="totalBalance" class="text-4xl font-black">0</h2>
+            <p class="text-xs mt-2 opacity-60">جنيه مصري (تقديري)</p>
         </div>
         <i class="fa-solid fa-chart-line absolute -bottom-4 -left-4 text-9xl opacity-10"></i>
     </div>
 
+    <!-- إضافة أصل جديد -->
     <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
         <h3 class="font-black text-slate-800 mb-4 flex items-center gap-2">
             <i class="fa-solid fa-plus-circle text-sky-500"></i> إضافة أصل جديد
         </h3>
+
+        <!-- اقتراحات سريعة للفئات -->
+        <div class="flex flex-wrap gap-2 mb-4">
+            <button onclick="setAssetCategory('fixed_income', 'صندوق دخل ثابت')" class="px-3 py-2 bg-blue-50 text-blue-700 rounded-xl text-xs font-bold hover:bg-blue-100 transition">🏦 دخل ثابت</button>
+            <button onclick="setAssetCategory('stocks', 'محفظة أسهم')" class="px-3 py-2 bg-emerald-50 text-emerald-700 rounded-xl text-xs font-bold hover:bg-emerald-100 transition">📈 أسهم</button>
+            <button onclick="setAssetCategory('real_estate', 'عقار')" class="px-3 py-2 bg-amber-50 text-amber-700 rounded-xl text-xs font-bold hover:bg-amber-100 transition">🏠 عقار</button>
+            <button onclick="setAssetCategory('gold', 'ذهب')" class="px-3 py-2 bg-yellow-50 text-yellow-700 rounded-xl text-xs font-bold hover:bg-yellow-100 transition">🥇 ذهب</button>
+            <button onclick="setAssetCategory('crypto', 'عملة رقمية')" class="px-3 py-2 bg-orange-50 text-orange-700 rounded-xl text-xs font-bold hover:bg-orange-100 transition">₿ رقمية</button>
+            <button onclick="setAssetCategory('marketing', 'أصل تسويقي')" class="px-3 py-2 bg-purple-50 text-purple-700 rounded-xl text-xs font-bold hover:bg-purple-100 transition">📢 تسويق</button>
+            <button onclick="setAssetCategory('business', 'مشروع خاص')" class="px-3 py-2 bg-indigo-50 text-indigo-700 rounded-xl text-xs font-bold hover:bg-indigo-100 transition">💼 مشروع</button>
+        </div>
+
         <div class="space-y-3">
             <input type="text" id="assetName" placeholder="اسم الأصل (ذهب، أسهم، عقار...)" class="w-full p-4 bg-gray-50 rounded-xl outline-none focus:ring-2 focus:ring-sky-500 transition-all border-none text-sm">
             <input type="number" id="assetValue" placeholder="القيمة الحالية" class="w-full p-4 bg-gray-50 rounded-xl outline-none focus:ring-2 focus:ring-sky-500 transition-all border-none text-sm">
+            <input type="hidden" id="assetCategory" value="other">
             <button onclick="engine.saveAsset()" class="w-full bg-sky-500 text-white font-black py-4 rounded-xl shadow-lg shadow-sky-100 active:scale-95 transition-all">إضافة للمحفظة</button>
         </div>
     </div>
 
-    <div id="assetsContainer" class="space-y-3">
-        </div>
+    <!-- قائمة الأصول -->
+    <div id="assetsContainer" class="space-y-3"></div>
 </div>
+
+<script>
+    // تعيين الفئة عند الضغط على الاقتراح
+    function setAssetCategory(category, defaultName) {
+        document.getElementById('assetCategory').value = category;
+        document.getElementById('assetName').value = defaultName;
+        document.getElementById('assetValue').focus();
+    }
+
+    // تحميل الأصول عند فتح الصفحة
+    (function() {
+        if (window.engine && window.engine.loadAssets) {
+            window.engine.loadAssets('assetsContainer');
+        } else {
+            setTimeout(arguments.callee, 100);
+        }
+    })();
+</script>
