@@ -77,7 +77,6 @@
 
 <!-- ========== سكريبت تحميل البروفايل (عام أو شخصي) ========== -->
 <script type="module">
-    // استيراد Firebase (يجب أن يكون متوافقاً مع app.js)
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-app.js";
     import { getFirestore, doc, getDoc, collection, query, where, orderBy, getDocs } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-firestore.js";
     import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-auth.js";
@@ -91,18 +90,15 @@
         appId: "1:325577904362:web:8d85d4547bf22b1d8f4793"
     };
 
-    // تجنب إعادة التهيئة إذا كان التطبيق قد هيأها مسبقاً
     let app;
     try {
         app = initializeApp(firebaseConfig);
     } catch (e) {
-        // قد يكون مهيأ بالفعل من app.js
         app = firebase.getApp();
     }
     const db = getFirestore(app);
     const auth = getAuth(app);
 
-    // دالة مساعدة لضغط الصورة (إن لزم الأمر)
     function fixPhotoUrl(url) {
         if (!url) return "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='%23e2e8f0'/%3E%3Ctext x='50' y='67' font-size='60' text-anchor='middle' fill='%2394a3b8'%3E🦈%3C/text%3E%3C/svg%3E";
         if (url.startsWith('data:')) return url;
@@ -112,11 +108,9 @@
         return url;
     }
 
-    // الحصول على uid من الرابط
     const urlParams = new URLSearchParams(window.location.search);
     const profileUid = urlParams.get('uid');
 
-    // العناصر الأساسية
     const avatarImg = document.getElementById('profileAvatar');
     const nameEl = document.getElementById('profileName');
     const emailEl = document.getElementById('profileEmail');
@@ -129,16 +123,13 @@
     const avatarOverlay = document.getElementById('avatarOverlay');
     const avatarFileInput = document.getElementById('avatarFileInput');
 
-    // دالة لعرض بروفايل عام (مستخدم آخر)
     async function loadPublicProfile(uid) {
-        // إخفاء أدوات التعديل
         if (editBtn) editBtn.style.display = 'none';
         if (saveBtn) saveBtn.style.display = 'none';
         if (logoutBtn) logoutBtn.style.display = 'none';
         if (avatarOverlay) avatarOverlay.style.display = 'none';
         if (avatarFileInput) avatarFileInput.disabled = true;
 
-        // جلب بيانات المستخدم من Firestore
         const userDoc = await getDoc(doc(db, "users", uid));
         if (!userDoc.exists()) {
             alert("المستخدم غير موجود");
@@ -146,15 +137,13 @@
             return;
         }
         const userData = userDoc.data();
-        
-        // عرض البيانات
+
         nameEl.textContent = userData.displayName || 'مستخدم';
         avatarImg.src = fixPhotoUrl(userData.photoURL);
         bioEl.textContent = userData.bio || '';
         aboutEl.textContent = userData.bio || '';
-        emailEl.textContent = ''; // لا نعرض إيميل الآخرين
+        emailEl.textContent = '';
 
-        // تحميل منشورات المستخدم
         const q = query(collection(db, "posts"), where("authorId", "==", uid), orderBy("createdAt", "desc"));
         const snapshot = await getDocs(q);
         postsContainer.innerHTML = '';
@@ -180,11 +169,9 @@
         });
     }
 
-    // إذا كان هناك uid في الرابط → بروفايل عام
     if (profileUid) {
         loadPublicProfile(profileUid);
     } else {
-        // بروفايل شخصي: ننتظر engine ليجهز ثم نشغله
         (function waitForEngine() {
             if (window.engine && window.engine.listenToProfilePosts) {
                 window.engine.listenToProfilePosts('userPostsContainer');
