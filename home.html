@@ -2,7 +2,7 @@
 <div id="storiesRow" class="flex gap-3 overflow-x-auto pb-3 mb-4"></div>
 
 <!-- صندوق النشر -->
-<!-- صندوق النشر (مُصغّر) -->
+<!-- صندوق النشر (مُصغّر، مربع كتابة بسطرين، شريط ألوان مضغوط) -->
 <div class="bg-white rounded-2xl p-3 shadow-sm border border-gray-100 mb-3">
     <!-- شريط اختيار النوع (أيقونات صغيرة) -->
     <div class="flex items-center justify-around mb-2">
@@ -17,9 +17,9 @@
         <img id="creatorAvatar" src="" class="w-8 h-8 rounded-full border border-sky-200 object-cover flex-shrink-0">
         <div class="flex-1">
             <textarea id="postInput" placeholder="ما الذي تفكر فيه؟" maxlength="600"
-                class="w-full bg-gray-50 p-2 text-xs outline-none border border-gray-200 rounded-xl resize-none focus:ring-2 focus:ring-sky-500"
-                rows="1"></textarea>
-            <!-- ألوان الخلفية -->
+                class="w-full bg-gray-50 p-2 text-sm outline-none border border-gray-200 rounded-xl resize-none focus:ring-2 focus:ring-sky-500"
+                rows="2"></textarea>
+            <!-- ألوان الخلفية (مصغّرة جداً) -->
             <div id="bgPickerContainer" class="flex gap-1 mt-2 flex-wrap"></div>
             <div class="flex items-center justify-between mt-2">
                 <span id="charCount" class="text-[10px] text-gray-400">0 / 600</span>
@@ -30,6 +30,9 @@
         </div>
     </div>
 </div>
+
+<!-- قائمة المنشورات -->
+<div id="feedList"></div>
 <!-- قائمة المنشورات -->
 <div id="feedList"></div>
 
