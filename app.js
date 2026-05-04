@@ -38,18 +38,27 @@ function fixPhotoUrl(url) {
 }
 
 const bgGradients = {
-    gradient1: 'linear-gradient(135deg, #667eea, #764ba2)',
-    gradient2: 'linear-gradient(135deg, #f093fb, #f5576c)',
-    gradient3: 'linear-gradient(135deg, #4facfe, #00f2fe)',
-    gradient4: 'linear-gradient(135deg, #43e97b, #38f9d7)',
-    gradient5: 'linear-gradient(135deg, #fa709a, #fee140)',
-    gradient6: 'linear-gradient(135deg, #a18cd1, #fbc2eb)',
-    gradient7: 'linear-gradient(135deg, #fccb90, #d57eeb)',
-    gradient8: 'linear-gradient(135deg, #e0c3fc, #8ec5fc)',
-    gradient9: 'linear-gradient(135deg, #f093fb, #f5576c)',
-    gradient10: 'linear-gradient(135deg, #fddb92, #d1fdff)'
+    // كحلي ملكي مع أرجواني عميق
+    gradient1: 'linear-gradient(135deg, #0f0c29, #302b63, #24243e)', 
+    // أحمر نبيتي غامق مع أسود
+    gradient2: 'linear-gradient(135deg, #4b0000, #000000)', 
+    // أزرق ليل داكن
+    gradient3: 'linear-gradient(135deg, #141e30, #243b55)', 
+    // أخضر غابة عميق (فخم جداً)
+    gradient4: 'linear-gradient(135deg, #134e5e, #71b280)', 
+    // برتقالي محروق مع بني دافئ
+    gradient5: 'linear-gradient(135deg, #2c3e50, #bdc3c7)', 
+    // بنفسجي غامق جداً (Midnight Purple)
+    gradient6: 'linear-gradient(135deg, #200122, #6f0000)', 
+    // رمادي فحمي مع أزرق بترولي
+    gradient7: 'linear-gradient(135deg, #232526, #414345)', 
+    // بنفسجي مع كحلي (Mystic)
+    gradient8: 'linear-gradient(135deg, #2c3e50, #000000)', 
+    // أزرق المحيط المظلم
+    gradient9: 'linear-gradient(135deg, #061161, #781717)', 
+    // ذهبي مطفي مع أسود (Luxury)
+    gradient10: 'linear-gradient(135deg, #1f1c2c, #928dab)' 
 };
-
 window.engine = {
     _allComments: {},
     _allPosts: [],
