@@ -600,17 +600,16 @@ async updateTotalBalance() {
         try { dateStr = p.createdAt?.toDate().toLocaleString('ar-EG'); } catch (e) { dateStr = '---'; }
         const img = fixPhotoUrl(p.authorPhoto);
         const bg = p.backgroundColor ? bgGradients[p.backgroundColor] : null;
-
-        let html = `
-        <div class="bg-white rounded-2xl p-4 mb-4 shadow-sm border border-gray-100">
-            <div class="flex items-center gap-3 mb-3">
-                <img src="${img}" class="w-10 h-10 rounded-full border border-sky-200 object-cover" loading="lazy" onerror="this.src='${DEFAULT_AVATAR}'">
-                <div>
-                    <span class="font-extrabold text-gray-800 text-sm">${p.authorName || 'مستخدم'}</span>
-                    <div class="text-xs text-gray-400">${dateStr}</div>
-                </div>
-            </div>`;
-
+let html = `
+<div class="bg-white rounded-2xl p-4 mb-4 shadow-sm border border-gray-100">
+    <div class="flex items-center gap-3 mb-3 cursor-pointer" onclick="engine.viewUserProfile('${p.authorId}')">
+        <img src="${img}" class="w-10 h-10 rounded-full border border-sky-200 object-cover" loading="lazy" onerror="this.src='${DEFAULT_AVATAR}'">
+        <div>
+            <span class="font-extrabold text-gray-800 text-sm">${p.authorName || 'مستخدم'}</span>
+            <div class="text-xs text-gray-400">${dateStr}</div>
+        </div>
+    </div>`;
+        
         if (bg) {
             html += `
             <div style="background: ${bg}; border-radius: 16px; padding: 16px; margin-bottom: 16px;">
