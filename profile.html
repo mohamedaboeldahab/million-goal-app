@@ -6,7 +6,6 @@
     <title>البروفايل – Shark UP</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Firebase compat -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
@@ -19,8 +18,8 @@
 </head>
 <body class="bg-gray-50">
 
-<!-- الهيدر المستقل (يظهر فقط عند الفتح مباشرة) -->
-<div id="standaloneHeader" class="bg-gradient-to-l from-sky-500 to-blue-600 text-white px-4 py-3 flex items-center gap-3 shadow-md sticky top-0 z-50">
+<!-- الهيدر المستقل (يظهر فقط عند الفتح المباشر بدون engine) -->
+<div id="standaloneHeader" class="bg-gradient-to-l from-sky-500 to-blue-600 text-white px-4 py-3 flex items-center gap-3 shadow-md sticky top-0 z-50" style="display: none;">
     <button id="backBtnInHeader" onclick="window.location.href='index.html'" class="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center text-white hover:bg-white/30 transition">
         <i class="fa-solid fa-arrow-right text-sm"></i>
     </button>
@@ -28,7 +27,8 @@
     <span class="text-xs bg-white/20 px-2 py-0.5 rounded-full mr-auto">🦈 الملف الشخصي</span>
 </div>
 
-<div class="max-w-md mx-auto px-4 pb-6">
+<!-- الحاوية الرئيسية (بدون مسافات جانبية، تُضاف عند الحاجة) -->
+<div id="profileContainer" class="max-w-md mx-auto pb-6">
     <!-- غلاف البروفايل -->
     <div class="relative h-36 bg-gradient-to-b from-cyan-400 via-sky-500 to-blue-600 rounded-b-[2.5rem] overflow-hidden shadow-lg mt-0">
         <div class="absolute inset-0 opacity-20">
@@ -66,7 +66,7 @@
             </div>
         </div>
 
-        <!-- أزرار الإجراءات (تظهر فقط في البروفايل الشخصي) -->
+        <!-- أزرار الإجراءات -->
         <div id="profileActions" class="flex justify-start gap-2 mt-4 flex-wrap">
             <button id="editProfileBtn" class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-xl text-xs transition">
                 <i class="fa-solid fa-pen-to-square"></i> تعديل
@@ -108,7 +108,7 @@
         </div>
     </div>
 
-    <!-- شاشة "الحساب مغلق" (تظهر عند خطأ UID) -->
+    <!-- شاشة "الحساب مغلق" -->
     <div id="closedAccountScreen" class="bg-white rounded-2xl shadow-xl px-5 py-12 text-center mt-6 hidden">
         <div class="text-6xl mb-4">🔒</div>
         <h2 class="text-xl font-black text-gray-800 mb-2">هذا الحساب مغلق</h2>
@@ -157,14 +157,20 @@
     const avatarOverlay = document.getElementById('avatarOverlay');
     const avatarFileInput = document.getElementById('avatarFileInput');
     const standaloneHeader = document.getElementById('standaloneHeader');
-    const backBtnInHeader = document.getElementById('backBtnInHeader');
+    const profileContainer = document.getElementById('profileContainer');
     const closedAccountScreen = document.getElementById('closedAccountScreen');
 
-    // إظهار/إخفاء الهيدر المستقل
-    if (window.engine || window !== window.top) {
-        if (standaloneHeader) standaloneHeader.style.display = 'none';
+    // التعامل مع المسافات والهيدر حسب السياق
+    const isStandalone = !window.engine && window.self === window.top && !document.getElementById('app-content');
+    
+    if (isStandalone) {
+        // فتح مستقل: أظهر الهيدر وأضف padding جانبي
+        standaloneHeader.style.display = 'flex';
+        profileContainer.classList.add('px-4');
     } else {
-        if (standaloneHeader) standaloneHeader.style.display = 'flex';
+        // داخل التطبيق: بدون هيدر ولا padding إضافي (app-content عنده padding)
+        standaloneHeader.style.display = 'none';
+        profileContainer.classList.add('px-0');
     }
 
     // تبديل التبويبات
@@ -178,21 +184,16 @@
         });
     });
 
-    // إظهار شاشة "الحساب مغلق"
     function showAccountClosed() {
-        document.querySelector('.max-w-md > div:nth-child(2)').style.display = 'none'; // إخفاء البطاقة
+        document.querySelector('.max-w-md > div:nth-child(2)').style.display = 'none';
         closedAccountScreen.classList.remove('hidden');
     }
 
-    // تحميل بروفايل عام
     async function loadPublicProfile(uid) {
-        // نتأكد من أن uid ليس فارغًا أو "undefined"
         if (!uid || uid === 'undefined' || uid.trim() === '') {
             showAccountClosed();
             return;
         }
-
-        // إخفاء أزرار التعديل
         editBtn.style.display = 'none';
         saveBtn.style.display = 'none';
         logoutBtn.style.display = 'none';
@@ -243,7 +244,6 @@
         }
     }
 
-    // تحميل البروفايل الشخصي (بدون uid)
     async function loadOwnProfile() {
         try {
             const user = auth.currentUser;
@@ -294,7 +294,6 @@
         }
     }
 
-    // بدء التشغيل
     if (profileUid) {
         loadPublicProfile(profileUid);
     } else {
@@ -307,7 +306,6 @@
         });
     }
 
-    // ربط زر الخروج
     if (logoutBtn) {
         logoutBtn.addEventListener('click', async () => {
             if (confirm("هل تريد مغادرة المحيط؟")) {
