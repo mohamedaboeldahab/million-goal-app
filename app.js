@@ -825,6 +825,11 @@ async updateUserProfile(updates) {
         userBtn.innerHTML = `<img src="${fixPhotoUrl(updates.photoURL)}" class="w-full h-full object-cover rounded-2xl" loading="lazy">`;
     }
 },
+
+    viewUserProfile(uid) {
+    // الانتقال إلى صفحة البروفايل مع تمرير معرف المستخدم
+    window.location.href = `profile.html?uid=${uid}`;
+}, 
     async addComment(postId) {
         const input = document.getElementById(`comm_${postId}`);
         if (!input?.value.trim()) return;
