@@ -18,8 +18,8 @@
 </head>
 <body class="bg-gray-50">
 
-<!-- الهيدر المستقل (يظهر فقط عند الفتح المباشر بدون engine) -->
-<div id="standaloneHeader" class="bg-gradient-to-l from-sky-500 to-blue-600 text-white px-4 py-3 flex items-center gap-3 shadow-md sticky top-0 z-50" style="display: none;">
+<!-- هيدر للمستقل فقط -->
+<div id="standaloneHeader" class="bg-gradient-to-l from-sky-500 to-blue-600 text-white px-4 py-3 flex items-center gap-3 shadow-md sticky top-0 z-50" style="display:none;">
     <button id="backBtnInHeader" onclick="window.location.href='index.html'" class="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center text-white hover:bg-white/30 transition">
         <i class="fa-solid fa-arrow-right text-sm"></i>
     </button>
@@ -27,7 +27,6 @@
     <span class="text-xs bg-white/20 px-2 py-0.5 rounded-full mr-auto">🦈 الملف الشخصي</span>
 </div>
 
-<!-- الحاوية الرئيسية (بدون مسافات جانبية، تُضاف عند الحاجة) -->
 <div id="profileContainer" class="max-w-md mx-auto pb-6">
     <!-- غلاف البروفايل -->
     <div class="relative h-36 bg-gradient-to-b from-cyan-400 via-sky-500 to-blue-600 rounded-b-[2.5rem] overflow-hidden shadow-lg mt-0">
@@ -44,17 +43,16 @@
 
     <!-- بطاقة المعلومات -->
     <div class="bg-white rounded-2xl shadow-xl -mt-10 px-5 pt-8 pb-5 relative z-10">
-        <!-- تفاصيل البروفايل: صورة + اسم + شارة -->
         <div class="flex items-start gap-4">
-            <!-- الصورة المربعة -->
+            <!-- الصورة -->
             <div class="w-24 h-24 rounded-2xl border-4 border-white shadow-lg overflow-hidden bg-white relative -mt-14 group flex-shrink-0">
-                <img id="profileAvatar" class="w-full h-full object-cover" src="" alt="الصورة الشخصية">
+                <img id="profileAvatar" class="w-full h-full object-cover" src="" alt="الصورة">
                 <div id="avatarOverlay" class="absolute inset-0 bg-black/30 hidden group-hover:flex items-center justify-center text-white cursor-pointer text-2xl">
                     <i class="fa-solid fa-camera"></i>
                 </div>
                 <input type="file" id="avatarFileInput" accept="image/*" class="hidden">
             </div>
-            <!-- الاسم والبيانات -->
+            <!-- الاسم -->
             <div class="mt-2 flex-1">
                 <div class="flex items-center gap-1 flex-wrap">
                     <h1 id="profileName" class="text-lg font-black text-gray-800">جار التحميل...</h1>
@@ -66,56 +64,34 @@
             </div>
         </div>
 
-        <!-- أزرار الإجراءات -->
         <div id="profileActions" class="flex justify-start gap-2 mt-4 flex-wrap">
-            <button id="editProfileBtn" class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-xl text-xs transition">
-                <i class="fa-solid fa-pen-to-square"></i> تعديل
-            </button>
-            <button id="saveProfileBtn" class="bg-sky-500 hover:bg-sky-600 text-white font-bold py-2 px-4 rounded-xl text-xs transition hidden">
-                <i class="fa-solid fa-check"></i> حفظ
-            </button>
-            <button id="logoutBtn" class="bg-white border border-red-200 text-red-500 hover:bg-red-50 font-bold py-2 px-4 rounded-xl text-xs transition">
-                <i class="fa-solid fa-right-from-bracket"></i> خروج
-            </button>
+            <button id="editProfileBtn" class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-xl text-xs transition"><i class="fa-solid fa-pen-to-square"></i> تعديل</button>
+            <button id="saveProfileBtn" class="bg-sky-500 hover:bg-sky-600 text-white font-bold py-2 px-4 rounded-xl text-xs transition hidden"><i class="fa-solid fa-check"></i> حفظ</button>
+            <button id="logoutBtn" class="bg-white border border-red-200 text-red-500 hover:bg-red-50 font-bold py-2 px-4 rounded-xl text-xs transition"><i class="fa-solid fa-right-from-bracket"></i> خروج</button>
         </div>
 
-        <!-- تبويبات -->
         <div class="flex gap-1 mt-5 border-b pb-2 justify-start">
-            <button class="tab-btn active font-bold text-xs px-4 py-2 rounded-lg bg-gray-100" data-tab="posts">
-                📄 المنشورات
-            </button>
-            <button class="tab-btn font-bold text-xs px-4 py-2 rounded-lg text-gray-500" data-tab="about">
-                ℹ️ عني
-            </button>
+            <button class="tab-btn active font-bold text-xs px-4 py-2 rounded-lg bg-gray-100" data-tab="posts">📄 المنشورات</button>
+            <button class="tab-btn font-bold text-xs px-4 py-2 rounded-lg text-gray-500" data-tab="about">ℹ️ عني</button>
         </div>
 
-        <!-- محتوى التبويبات -->
         <div class="mt-3">
             <div id="tab-posts">
                 <div id="userPostsContainer" class="space-y-3">
-                    <div class="text-center py-8 text-gray-400">
-                        <div class="w-8 h-8 border-4 border-sky-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
-                        <p class="mt-2 text-xs">جاري تحميل المنشورات...</p>
-                    </div>
+                    <div class="text-center py-8 text-gray-400"><div class="w-8 h-8 border-4 border-sky-500 border-t-transparent rounded-full animate-spin mx-auto"></div><p class="mt-2 text-xs">جاري تحميل المنشورات...</p></div>
                 </div>
             </div>
             <div id="tab-about" class="hidden">
-                <div class="bg-gray-50 rounded-xl p-4 text-center">
-                    <p class="font-bold text-sm mb-1">نبذة عني</p>
-                    <p id="aboutBio" class="text-xs text-gray-600">🦈 مؤسس في Shark Hub</p>
-                </div>
+                <div class="bg-gray-50 rounded-xl p-4 text-center"><p class="font-bold text-sm mb-1">نبذة عني</p><p id="aboutBio" class="text-xs text-gray-600">🦈 مؤسس في Shark Hub</p></div>
             </div>
         </div>
     </div>
 
-    <!-- شاشة "الحساب مغلق" -->
     <div id="closedAccountScreen" class="bg-white rounded-2xl shadow-xl px-5 py-12 text-center mt-6 hidden">
         <div class="text-6xl mb-4">🔒</div>
         <h2 class="text-xl font-black text-gray-800 mb-2">هذا الحساب مغلق</h2>
         <p class="text-sm text-gray-500 mb-6">لم يعد هذا الحساب متاحاً أو أنه غير موجود.</p>
-        <button onclick="window.location.href='index.html'" class="bg-sky-500 text-white font-bold py-2 px-6 rounded-xl text-sm shadow hover:bg-sky-600 transition">
-           العودة للرئيسية
-        </button>
+        <button onclick="window.location.href='index.html'" class="bg-sky-500 text-white font-bold py-2 px-6 rounded-xl text-sm shadow hover:bg-sky-600 transition">العودة للرئيسية</button>
     </div>
 </div>
 
@@ -145,32 +121,31 @@
     const urlParams = new URLSearchParams(window.location.search);
     const profileUid = urlParams.get('uid');
 
-    const avatarImg = document.getElementById('profileAvatar');
-    const nameEl = document.getElementById('profileName');
-    const emailEl = document.getElementById('profileEmail');
-    const bioEl = document.getElementById('profileBio');
-    const aboutEl = document.getElementById('aboutBio');
-    const postsContainer = document.getElementById('userPostsContainer');
-    const editBtn = document.getElementById('editProfileBtn');
-    const saveBtn = document.getElementById('saveProfileBtn');
-    const logoutBtn = document.getElementById('logoutBtn');
-    const avatarOverlay = document.getElementById('avatarOverlay');
-    const avatarFileInput = document.getElementById('avatarFileInput');
-    const standaloneHeader = document.getElementById('standaloneHeader');
-    const profileContainer = document.getElementById('profileContainer');
-    const closedAccountScreen = document.getElementById('closedAccountScreen');
+    const elements = {
+        avatar: document.getElementById('profileAvatar'),
+        name: document.getElementById('profileName'),
+        email: document.getElementById('profileEmail'),
+        bio: document.getElementById('profileBio'),
+        about: document.getElementById('aboutBio'),
+        posts: document.getElementById('userPostsContainer'),
+        edit: document.getElementById('editProfileBtn'),
+        save: document.getElementById('saveProfileBtn'),
+        logout: document.getElementById('logoutBtn'),
+        overlay: document.getElementById('avatarOverlay'),
+        fileInput: document.getElementById('avatarFileInput'),
+        header: document.getElementById('standaloneHeader'),
+        container: document.getElementById('profileContainer'),
+        closed: document.getElementById('closedAccountScreen')
+    };
 
-    // التعامل مع المسافات والهيدر حسب السياق
-    const isStandalone = !window.engine && window.self === window.top && !document.getElementById('app-content');
-    
+    // تحديد الوضع
+    const isStandalone = !window.engine && window === window.top;
     if (isStandalone) {
-        // فتح مستقل: أظهر الهيدر وأضف padding جانبي
-        standaloneHeader.style.display = 'flex';
-        profileContainer.classList.add('px-4');
+        elements.header.style.display = 'flex';
+        elements.container.classList.add('px-4');
     } else {
-        // داخل التطبيق: بدون هيدر ولا padding إضافي (app-content عنده padding)
-        standaloneHeader.style.display = 'none';
-        profileContainer.classList.add('px-0');
+        elements.header.style.display = 'none';
+        elements.container.classList.add('px-0');
     }
 
     // تبديل التبويبات
@@ -184,137 +159,93 @@
         });
     });
 
-    function showAccountClosed() {
-        document.querySelector('.max-w-md > div:nth-child(2)').style.display = 'none';
-        closedAccountScreen.classList.remove('hidden');
-    }
-
+    // بروفايل عام
     async function loadPublicProfile(uid) {
-        if (!uid || uid === 'undefined' || uid.trim() === '') {
-            showAccountClosed();
-            return;
-        }
-        editBtn.style.display = 'none';
-        saveBtn.style.display = 'none';
-        logoutBtn.style.display = 'none';
-        if (avatarOverlay) avatarOverlay.style.display = 'none';
-        if (avatarFileInput) avatarFileInput.disabled = true;
+        if (!uid || uid === 'undefined' || uid.trim() === '') return showClosed();
+        elements.edit.style.display = 'none';
+        elements.save.style.display = 'none';
+        elements.logout.style.display = 'none';
+        if (elements.overlay) elements.overlay.style.display = 'none';
+        if (elements.fileInput) elements.fileInput.disabled = true;
 
         try {
-            const userDoc = await db.collection("users").doc(uid).get();
-            if (!userDoc.exists) {
-                showAccountClosed();
+            const doc = await db.collection("users").doc(uid).get();
+            if (!doc.exists) return showClosed();
+            const d = doc.data();
+            elements.name.textContent = d.displayName || 'مستخدم';
+            elements.avatar.src = fixPhotoUrl(d.photoURL);
+            elements.bio.textContent = d.bio || '';
+            elements.about.textContent = d.bio || '';
+            elements.email.textContent = '';
+
+            const snap = await db.collection("posts").where("authorId", "==", uid).orderBy("createdAt", "desc").get();
+            elements.posts.innerHTML = '';
+            if (snap.empty) {
+                elements.posts.innerHTML = '<p class="text-gray-400 text-sm text-center py-6">لا توجد منشورات بعد</p>';
                 return;
             }
-            const userData = userDoc.data();
-            nameEl.textContent = userData.displayName || 'مستخدم';
-            avatarImg.src = fixPhotoUrl(userData.photoURL);
-            bioEl.textContent = userData.bio || '';
-            aboutEl.textContent = userData.bio || '';
-            emailEl.textContent = '';
-
-            const snapshot = await db.collection("posts")
-                .where("authorId", "==", uid)
-                .orderBy("createdAt", "desc")
-                .get();
-
-            postsContainer.innerHTML = '';
-            if (snapshot.empty) {
-                postsContainer.innerHTML = '<p class="text-gray-400 text-sm text-center py-6">لا توجد منشورات بعد</p>';
-                return;
-            }
-            snapshot.forEach(docSnap => {
-                const p = docSnap.data();
-                const dateStr = p.createdAt?.toDate().toLocaleString('ar-EG') || '';
-                const img = fixPhotoUrl(p.authorPhoto);
+            snap.forEach(doc => {
+                const p = doc.data();
+                const date = p.createdAt?.toDate().toLocaleString('ar-EG') || '';
                 const card = document.createElement('div');
                 card.className = 'bg-white rounded-2xl p-3 shadow-sm border border-gray-100';
-                card.innerHTML = `
-                    <div class="flex items-center gap-2 mb-2">
-                        <img src="${img}" class="w-8 h-8 rounded-full border border-sky-200 object-cover">
-                        <span class="font-bold text-gray-800 text-xs">${p.authorName || 'مستخدم'}</span>
-                        <span class="text-[10px] text-gray-400 mr-auto">${dateStr}</span>
-                    </div>
-                    <p class="text-gray-700 text-xs leading-relaxed whitespace-pre-wrap">${p.content}</p>
-                `;
-                postsContainer.appendChild(card);
+                card.innerHTML = `<div class="flex items-center gap-2 mb-2"><img src="${fixPhotoUrl(p.authorPhoto)}" class="w-8 h-8 rounded-full border"><span class="font-bold text-xs">${p.authorName||'مستخدم'}</span><span class="text-[10px] text-gray-400 mr-auto">${date}</span></div><p class="text-xs">${p.content}</p>`;
+                elements.posts.appendChild(card);
             });
-        } catch (e) {
-            showAccountClosed();
-        }
+        } catch (e) { showClosed(); }
     }
 
+    // بروفايل شخصي
     async function loadOwnProfile() {
-        try {
-            const user = auth.currentUser;
-            if (!user) {
-                window.location.href = "index.html";
-                return;
-            }
-            const userDoc = await db.collection("users").doc(user.uid).get();
-            const userData = userDoc.data() || {};
-            avatarImg.src = fixPhotoUrl(userData.photoURL || user.photoURL);
-            nameEl.textContent = userData.displayName || user.displayName || 'مستخدم';
-            bioEl.textContent = userData.bio || '';
-            aboutEl.textContent = userData.bio || '';
-            emailEl.textContent = user.email || '';
+        auth.onAuthStateChanged(async user => {
+            if (!user) return window.location.href = "index.html";
+            const doc = await db.collection("users").doc(user.uid).get();
+            const data = doc.data() || {};
+            elements.avatar.src = fixPhotoUrl(data.photoURL || user.photoURL);
+            elements.name.textContent = data.displayName || user.displayName || 'مستخدم';
+            elements.bio.textContent = data.bio || '';
+            elements.about.textContent = data.bio || '';
+            elements.email.textContent = user.email || '';
 
-            if (window.engine && window.engine.listenToProfilePosts) {
-                window.engine.listenToProfilePosts('userPostsContainer');
-                window.engine.activateProfile?.();
-            } else {
-                const snapshot = await db.collection("posts")
-                    .where("authorId", "==", user.uid)
-                    .orderBy("createdAt", "desc")
-                    .get();
-                postsContainer.innerHTML = '';
-                if (snapshot.empty) {
-                    postsContainer.innerHTML = '<p class="text-gray-400 text-xs text-center py-6">لا توجد منشورات بعد</p>';
+            // تحميل المنشورات إذا لم يكن هناك engine (مستقل) وإلا نترك engine
+            if (!window.engine) {
+                const snap = await db.collection("posts").where("authorId", "==", user.uid).orderBy("createdAt", "desc").get();
+                elements.posts.innerHTML = '';
+                if (snap.empty) {
+                    elements.posts.innerHTML = '<p class="text-gray-400 text-xs text-center py-6">لا توجد منشورات بعد</p>';
                     return;
                 }
-                snapshot.forEach(docSnap => {
-                    const p = docSnap.data();
-                    const dateStr = p.createdAt?.toDate().toLocaleString('ar-EG') || '';
-                    const img = fixPhotoUrl(p.authorPhoto);
+                snap.forEach(doc => {
+                    const p = doc.data();
+                    const date = p.createdAt?.toDate().toLocaleString('ar-EG') || '';
                     const card = document.createElement('div');
                     card.className = 'bg-white rounded-2xl p-3 shadow-sm border border-gray-100';
-                    card.innerHTML = `
-                        <div class="flex items-center gap-2 mb-2">
-                            <img src="${img}" class="w-8 h-8 rounded-full border border-sky-200 object-cover">
-                            <span class="font-bold text-gray-800 text-xs">${p.authorName || 'مستخدم'}</span>
-                            <span class="text-[10px] text-gray-400 mr-auto">${dateStr}</span>
-                        </div>
-                        <p class="text-gray-700 text-xs leading-relaxed whitespace-pre-wrap">${p.content}</p>
-                    `;
-                    postsContainer.appendChild(card);
+                    card.innerHTML = `<div class="flex items-center gap-2 mb-2"><img src="${fixPhotoUrl(p.authorPhoto)}" class="w-8 h-8 rounded-full border"><span class="font-bold text-xs">${p.authorName||'مستخدم'}</span><span class="text-[10px] text-gray-400 mr-auto">${date}</span></div><p class="text-xs">${p.content}</p>`;
+                    elements.posts.appendChild(card);
                 });
             }
-        } catch (e) {
-            postsContainer.innerHTML = '<p class="text-red-500 text-xs text-center py-6">حدث خطأ في تحميل البروفايل</p>';
-        }
+        });
     }
 
+    function showClosed() {
+        document.querySelector('.bg-white.rounded-2xl.shadow-xl.-mt-10').style.display = 'none';
+        elements.closed.classList.remove('hidden');
+    }
+
+    // بدء
     if (profileUid) {
         loadPublicProfile(profileUid);
     } else {
-        auth.onAuthStateChanged(user => {
-            if (user) {
-                loadOwnProfile();
-            } else {
-                window.location.href = "index.html";
-            }
-        });
+        loadOwnProfile();
     }
 
-    if (logoutBtn) {
-        logoutBtn.addEventListener('click', async () => {
-            if (confirm("هل تريد مغادرة المحيط؟")) {
-                await auth.signOut();
-                window.location.href = "index.html";
-            }
-        });
-    }
+    // زر الخروج
+    elements.logout?.addEventListener('click', async () => {
+        if (confirm("هل تريد مغادرة المحيط؟")) {
+            await auth.signOut();
+            window.location.href = "index.html";
+        }
+    });
 </script>
-
 </body>
 </html>
