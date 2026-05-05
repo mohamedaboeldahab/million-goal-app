@@ -384,19 +384,10 @@ loadChatMessagesImproved(receiverId, container) {
 
 // استبدال دالة sendMessage القديمة لتعمل بشكل أفضل
 async sendMessage(receiverId, receiverName) {
-    // إذا كان receiverName عبارة عن نص طويل (رسالة)، نستخدم openChat بدلاً من ذلك
-    if (receiverName && receiverName.length > 50) {
-        // هذا يعني أن المستخدم استخدم الزر القديم
-        this.openChat(receiverId, "الصديق");
-        return;
-    }
-    
-    let messageText = prompt(`إرسال رسالة إلى ${receiverName}:`);
-    if (!messageText || !messageText.trim()) return;
-    
-    await this.sendMessageDirectImproved(receiverId, receiverName, messageText.trim());
+     this.openChat(receiverId, receiverName);
 },
 
+// تحسين دالة acceptFriendRequest
 // تحسين دالة acceptFriendRequest
 async acceptFriendRequest(requestId, fromUserId) {
     const currentUserId = auth.currentUser.uid;
@@ -419,10 +410,14 @@ async acceptFriendRequest(requestId, fromUserId) {
         
         this.showToast('🎉 تم قبول الصداقة');
         
-        // تحديث واجهة الأصدقاء إذا كانت مفتوحة
-        if (document.getElementById('friendRequestsList')) {
-            location.reload(); // إعادة تحميل بسيطة لتحديث البيانات
+        // تحديث واجهة الأصدقاء
+        if (document.getElementById('friendsList')) {
+            this.loadFriendsData();
         }
+        
+        // تحديث زر الإضافة في صفحة البروفايل
+        this.updateProfileFriendButton(fromUserId);
+        
     } catch (e) {
         console.error(e);
         this.showToast('⚠️ فشل قبول الطلب');
