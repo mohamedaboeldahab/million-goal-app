@@ -37,6 +37,13 @@ function fixPhotoUrl(url) {
     return url + (url.includes('?') ? '&' : '?') + 'sz=50';
 }
 
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
 const bgGradients = {
     gradient1: 'linear-gradient(135deg, #0f0c29, #302b63, #24243e)',
     gradient2: 'linear-gradient(135deg, #4b0000, #000000)',
@@ -75,7 +82,7 @@ window.engine = {
                 const userBtn = document.getElementById('userBtn');
                 this.getOrCreateUserProfile().then(profile => {
                     const photo = fixPhotoUrl(profile.photoURL || user.photoURL);
-                    if (userBtn) userBtn.innerHTML = `<img src="${photo}" class="w-full h-full object-cover rounded-2xl" loading="lazy">`;
+                    if (userBtn) userBtn.innerHTML = `<img src="${photo}" class="w-9 h-9 rounded-full object-cover">`;
                 });
                 this.loadPage('home');
             } else {
@@ -108,10 +115,9 @@ window.engine = {
         if (!content) return;
         document.querySelectorAll('.nav-link').forEach(l => l.classList.toggle('active', l.dataset.page === pageName));
         content.innerHTML = '<div class="flex justify-center py-20"><div class="w-8 h-8 border-4 border-sky-500 border-t-transparent rounded-full animate-spin"></div></div>';
-if (pageName !== 'profile') {
-    sessionStorage.removeItem('viewingProfileUID');
-}
-        // تدمير المراقب القديم قبل تحميل أي صفحة جديدة
+        if (pageName !== 'profile') {
+            sessionStorage.removeItem('viewingProfileUID');
+        }
         if (this._observer) {
             this._observer.disconnect();
             this._observer = null;
@@ -134,7 +140,7 @@ if (pageName !== 'profile') {
                     this.updateTypeButtons();
                     this.updateCreatorAvatar();
                     this.renderBgPicker();
-                    this.watchStoriesContainer(); // إنشاء مراقب جديد للقصص
+                    this.watchStoriesContainer();
                 }, 50);
             } else if (pageName === 'profile') {
                 setTimeout(() => {
@@ -145,14 +151,14 @@ if (pageName !== 'profile') {
             if (typeof setActiveNavLink === 'function') setActiveNavLink(pageName);
         } catch (e) { content.innerHTML = `<div class="text-center py-20 text-slate-400">قريباً..</div>`; }
     },
-  async sendFriendRequest(toUserId) {
+
+    async sendFriendRequest(toUserId) {
         const fromUserId = auth.currentUser.uid;
         if (!fromUserId || !toUserId || fromUserId === toUserId) {
             this.showToast('لا يمكن إرسال طلب صداقة');
             return;
         }
 
-        // التحقق من عدم وجود طلب سابق
         const existingQuery = query(
             collection(db, "friend_requests"),
             where("fromUserId", "==", fromUserId),
@@ -165,7 +171,6 @@ if (pageName !== 'profile') {
             return;
         }
 
-        // التحقق من أنهم ليسوا أصدقاء بالفعل
         const friendshipCheck = await this.checkFriendship(fromUserId, toUserId);
         if (friendshipCheck) {
             this.showToast('أنتما أصدقاء بالفعل');
@@ -188,291 +193,232 @@ if (pageName !== 'profile') {
         }
     },
 
-    // التحقق من وجود صداقة
     async checkFriendship(user1, user2) {
         const q1 = query(collection(db, "friendships"), where("user1", "==", user1), where("user2", "==", user2));
         const q2 = query(collection(db, "friendships"), where("user1", "==", user2), where("user2", "==", user1));
-        
         const [snap1, snap2] = await Promise.all([getDocs(q1), getDocs(q2)]);
         return !snap1.empty || !snap2.empty;
     },
 
-    // قبول طلب الصداقة
-  // فتح نافذة المحادثة المباشرة (بدلاً من الـ prompt)
-openChat(receiverId, receiverName) {
-    console.log('فتح الشات مع:', receiverId, receiverName);
-    
-    if (!receiverId || !receiverName) {
-        this.showToast('❌ حدث خطأ في فتح المحادثة');
-        return;
-    }
-    
-    // إنشاء نافذة شات جميلة
-    const modal = document.createElement('div');
-    modal.className = 'fixed inset-0 bg-black/50 z-[9999] flex items-center justify-center p-4';
-    modal.style.backdropFilter = 'blur(4px)';
-    modal.innerHTML = `
-        <div class="bg-white rounded-2xl w-full max-w-md overflow-hidden shadow-2xl" style="direction: rtl;">
-            <div class="bg-gradient-to-r from-sky-500 to-blue-600 text-white p-4 flex justify-between items-center">
-                <div class="flex items-center gap-2">
-                    <i class="fa-regular fa-comment-dots"></i>
-                    <h3 class="font-bold">محادثة مع ${receiverName}</h3>
-                </div>
-                <button onclick="this.closest('.fixed').remove()" class="text-white text-2xl hover:opacity-80">&times;</button>
-            </div>
-            <div id="chatMessagesContainer" class="h-96 overflow-y-auto p-4 space-y-3 bg-gray-50"></div>
-            <div class="p-4 border-t bg-white flex gap-2">
-                <input type="text" id="chatInput" placeholder="اكتب رسالتك..." class="flex-1 border rounded-xl px-4 py-2 focus:outline-none focus:border-sky-500 text-sm">
-                <button id="sendMessageBtn" class="bg-sky-500 hover:bg-sky-600 text-white px-5 py-2 rounded-xl font-bold transition">
-                    <i class="fa-regular fa-paper-plane"></i> إرسال
-                </button>
-            </div>
-        </div>
-    `;
-    document.body.appendChild(modal);
-    
-    // تحميل الرسائل السابقة
-    this.loadChatMessagesImproved(receiverId, modal.querySelector('#chatMessagesContainer'));
-    
-    // إرسال رسالة
-    const sendBtn = modal.querySelector('#sendMessageBtn');
-    const input = modal.querySelector('#chatInput');
-    
-    const sendMessage = () => {
-        const text = input.value.trim();
-        if (!text) {
-            this.showToast('✏️ اكتب رسالة أولاً');
+    openChat(receiverId, receiverName) {
+        console.log('فتح الشات مع:', receiverId, receiverName);
+        
+        if (!receiverId || !receiverName) {
+            this.showToast('❌ حدث خطأ في فتح المحادثة');
             return;
         }
-        this.sendMessageDirectImproved(receiverId, receiverName, text);
-        input.value = '';
-        setTimeout(() => input.focus(), 100);
-    };
-    
-    sendBtn.onclick = sendMessage;
-    input.onkeypress = (e) => { 
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            sendMessage();
-        }
-    };
-    
-    setTimeout(() => input.focus(), 300);
-},
-
-// إرسال رسالة مباشرة محسنة
-async sendMessageDirectImproved(receiverId, receiverName, messageText) {
-    const senderId = auth.currentUser.uid;
-    try {
-        const messageData = {
-            senderId: senderId,
-            receiverId: receiverId,
-            text: messageText,
-            senderName: auth.currentUser.displayName || 'مستخدم',
-            senderPhoto: auth.currentUser.photoURL || '',
-            createdAt: serverTimestamp(),
-            read: false
+        
+        const modal = document.createElement('div');
+        modal.className = 'fixed inset-0 bg-black/50 z-[9999] flex items-center justify-center p-4';
+        modal.style.backdropFilter = 'blur(4px)';
+        modal.innerHTML = `
+            <div class="bg-white rounded-2xl w-full max-w-md overflow-hidden shadow-2xl" style="direction: rtl;">
+                <div class="bg-gradient-to-r from-sky-500 to-blue-600 text-white p-4 flex justify-between items-center">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-regular fa-comment-dots"></i>
+                        <h3 class="font-bold">محادثة مع ${receiverName}</h3>
+                    </div>
+                    <button onclick="this.closest('.fixed').remove()" class="text-white text-2xl hover:opacity-80">&times;</button>
+                </div>
+                <div id="chatMessagesContainer" class="h-96 overflow-y-auto p-4 space-y-3 bg-gray-50"></div>
+                <div class="p-4 border-t bg-white flex gap-2">
+                    <input type="text" id="chatInput" placeholder="اكتب رسالتك..." class="flex-1 border rounded-xl px-4 py-2 focus:outline-none focus:border-sky-500 text-sm">
+                    <button id="sendMessageBtn" class="bg-sky-500 hover:bg-sky-600 text-white px-5 py-2 rounded-xl font-bold transition">
+                        <i class="fa-regular fa-paper-plane"></i> إرسال
+                    </button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        
+        this.loadChatMessages(receiverId, modal.querySelector('#chatMessagesContainer'));
+        
+        const sendBtn = modal.querySelector('#sendMessageBtn');
+        const input = modal.querySelector('#chatInput');
+        
+        const sendMessage = () => {
+            const text = input.value.trim();
+            if (!text) {
+                this.showToast('✏️ اكتب رسالة أولاً');
+                return;
+            }
+            this.sendMessageDirect(receiverId, receiverName, text);
+            input.value = '';
+            setTimeout(() => input.focus(), 100);
         };
         
-        await addDoc(collection(db, "messages"), messageData);
-        this.showToast('✅ تم الإرسال');
-    } catch (e) {
-        console.error('خطأ في الإرسال:', e);
-        this.showToast('❌ فشل الإرسال: ' + e.message);
-    }
-},
-
-// تحميل رسائل الشات بطريقة محسنة
-loadChatMessagesImproved(receiverId, container) {
-    if (!container) return;
-    
-    const senderId = auth.currentUser.uid;
-    
-    // طريقة أفضل: استخدام استعلامين منفصلين بدلاً من 'in'
-    const q1 = query(
-        collection(db, "messages"),
-        where("senderId", "==", senderId),
-        where("receiverId", "==", receiverId),
-        orderBy("createdAt", "asc")
-    );
-    
-    const q2 = query(
-        collection(db, "messages"),
-        where("senderId", "==", receiverId),
-        where("receiverId", "==", senderId),
-        orderBy("createdAt", "asc")
-    );
-    
-    container.innerHTML = '<div class="text-center text-gray-400 py-10"><i class="fa-solid fa-spinner fa-spin"></i> جاري تحميل الرسائل...</div>';
-    
-    // دمج النتائج من كلا الاستعلامين
-    const allMessages = [];
-    
-    const onUpdate = () => {
-        // ترتيب الرسائل حسب الوقت
-        allMessages.sort((a, b) => {
-            const timeA = a.createdAt?.toDate?.()?.getTime() || 0;
-            const timeB = b.createdAt?.toDate?.()?.getTime() || 0;
-            return timeA - timeB;
-        });
-        
-        if (allMessages.length === 0) {
-            container.innerHTML = '<div class="text-center text-gray-400 py-10">✨ لا توجد رسائل بعد<br><span class="text-xs">ابدأ المحادثة الآن</span></div>';
-            return;
-        }
-        
-        container.innerHTML = '';
-        let lastDate = null;
-        
-        allMessages.forEach(msg => {
-            const isMe = msg.senderId === senderId;
-            const msgDate = msg.createdAt?.toDate();
-            
-            // إضافة فاصل زمني
-            if (msgDate) {
-                const today = new Date();
-                const isToday = msgDate.toDateString() === today.toDateString();
-                const dateStr = isToday ? 'اليوم' : msgDate.toLocaleDateString('ar-EG');
-                
-                if (lastDate !== dateStr) {
-                    const dateDiv = document.createElement('div');
-                    dateDiv.className = 'text-center my-2';
-                    dateDiv.innerHTML = `<span class="text-xs text-gray-400 bg-gray-100 px-3 py-1 rounded-full">${dateStr}</span>`;
-                    container.appendChild(dateDiv);
-                    lastDate = dateStr;
-                }
+        sendBtn.onclick = sendMessage;
+        input.onkeypress = (e) => { 
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                sendMessage();
             }
-            
-            const div = document.createElement('div');
-            div.className = `flex ${isMe ? 'justify-end' : 'justify-start'} animate-fade-in`;
-            div.innerHTML = `
-                <div class="max-w-[75%] ${isMe ? 'bg-sky-500 text-white rounded-br-none' : 'bg-white border border-gray-200 text-gray-800 rounded-bl-none'} rounded-2xl px-4 py-2 shadow-sm">
-                    ${!isMe ? `<div class="text-xs text-sky-600 font-bold mb-1">${msg.senderName || 'مستخدم'}</div>` : ''}
-                    <p class="text-sm break-words">${escapeHtmlImproved(msg.text)}</p>
-                    <div class="text-xs ${isMe ? 'text-sky-100' : 'text-gray-400'} text-left mt-1">
-                        ${msg.createdAt?.toDate()?.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) || ''}
-                        ${isMe ? ' ✓' : ''}
-                    </div>
-                </div>
-            `;
-            container.appendChild(div);
-        });
+        };
         
-        container.scrollTop = container.scrollHeight;
-    };
-    
-    // الاستماع للاستعلام الأول
-    onSnapshot(q1, (snapshot) => {
-        snapshot.docChanges().forEach(change => {
-            if (change.type === 'added') {
-                allMessages.push(change.doc.data());
-            }
-        });
-        onUpdate();
-    });
-    
-    // الاستماع للاستعلام الثاني
-    onSnapshot(q2, (snapshot) => {
-        snapshot.docChanges().forEach(change => {
-            if (change.type === 'added') {
-                allMessages.push(change.doc.data());
-            }
-        });
-        onUpdate();
-    });
-},
+        setTimeout(() => input.focus(), 300);
+    },
 
-// استبدال دالة sendMessage القديمة لتعمل بشكل أفضل
-async sendMessage(receiverId, receiverName) {
-     this.openChat(receiverId, receiverName);
-},
-
-// تحسين دالة acceptFriendRequest
-// تحسين دالة acceptFriendRequest
-async acceptFriendRequest(requestId, fromUserId) {
-    const currentUserId = auth.currentUser.uid;
-    try {
-        // تحديث حالة الطلب
-        await updateDoc(doc(db, "friend_requests", requestId), { 
-            status: 'accepted',
-            updatedAt: serverTimestamp()
-        });
-        
-        // إنشاء علاقة صداقة (تجنب التكرار)
-        const existingCheck = await this.checkFriendship(currentUserId, fromUserId);
-        if (!existingCheck) {
-            await addDoc(collection(db, "friendships"), {
-                user1: currentUserId,
-                user2: fromUserId,
-                createdAt: serverTimestamp()
-            });
-        }
-        
-        this.showToast('🎉 تم قبول الصداقة');
-        
-        // تحديث واجهة الأصدقاء
-        if (document.getElementById('friendsList')) {
-            this.loadFriendsData();
-        }
-        
-        // تحديث زر الإضافة في صفحة البروفايل
-        this.updateProfileFriendButton(fromUserId);
-        
-    } catch (e) {
-        console.error(e);
-        this.showToast('⚠️ فشل قبول الطلب');
-    }
-},
-
-// تحسين دالة rejectFriendRequest
-async rejectFriendRequest(requestId) {
-    try {
-        await updateDoc(doc(db, "friend_requests", requestId), { 
-            status: 'rejected',
-            updatedAt: serverTimestamp()
-        });
-        this.showToast('تم رفض الطلب');
-        
-        // تحديث الواجهة
-        const reqElement = document.querySelector(`button[onclick*="rejectFriendRequest('${requestId}')"]`)?.closest('.flex');
-        if (reqElement) reqElement.remove();
-    } catch (e) {
-        this.showToast('⚠️ فشل رفض الطلب');
-    }
-},
-
-    // إرسال رسالة
-    async sendMessage(receiverId, receiverName) {
+    async sendMessageDirect(receiverId, receiverName, messageText) {
         const senderId = auth.currentUser.uid;
-        let messageText = prompt(`إرسال رسالة إلى ${receiverName}:`);
-        if (!messageText || !messageText.trim()) return;
-
         try {
-            await addDoc(collection(db, "messages"), {
-                senderId,
-                receiverId,
-                text: messageText.trim(),
-                senderName: auth.currentUser.displayName,
+            const messageData = {
+                senderId: senderId,
+                receiverId: receiverId,
+                text: messageText,
+                senderName: auth.currentUser.displayName || 'مستخدم',
+                senderPhoto: auth.currentUser.photoURL || '',
                 createdAt: serverTimestamp(),
                 read: false
-            });
-            this.showToast('تم إرسال الرسالة 📩');
+            };
+            await addDoc(collection(db, "messages"), messageData);
+            this.showToast('✅ تم الإرسال');
         } catch (e) {
-            this.showToast('فشل إرسال الرسالة ⚠️');
+            console.error('خطأ في الإرسال:', e);
+            this.showToast('❌ فشل الإرسال: ' + e.message);
         }
     },
 
-    // تحميل طلبات الصداقة الواردة
-    async loadFriendRequests() {
-        const currentUserId = auth.currentUser.uid;
-        // يمكن استدعاء هذه الدالة من صفحة مخصصة أو من تبويب في البروفايل
-        const q = query(
-            collection(db, "friend_requests"),
-            where("toUserId", "==", currentUserId),
-            where("status", "==", "pending")
+    loadChatMessages(receiverId, container) {
+        if (!container) return;
+        const senderId = auth.currentUser.uid;
+        
+        const q1 = query(
+            collection(db, "messages"),
+            where("senderId", "==", senderId),
+            where("receiverId", "==", receiverId),
+            orderBy("createdAt", "asc")
         );
-        // ... عرض الطلبات في واجهة المستخدم ...
+        
+        const q2 = query(
+            collection(db, "messages"),
+            where("senderId", "==", receiverId),
+            where("receiverId", "==", senderId),
+            orderBy("createdAt", "asc")
+        );
+        
+        container.innerHTML = '<div class="text-center text-gray-400 py-10"><i class="fa-solid fa-spinner fa-spin"></i> جاري تحميل الرسائل...</div>';
+        
+        const allMessages = [];
+        
+        const onUpdate = () => {
+            allMessages.sort((a, b) => {
+                const timeA = a.createdAt?.toDate?.()?.getTime() || 0;
+                const timeB = b.createdAt?.toDate?.()?.getTime() || 0;
+                return timeA - timeB;
+            });
+            
+            if (allMessages.length === 0) {
+                container.innerHTML = '<div class="text-center text-gray-400 py-10">✨ لا توجد رسائل بعد<br><span class="text-xs">ابدأ المحادثة الآن</span></div>';
+                return;
+            }
+            
+            container.innerHTML = '';
+            let lastDate = null;
+            
+            allMessages.forEach(msg => {
+                const isMe = msg.senderId === senderId;
+                const msgDate = msg.createdAt?.toDate();
+                
+                if (msgDate) {
+                    const today = new Date();
+                    const isToday = msgDate.toDateString() === today.toDateString();
+                    const dateStr = isToday ? 'اليوم' : msgDate.toLocaleDateString('ar-EG');
+                    
+                    if (lastDate !== dateStr) {
+                        const dateDiv = document.createElement('div');
+                        dateDiv.className = 'text-center my-2';
+                        dateDiv.innerHTML = `<span class="text-xs text-gray-400 bg-gray-100 px-3 py-1 rounded-full">${dateStr}</span>`;
+                        container.appendChild(dateDiv);
+                        lastDate = dateStr;
+                    }
+                }
+                
+                const div = document.createElement('div');
+                div.className = `flex ${isMe ? 'justify-end' : 'justify-start'} animate-fade-in`;
+                div.innerHTML = `
+                    <div class="max-w-[75%] ${isMe ? 'bg-sky-500 text-white rounded-br-none' : 'bg-white border border-gray-200 text-gray-800 rounded-bl-none'} rounded-2xl px-4 py-2 shadow-sm">
+                        ${!isMe ? `<div class="text-xs text-sky-600 font-bold mb-1">${escapeHtml(msg.senderName) || 'مستخدم'}</div>` : ''}
+                        <p class="text-sm break-words">${escapeHtml(msg.text)}</p>
+                        <div class="text-xs ${isMe ? 'text-sky-100' : 'text-gray-400'} text-left mt-1">
+                            ${msg.createdAt?.toDate()?.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) || ''}
+                            ${isMe ? ' ✓' : ''}
+                        </div>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+            container.scrollTop = container.scrollHeight;
+        };
+        
+        onSnapshot(q1, (snapshot) => {
+            snapshot.docChanges().forEach(change => {
+                if (change.type === 'added') {
+                    allMessages.push(change.doc.data());
+                }
+            });
+            onUpdate();
+        });
+        
+        onSnapshot(q2, (snapshot) => {
+            snapshot.docChanges().forEach(change => {
+                if (change.type === 'added') {
+                    allMessages.push(change.doc.data());
+                }
+            });
+            onUpdate();
+        });
     },
+
+    async acceptFriendRequest(requestId, fromUserId) {
+        const currentUserId = auth.currentUser.uid;
+        try {
+            await updateDoc(doc(db, "friend_requests", requestId), { 
+                status: 'accepted',
+                updatedAt: serverTimestamp()
+            });
+            
+            const existingCheck = await this.checkFriendship(currentUserId, fromUserId);
+            if (!existingCheck) {
+                await addDoc(collection(db, "friendships"), {
+                    user1: currentUserId,
+                    user2: fromUserId,
+                    createdAt: serverTimestamp()
+                });
+            }
+            
+            this.showToast('🎉 تم قبول الصداقة');
+            
+            if (document.getElementById('friendsList')) {
+                this.loadFriendsData();
+            }
+            
+            this.updateProfileFriendButton(fromUserId);
+            
+        } catch (e) {
+            console.error(e);
+            this.showToast('⚠️ فشل قبول الطلب');
+        }
+    },
+
+    async rejectFriendRequest(requestId) {
+        try {
+            await updateDoc(doc(db, "friend_requests", requestId), { 
+                status: 'rejected',
+                updatedAt: serverTimestamp()
+            });
+            this.showToast('تم رفض الطلب');
+            
+            const reqElement = document.querySelector(`button[onclick*="rejectFriendRequest('${requestId}')"]`)?.closest('.flex');
+            if (reqElement) reqElement.remove();
+        } catch (e) {
+            this.showToast('⚠️ فشل رفض الطلب');
+        }
+    },
+
+    async sendMessage(receiverId, receiverName) {
+        this.openChat(receiverId, receiverName);
+    },
+
     // ==================== محفظة الأصول ====================
     async loadAssets(containerId) {
         const userId = auth.currentUser?.uid;
@@ -976,9 +922,7 @@ async rejectFriendRequest(requestId) {
         btn.style.display = 'none';
     },
 
-    // ========== صفحة البروفايل ==========
-   listenToProfilePosts(containerId) {
-        // استخدام uid المخزن إذا كان المستخدم يشاهد بروفايل شخص آخر
+    listenToProfilePosts(containerId) {
         const targetUID = sessionStorage.getItem('viewingProfileUID') || auth.currentUser?.uid;
         if (!targetUID) return;
 
@@ -1006,25 +950,20 @@ async rejectFriendRequest(requestId) {
             if (container) container.innerHTML = '<p class="text-center text-red-500">تعذر تحميل المنشورات</p>';
         });
     },
-   async activateProfile() {
-        // عند فتح البروفايل من الأيقونة الرئيسية، نتأكد من مسح أي بيانات مؤقتة
-        // هذا يحل مشكلة عرض آخر بروفايل تمت زيارته
+
+    async activateProfile() {
         if (!sessionStorage.getItem('viewingProfileUID')) {
-            // إذا لم يتم تخزين uid لشخص آخر، فهذا يعني أن المستخدم فتح بروفايله الشخصي
-            // لا حاجة لمسح شيء هنا، ولكن يمكننا تخزين uid الحالي لتجنب التضارب
             sessionStorage.removeItem('viewingProfileUID');
         }
         
         const targetUID = sessionStorage.getItem('viewingProfileUID') || auth.currentUser?.uid;
         const isOwnProfile = targetUID === auth.currentUser?.uid;
         
-        // إظهار/إخفاء تبويب الأصدقاء (يظهر فقط في البروفايل الشخصي)
         const friendsTab = document.getElementById('friendsTabBtn');
         if (friendsTab) {
             friendsTab.classList.toggle('hidden', !isOwnProfile);
         }
 
-        // جلب بيانات المستخدم المستهدف
         let profile = {};
         if (!isOwnProfile) {
             const ref = doc(db, "users", targetUID);
@@ -1034,7 +973,6 @@ async rejectFriendRequest(requestId) {
             profile = await this.getOrCreateUserProfile();
         }
 
-        // تبويبات التبديل
         document.querySelectorAll('.tab-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 document.querySelectorAll('.tab-btn').forEach(b => { b.classList.remove('active','bg-gray-100'); b.classList.add('text-gray-500'); });
@@ -1055,7 +993,6 @@ async rejectFriendRequest(requestId) {
         const actionsContainer = document.getElementById('profileActions');
         if (!actionsContainer) return;
 
-        // تعبئة بيانات المستخدم
         if (avatarImg && nameEl) {
             avatarImg.src = fixPhotoUrl(profile.photoURL || '');
             nameEl.textContent = profile.displayName || 'مستخدم';
@@ -1064,47 +1001,55 @@ async rejectFriendRequest(requestId) {
             if (aboutEl) aboutEl.textContent = bio;
         }
 
-        // بناء أزرار الإجراءات بناءً على من هو صاحب البروفايل
         actionsContainer.innerHTML = '';
         if (!isOwnProfile) {
-            // --- أزرار لملف تعريف مستخدم آخر ---
             const msgBtn = document.createElement('button');
-            msgBtn.className = 'bg-sky-500 hover:bg-sky-600 text-white font-bold py-1.5 px-4 sm:py-2 sm:px-5 rounded-lg text-xs sm:text-sm';
+            msgBtn.className = 'bg-sky-500 hover:bg-sky-600 text-white font-bold py-1.5 px-4 rounded-lg text-xs sm:text-sm';
             msgBtn.innerHTML = '<i class="fa-solid fa-message ml-1"></i> إرسال رسالة';
             msgBtn.onclick = () => engine.sendMessage(targetUID, profile.displayName || 'مستخدم');
             actionsContainer.appendChild(msgBtn);
 
-            const addFriendBtn = document.createElement('button');
-            addFriendBtn.className = 'bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-1.5 px-4 sm:py-2 sm:px-5 rounded-lg text-xs sm:text-sm';
-            addFriendBtn.innerHTML = '<i class="fa-solid fa-user-plus ml-1"></i> إضافة صديق';
-            addFriendBtn.onclick = () => engine.sendFriendRequest(targetUID);
-            actionsContainer.appendChild(addFriendBtn);
+            const isFriend = await this.checkFriendship(targetUID, auth.currentUser.uid);
+            const hasPending = await this.hasPendingRequest(targetUID);
+            
+            const friendBtn = document.createElement('button');
+            friendBtn.className = 'friend-action-btn ' + (isFriend ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-800') + ' font-bold py-1.5 px-4 rounded-lg text-xs sm:text-sm';
+            
+            if (isFriend) {
+                friendBtn.innerHTML = '<i class="fa-solid fa-user-check ml-1"></i> أصدقاء';
+                friendBtn.onclick = () => this.showToast('أنتما أصدقاء بالفعل 🎉');
+            } else if (hasPending) {
+                friendBtn.innerHTML = '<i class="fa-solid fa-hourglass-half ml-1"></i> طلب مرسل';
+                friendBtn.onclick = () => this.showToast('طلب صداقة قيد الانتظار ⏳');
+            } else {
+                friendBtn.innerHTML = '<i class="fa-solid fa-user-plus ml-1"></i> إضافة صديق';
+                friendBtn.onclick = () => this.sendFriendRequest(targetUID);
+            }
+            actionsContainer.appendChild(friendBtn);
 
             if (emailEl) emailEl.textContent = '';
 
         } else {
-            // --- أزرار للملف الشخصي الخاص بك ---
             const editBtn = document.createElement('button');
             editBtn.id = 'editProfileBtn';
-            editBtn.className = 'bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-1.5 px-4 sm:py-2 sm:px-5 rounded-lg text-xs sm:text-sm';
+            editBtn.className = 'bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-1.5 px-4 rounded-lg text-xs sm:text-sm';
             editBtn.innerHTML = '<i class="fa-solid fa-pen-to-square"></i> تعديل';
             actionsContainer.appendChild(editBtn);
 
             const saveBtn = document.createElement('button');
             saveBtn.id = 'saveProfileBtn';
-            saveBtn.className = 'bg-sky-500 hover:bg-sky-600 text-white font-bold py-1.5 px-4 sm:py-2 sm:px-5 rounded-lg text-xs sm:text-sm hidden';
+            saveBtn.className = 'bg-sky-500 hover:bg-sky-600 text-white font-bold py-1.5 px-4 rounded-lg text-xs sm:text-sm hidden';
             saveBtn.innerHTML = '<i class="fa-solid fa-check"></i> حفظ';
             actionsContainer.appendChild(saveBtn);
 
             const logoutBtn = document.createElement('button');
-            logoutBtn.className = 'bg-white border border-red-200 text-red-500 hover:bg-red-50 font-bold py-1.5 px-4 sm:py-2 sm:px-5 rounded-lg text-xs sm:text-sm';
+            logoutBtn.className = 'bg-white border border-red-200 text-red-500 hover:bg-red-50 font-bold py-1.5 px-4 rounded-lg text-xs sm:text-sm';
             logoutBtn.innerHTML = '<i class="fa-solid fa-right-from-bracket"></i> خروج';
             logoutBtn.onclick = () => this.logout();
             actionsContainer.appendChild(logoutBtn);
             
             if (emailEl) emailEl.textContent = auth.currentUser.email || '';
 
-            // تفعيل أزرار التحرير والحفظ
             editBtn.addEventListener('click', () => {
                 if (nameEl) { nameEl.contentEditable = 'true'; nameEl.classList.add('bg-yellow-50','px-2','rounded','outline-none'); }
                 if (bioEl) { bioEl.contentEditable = 'true'; bioEl.classList.add('bg-yellow-50','px-2','rounded','outline-none'); }
@@ -1123,7 +1068,6 @@ async rejectFriendRequest(requestId) {
                 } catch(e) { this.showToast('فشل الحفظ ⚠️'); }
             });
 
-            // رفع الصورة مع ضغط (للمستخدم الحالي فقط)
             document.getElementById('avatarOverlay')?.addEventListener('click', () => document.getElementById('avatarFileInput').click());
             document.getElementById('avatarFileInput')?.addEventListener('change', (e) => {
                 const file = e.target.files[0];
@@ -1147,7 +1091,7 @@ async rejectFriendRequest(requestId) {
                         if (avatarImg) avatarImg.src = compressedDataUrl;
                         this.updateUserProfile({ photoURL: compressedDataUrl })
                             .then(() => this.showToast('تم تغيير الصورة وحفظها ☁️'))
-                            .catch(() => this.showToast('تعذر حفظ الصورة (حاول مجدداً) ⚠️'));
+                            .catch(() => this.showToast('تعذر حفظ الصورة ⚠️'));
                     };
                     img.src = event.target.result;
                 };
@@ -1155,171 +1099,171 @@ async rejectFriendRequest(requestId) {
             });
         }
         
-        // إذا كان الملف الشخصي للمستخدم الحالي، قم بتحميل بيانات الأصدقاء
         if (isOwnProfile) {
             this.loadFriendsData();
         }
     },
 
-    // دالة تحميل بيانات الأصدقاء (للاستخدام من profile.html)
-  // دالة تحميل بيانات الأصدقاء (للاستخدام من profile.html)
-async loadFriendsData() {
-    const userId = auth.currentUser.uid;
-    if (!userId) return;
+    async loadFriendsData() {
+        const userId = auth.currentUser.uid;
+        if (!userId) return;
 
-    // --- تحميل طلبات الصداقة الواردة ---
-    const requestsQuery = query(
-        collection(db, "friend_requests"),
-        where("toUserId", "==", userId),
-        where("status", "==", "pending")
-    );
-    const requestsSnap = await getDocs(requestsQuery);
-    const requestsContainer = document.getElementById('friendRequestsList');
-    if (requestsContainer) {
-        requestsContainer.innerHTML = '';
-        if (requestsSnap.empty) {
-            requestsContainer.innerHTML = '<p class="text-gray-400 text-sm text-center">✨ لا توجد طلبات صداقة</p>';
-        } else {
-            for (const doc of requestsSnap.docs) {
-                const data = doc.data();
-                const div = document.createElement('div');
-                div.className = 'flex items-center justify-between bg-gray-50 p-3 rounded-xl';
-                div.innerHTML = `
-                    <div class="flex items-center gap-3 flex-1 cursor-pointer" onclick="engine.viewUserProfile('${data.fromUserId}')">
-                        <img src="${fixPhotoUrl(data.fromPhotoURL)}" class="w-10 h-10 rounded-full object-cover" onerror="this.src='${DEFAULT_AVATAR}'">
-                        <div>
-                            <span class="font-bold text-gray-800 text-sm block">${data.fromUserName || 'مستخدم'}</span>
-                            <span class="text-xs text-gray-400">يريد إضافتك كصديق</span>
-                        </div>
-                    </div>
-                    <div class="flex gap-2">
-                        <button onclick="event.stopPropagation(); engine.acceptFriendRequest('${doc.id}', '${data.fromUserId}')" class="bg-green-500 hover:bg-green-600 text-white px-4 py-1.5 rounded-lg text-xs font-bold transition">
-                            قبول
-                        </button>
-                        <button onclick="event.stopPropagation(); engine.rejectFriendRequest('${doc.id}')" class="bg-red-500 hover:bg-red-600 text-white px-4 py-1.5 rounded-lg text-xs font-bold transition">
-                            رفض
-                        </button>
-                    </div>
-                `;
-                requestsContainer.appendChild(div);
-            }
-        }
-    }
-
-    // --- تحميل قائمة الأصدقاء ---
-    const q1 = query(collection(db, "friendships"), where("user1", "==", userId));
-    const q2 = query(collection(db, "friendships"), where("user2", "==", userId));
-    const [snap1, snap2] = await Promise.all([getDocs(q1), getDocs(q2)]);
-    const friendsContainer = document.getElementById('friendsList');
-    if (friendsContainer) {
-        friendsContainer.innerHTML = '';
-        const friends = [];
-        snap1.forEach(d => friends.push({ userId: d.data().user2, docId: d.id }));
-        snap2.forEach(d => friends.push({ userId: d.data().user1, docId: d.id }));
-        
-        if (friends.length === 0) {
-            friendsContainer.innerHTML = '<p class="text-gray-400 text-sm text-center">💙 لا يوجد أصدقاء بعد</p>';
-        } else {
-            for (let friend of friends) {
-                const friendSnap = await getDoc(doc(db, "users", friend.userId));
-                if (friendSnap.exists()) {
-                    const friendData = friendSnap.data();
+        const requestsQuery = query(
+            collection(db, "friend_requests"),
+            where("toUserId", "==", userId),
+            where("status", "==", "pending")
+        );
+        const requestsSnap = await getDocs(requestsQuery);
+        const requestsContainer = document.getElementById('friendRequestsList');
+        if (requestsContainer) {
+            requestsContainer.innerHTML = '';
+            if (requestsSnap.empty) {
+                requestsContainer.innerHTML = '<p class="text-gray-400 text-sm text-center">✨ لا توجد طلبات صداقة</p>';
+            } else {
+                for (const doc of requestsSnap.docs) {
+                    const data = doc.data();
                     const div = document.createElement('div');
                     div.className = 'flex items-center justify-between bg-gray-50 p-3 rounded-xl';
                     div.innerHTML = `
-                        <div class="flex items-center gap-3 flex-1 cursor-pointer" onclick="engine.viewUserProfile('${friend.userId}')">
-                            <img src="${fixPhotoUrl(friendData.photoURL)}" class="w-10 h-10 rounded-full object-cover" onerror="this.src='${DEFAULT_AVATAR}'">
+                        <div class="flex items-center gap-3 flex-1 cursor-pointer" onclick="engine.viewUserProfile('${data.fromUserId}')">
+                            <img src="${fixPhotoUrl(data.fromPhotoURL)}" class="w-10 h-10 rounded-full object-cover" onerror="this.src='${DEFAULT_AVATAR}'">
                             <div>
-                                <span class="font-bold text-gray-800 text-sm block">${friendData.displayName || 'مستخدم'}</span>
-                                <span class="text-xs text-green-600">✓ صديق</span>
+                                <span class="font-bold text-gray-800 text-sm block">${data.fromUserName || 'مستخدم'}</span>
+                                <span class="text-xs text-gray-400">يريد إضافتك كصديق</span>
                             </div>
                         </div>
                         <div class="flex gap-2">
-                            <button onclick="event.stopPropagation(); engine.openChat('${friend.userId}', '${friendData.displayName}')" class="bg-sky-500 hover:bg-sky-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition">
-                                <i class="fa-regular fa-comment"></i> رسالة
+                            <button onclick="event.stopPropagation(); engine.acceptFriendRequest('${doc.id}', '${data.fromUserId}')" class="bg-green-500 hover:bg-green-600 text-white px-4 py-1.5 rounded-lg text-xs font-bold transition">
+                                قبول
                             </button>
-                            <button onclick="event.stopPropagation(); engine.removeFriend('${friend.userId}', '${friend.docId}')" class="bg-red-100 hover:bg-red-200 text-red-600 px-3 py-1.5 rounded-lg text-xs font-bold transition">
-                                <i class="fa-solid fa-user-minus"></i> إلغاء
+                            <button onclick="event.stopPropagation(); engine.rejectFriendRequest('${doc.id}')" class="bg-red-500 hover:bg-red-600 text-white px-4 py-1.5 rounded-lg text-xs font-bold transition">
+                                رفض
                             </button>
                         </div>
                     `;
-                    friendsContainer.appendChild(div);
+                    requestsContainer.appendChild(div);
                 }
             }
         }
-    }
-},
 
-// إضافة دالة إلغاء الصداقة
-async removeFriend(friendId, friendshipDocId) {
-    if (!confirm('هل أنت متأكد من إلغاء الصداقة؟')) return;
-    
-    try {
-        // حذف علاقة الصداقة
-        await deleteDoc(doc(db, "friendships", friendshipDocId));
-        
-        // حذف أي طلبات صداقة معلقة بينهما
-        const q1 = query(
-            collection(db, "friend_requests"),
-            where("fromUserId", "==", auth.currentUser.uid),
-            where("toUserId", "==", friendId)
-        );
-        const q2 = query(
-            collection(db, "friend_requests"),
-            where("fromUserId", "==", friendId),
-            where("toUserId", "==", auth.currentUser.uid)
-        );
-        
+        const q1 = query(collection(db, "friendships"), where("user1", "==", userId));
+        const q2 = query(collection(db, "friendships"), where("user2", "==", userId));
         const [snap1, snap2] = await Promise.all([getDocs(q1), getDocs(q2)]);
-        for (const doc of [...snap1.docs, ...snap2.docs]) {
-            await deleteDoc(doc.ref);
+        const friendsContainer = document.getElementById('friendsList');
+        if (friendsContainer) {
+            friendsContainer.innerHTML = '';
+            const friends = [];
+            snap1.forEach(d => friends.push({ userId: d.data().user2, docId: d.id }));
+            snap2.forEach(d => friends.push({ userId: d.data().user1, docId: d.id }));
+            
+            if (friends.length === 0) {
+                friendsContainer.innerHTML = '<p class="text-gray-400 text-sm text-center">💙 لا يوجد أصدقاء بعد</p>';
+            } else {
+                for (let friend of friends) {
+                    const friendSnap = await getDoc(doc(db, "users", friend.userId));
+                    if (friendSnap.exists()) {
+                        const friendData = friendSnap.data();
+                        const div = document.createElement('div');
+                        div.className = 'flex items-center justify-between bg-gray-50 p-3 rounded-xl';
+                        div.innerHTML = `
+                            <div class="flex items-center gap-3 flex-1 cursor-pointer" onclick="engine.viewUserProfile('${friend.userId}')">
+                                <img src="${fixPhotoUrl(friendData.photoURL)}" class="w-10 h-10 rounded-full object-cover" onerror="this.src='${DEFAULT_AVATAR}'">
+                                <div>
+                                    <span class="font-bold text-gray-800 text-sm block">${friendData.displayName || 'مستخدم'}</span>
+                                    <span class="text-xs text-green-600">✓ صديق</span>
+                                </div>
+                            </div>
+                            <div class="flex gap-2">
+                                <button onclick="event.stopPropagation(); engine.openChat('${friend.userId}', '${friendData.displayName}')" class="bg-sky-500 hover:bg-sky-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition">
+                                    <i class="fa-regular fa-comment"></i> رسالة
+                                </button>
+                                <button onclick="event.stopPropagation(); engine.removeFriend('${friend.userId}', '${friend.docId}')" class="bg-red-100 hover:bg-red-200 text-red-600 px-3 py-1.5 rounded-lg text-xs font-bold transition">
+                                    <i class="fa-solid fa-user-minus"></i> إلغاء
+                                </button>
+                            </div>
+                        `;
+                        friendsContainer.appendChild(div);
+                    }
+                }
+            }
         }
-        
-        this.showToast('🗑️ تم إلغاء الصداقة');
-        
-        // تحديث الواجهة
-        if (document.getElementById('friendsList')) {
-            this.loadFriendsData();
-        }
-        
-        // تحديث زر الإضافة في صفحة البروفايل إذا كانت مفتوحة
-        this.updateProfileFriendButton(friendId);
-    } catch (e) {
-        console.error(e);
-        this.showToast('⚠️ فشل إلغاء الصداقة');
-    }
-},
+    },
 
-// تحديث زر الصداقة في صفحة البروفايل
-async updateProfileFriendButton(userId) {
-    // التحقق من وجود الصفحة المفتوحة
-    const profileActions = document.getElementById('profileActions');
-    if (!profileActions) return;
-    
-    const isFriend = await this.checkFriendship(auth.currentUser.uid, userId);
-    const addFriendBtn = profileActions.querySelector('.friend-action-btn');
-    
-    if (addFriendBtn) {
-        if (isFriend) {
-            addFriendBtn.innerHTML = '<i class="fa-solid fa-user-check ml-1"></i> أصدقاء';
-            addFriendBtn.className = 'bg-green-100 hover:bg-green-200 text-green-700 font-bold py-1.5 px-4 rounded-lg text-xs sm:text-sm friend-action-btn';
-            addFriendBtn.onclick = () => this.showToast('أنتما أصدقاء بالفعل 🎉');
-        } else {
-            addFriendBtn.innerHTML = '<i class="fa-solid fa-user-plus ml-1"></i> إضافة صديق';
-            addFriendBtn.className = 'bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-1.5 px-4 rounded-lg text-xs sm:text-sm friend-action-btn';
-            addFriendBtn.onclick = () => engine.sendFriendRequest(userId);
+    async removeFriend(friendId, friendshipDocId) {
+        if (!confirm('هل أنت متأكد من إلغاء الصداقة؟')) return;
+        
+        try {
+            await deleteDoc(doc(db, "friendships", friendshipDocId));
+            
+            const q1 = query(
+                collection(db, "friend_requests"),
+                where("fromUserId", "==", auth.currentUser.uid),
+                where("toUserId", "==", friendId)
+            );
+            const q2 = query(
+                collection(db, "friend_requests"),
+                where("fromUserId", "==", friendId),
+                where("toUserId", "==", auth.currentUser.uid)
+            );
+            
+            const [snap1, snap2] = await Promise.all([getDocs(q1), getDocs(q2)]);
+            for (const doc of [...snap1.docs, ...snap2.docs]) {
+                await deleteDoc(doc.ref);
+            }
+            
+            this.showToast('🗑️ تم إلغاء الصداقة');
+            
+            if (document.getElementById('friendsList')) {
+                this.loadFriendsData();
+            }
+            
+            this.updateProfileFriendButton(friendId);
+        } catch (e) {
+            console.error(e);
+            this.showToast('⚠️ فشل إلغاء الصداقة');
         }
-    }
-},
-   viewUserProfile(uid) {
-        // تخزين uid للانتقال إلى صفحة البروفايل المطلوبة
+    },
+
+    async updateProfileFriendButton(userId) {
+        const profileActions = document.getElementById('profileActions');
+        if (!profileActions) return;
+        
+        const isFriend = await this.checkFriendship(auth.currentUser.uid, userId);
+        const friendBtn = profileActions.querySelector('.friend-action-btn');
+        
+        if (friendBtn) {
+            if (isFriend) {
+                friendBtn.innerHTML = '<i class="fa-solid fa-user-check ml-1"></i> أصدقاء';
+                friendBtn.className = 'bg-green-100 hover:bg-green-200 text-green-700 font-bold py-1.5 px-4 rounded-lg text-xs sm:text-sm friend-action-btn';
+                friendBtn.onclick = () => this.showToast('أنتما أصدقاء بالفعل 🎉');
+            } else {
+                friendBtn.innerHTML = '<i class="fa-solid fa-user-plus ml-1"></i> إضافة صديق';
+                friendBtn.className = 'bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-1.5 px-4 rounded-lg text-xs sm:text-sm friend-action-btn';
+                friendBtn.onclick = () => this.sendFriendRequest(userId);
+            }
+        }
+    },
+
+    async hasPendingRequest(toUserId) {
+        const fromUserId = auth.currentUser.uid;
+        const q = query(
+            collection(db, "friend_requests"),
+            where("fromUserId", "==", fromUserId),
+            where("toUserId", "==", toUserId),
+            where("status", "==", "pending")
+        );
+        const snap = await getDocs(q);
+        return !snap.empty;
+    },
+
+    viewUserProfile(uid) {
         sessionStorage.setItem('viewingProfileUID', uid);
         this.loadPage('profile');
     },
 
     showToast(message) {
         const toast = document.createElement('div');
-        toast.className = 'fixed bottom-4 right-4 bg-gray-800 text-white px-4 py-2 rounded-lg text-sm z-50 shadow-lg animate-pulse';
+        toast.className = 'fixed bottom-4 right-4 bg-gray-800 text-white px-4 py-2 rounded-lg text-sm z-50 shadow-lg';
         toast.textContent = message;
         document.body.appendChild(toast);
         setTimeout(() => toast.remove(), 2500);
@@ -1346,7 +1290,7 @@ async updateProfileFriendButton(userId) {
         await setDoc(ref, updates, { merge: true });
         const userBtn = document.getElementById('userBtn');
         if (updates.photoURL && userBtn) {
-            userBtn.innerHTML = `<img src="${fixPhotoUrl(updates.photoURL)}" class="w-full h-full object-cover rounded-2xl" loading="lazy">`;
+            userBtn.innerHTML = `<img src="${fixPhotoUrl(updates.photoURL)}" class="w-9 h-9 rounded-full object-cover">`;
         }
     },
 
@@ -1362,7 +1306,6 @@ async updateProfileFriendButton(userId) {
     }
 };
 
-// تصدير الدوال المساعدة للملفات الأخرى (مثل courses.html و assets.html)
 window.__firestore_helpers = { collection, query, orderBy, getDocs, addDoc, serverTimestamp, doc, getDoc, where };
 
 window.engine.init();
