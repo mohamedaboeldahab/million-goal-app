@@ -1,27 +1,73 @@
 <div class="p-4 text-right" dir="rtl">
-    <h2 class="text-lg font-bold mb-4">طلبات الصداقة</h2>
-    <div id="friendRequestsList" class="space-y-3 mb-8">
-        <p class="text-gray-400 text-sm">لا توجد طلبات صداقة</p>
+    <!-- معلومات البروفايل -->
+    <div class="bg-white rounded-2xl p-4 mb-6 shadow-sm">
+        <div class="flex flex-col items-center">
+            <div class="relative">
+                <img id="profileAvatar" class="w-24 h-24 rounded-full border-4 border-sky-200 object-cover" src="" alt="صورة">
+                <div id="avatarOverlay" class="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 hover:opacity-100 transition cursor-pointer">
+                    <i class="fa-solid fa-camera text-white text-xl"></i>
+                </div>
+                <input type="file" id="avatarFileInput" class="hidden" accept="image/*">
+            </div>
+            <h2 id="profileName" class="text-xl font-bold mt-3">...</h2>
+            <p id="profileEmail" class="text-gray-500 text-sm">...</p>
+            <p id="profileBio" class="text-gray-600 text-sm mt-2 text-center">🦈 عضو في Shark Up</p>
+            <div id="profileActions" class="flex gap-2 mt-4"></div>
+        </div>
     </div>
 
-    <h2 class="text-lg font-bold mb-4">أصدقائي</h2>
-    <div id="friendsList" class="space-y-3">
-        <p class="text-gray-400 text-sm">قائمة الأصدقاء فارغة</p>
+    <!-- تبويبات -->
+    <div class="flex gap-2 mb-4 border-b border-gray-200">
+        <button class="tab-btn flex-1 py-2 font-bold text-sm text-gray-500" data-tab="posts">📝 المنشورات</button>
+        <button class="tab-btn flex-1 py-2 font-bold text-sm text-gray-500" data-tab="about">ℹ️ عني</button>
+        <button id="friendsTabBtn" class="tab-btn flex-1 py-2 font-bold text-sm text-gray-500" data-tab="friends">👥 الأصدقاء</button>
+    </div>
+
+    <!-- محتوى التبويبات -->
+    <div id="tab-posts" class="tab-content">
+        <div id="userPostsContainer"></div>
+    </div>
+    <div id="tab-about" class="tab-content hidden">
+        <div class="bg-white rounded-2xl p-4">
+            <h3 class="font-bold mb-2">نبذة عني</h3>
+            <p id="aboutBio" class="text-gray-600">لا توجد معلومات</p>
+        </div>
+    </div>
+    <div id="tab-friends" class="tab-content hidden">
+        <div class="bg-white rounded-2xl p-4">
+            <h2 class="text-lg font-bold mb-4">📨 طلبات الصداقة</h2>
+            <div id="friendRequestsList" class="space-y-3 mb-6">
+                <p class="text-gray-400 text-sm">جاري التحميل...</p>
+            </div>
+            
+            <h2 class="text-lg font-bold mb-4">👥 أصدقائي</h2>
+            <div id="friendsList" class="space-y-3">
+                <p class="text-gray-400 text-sm">جاري التحميل...</p>
+            </div>
+        </div>
     </div>
 </div>
 
 <script>
-    (function() {
-        function waitForEngine() {
-            if (window.engine && window.db) {
-                loadRequests();
-                loadFriends();
-            } else {
-                setTimeout(waitForEngine, 100);
-            }
+(function() {
+    // منع تكرار التحميل
+    if (window._friendsLoaded) return;
+    window._friendsLoaded = true;
+    
+    // انتظار تحميل engine
+    function initFriends() {
+        if (!window.engine || !window.auth || !window.auth.currentUser) {
+            setTimeout(initFriends, 200);
+            return;
         }
-
-        async function loadRequests() {
+        
+        loadFriendRequests();
+        loadFriendsList();
+    }
+    
+    // تحميل طلبات الصداقة
+    async function loadFriendRequests() {
+        try {
             const userId = window.auth.currentUser.uid;
             const q = query(
                 collection(window.db, "friend_requests"),
@@ -30,61 +76,134 @@
             );
             const snap = await getDocs(q);
             const container = document.getElementById('friendRequestsList');
-            container.innerHTML = '';
+            if (!container) return;
+            
             if (snap.empty) {
-                container.innerHTML = '<p class="text-gray-400 text-sm">لا توجد طلبات صداقة</p>';
+                container.innerHTML = '<p class="text-gray-400 text-sm text-center">✨ لا توجد طلبات صداقة</p>';
                 return;
             }
+            
+            container.innerHTML = '';
             snap.forEach(doc => {
                 const data = doc.data();
-                container.innerHTML += `
-                <div class="flex items-center justify-between bg-white p-3 rounded-xl shadow-sm">
-                    <div class="flex items-center gap-2">
-                        <img src="${data.fromPhotoURL}" class="w-8 h-8 rounded-full">
-                        <span class="font-bold text-sm">${data.fromUserName}</span>
+                const div = document.createElement('div');
+                div.className = 'flex items-center justify-between bg-gray-50 p-3 rounded-xl';
+                div.innerHTML = `
+                    <div class="flex items-center gap-3 flex-1 cursor-pointer" onclick="window.engine.viewUserProfile('${data.fromUserId}')">
+                        <img src="${data.fromPhotoURL || DEFAULT_AVATAR}" class="w-10 h-10 rounded-full object-cover" onerror="this.src='${DEFAULT_AVATAR}'">
+                        <div>
+                            <span class="font-bold text-gray-800 text-sm block">${data.fromUserName || 'مستخدم'}</span>
+                            <span class="text-xs text-gray-400">يريد إضافتك كصديق</span>
+                        </div>
                     </div>
                     <div class="flex gap-2">
-                        <button onclick="engine.acceptFriendRequest('${doc.id}', '${data.fromUserId}')" class="bg-green-500 text-white px-3 py-1 rounded-lg text-xs">قبول</button>
-                        <button onclick="engine.rejectFriendRequest('${doc.id}')" class="bg-red-500 text-white px-3 py-1 rounded-lg text-xs">رفض</button>
+                        <button onclick="event.stopPropagation(); window.engine.acceptFriendRequest('${doc.id}', '${data.fromUserId}')" class="bg-green-500 hover:bg-green-600 text-white px-4 py-1.5 rounded-lg text-xs font-bold transition">
+                            قبول
+                        </button>
+                        <button onclick="event.stopPropagation(); window.engine.rejectFriendRequest('${doc.id}')" class="bg-red-500 hover:bg-red-600 text-white px-4 py-1.5 rounded-lg text-xs font-bold transition">
+                            رفض
+                        </button>
                     </div>
-                </div>`;
+                `;
+                container.appendChild(div);
             });
+        } catch(error) {
+            console.error('خطأ في تحميل الطلبات:', error);
+            const container = document.getElementById('friendRequestsList');
+            if (container) container.innerHTML = '<p class="text-red-400 text-sm text-center">حدث خطأ في التحميل</p>';
         }
-
-        async function loadFriends() {
+    }
+    
+    // تحميل قائمة الأصدقاء
+    async function loadFriendsList() {
+        try {
             const userId = window.auth.currentUser.uid;
             const q1 = query(collection(window.db, "friendships"), where("user1", "==", userId));
             const q2 = query(collection(window.db, "friendships"), where("user2", "==", userId));
             
             const [snap1, snap2] = await Promise.all([getDocs(q1), getDocs(q2)]);
             const container = document.getElementById('friendsList');
-            container.innerHTML = '';
-            const friends = [];
+            if (!container) return;
             
-            snap1.forEach(d => friends.push(d.data().user2));
-            snap2.forEach(d => friends.push(d.data().user1));
+            const friendsIds = [];
+            snap1.forEach(d => friendsIds.push(d.data().user2));
+            snap2.forEach(d => friendsIds.push(d.data().user1));
             
-            if (friends.length === 0) {
-                container.innerHTML = '<p class="text-gray-400 text-sm">قائمة الأصدقاء فارغة</p>';
+            if (friendsIds.length === 0) {
+                container.innerHTML = '<p class="text-gray-400 text-sm text-center">💙 لا يوجد أصدقاء بعد</p>';
                 return;
             }
             
-            for (let friendId of friends) {
+            container.innerHTML = '';
+            for (let friendId of friendsIds) {
                 const friendSnap = await getDoc(doc(window.db, "users", friendId));
                 if (friendSnap.exists()) {
                     const friend = friendSnap.data();
-                    container.innerHTML += `
-                    <div class="flex items-center justify-between bg-white p-3 rounded-xl shadow-sm">
-                        <div class="flex items-center gap-2">
-                            <img src="${friend.photoURL}" class="w-8 h-8 rounded-full">
-                            <span class="font-bold text-sm">${friend.displayName}</span>
+                    const div = document.createElement('div');
+                    div.className = 'flex items-center justify-between bg-gray-50 p-3 rounded-xl';
+                    div.innerHTML = `
+                        <div class="flex items-center gap-3 flex-1 cursor-pointer" onclick="window.engine.viewUserProfile('${friendId}')">
+                            <img src="${friend.photoURL || DEFAULT_AVATAR}" class="w-10 h-10 rounded-full object-cover" onerror="this.src='${DEFAULT_AVATAR}'">
+                            <div>
+                                <span class="font-bold text-gray-800 text-sm block">${friend.displayName || 'مستخدم'}</span>
+                                <span class="text-xs text-gray-400">صديق</span>
+                            </div>
                         </div>
-                        <button onclick="engine.sendMessage('${friendId}', '${friend.displayName}')" class="bg-sky-500 text-white px-3 py-1 rounded-lg text-xs">رسالة</button>
-                    </div>`;
+                        <button onclick="event.stopPropagation(); window.engine.openChat('${friendId}', '${friend.displayName}')" class="bg-sky-500 hover:bg-sky-600 text-white px-4 py-1.5 rounded-lg text-xs font-bold transition">
+                            <i class="fa-regular fa-comment"></i> رسالة
+                        </button>
+                    `;
+                    container.appendChild(div);
                 }
             }
+        } catch(error) {
+            console.error('خطأ في تحميل الأصدقاء:', error);
+            const container = document.getElementById('friendsList');
+            if (container) container.innerHTML = '<p class="text-red-400 text-sm text-center">حدث خطأ في تحميل الأصدقاء</p>';
         }
-
-        waitForEngine();
-    })();
+    }
+    
+    // تحديث عند تغيير التبويب
+    function setupTabs() {
+        const tabs = document.querySelectorAll('.tab-btn');
+        tabs.forEach(tab => {
+            tab.removeEventListener('click', handleTabClick);
+            tab.addEventListener('click', handleTabClick);
+        });
+    }
+    
+    function handleTabClick(e) {
+        const tab = e.currentTarget;
+        const targetTab = tab.dataset.tab;
+        
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.classList.remove('active', 'bg-gray-100', 'text-sky-600');
+            btn.classList.add('text-gray-500');
+        });
+        tab.classList.add('active', 'bg-gray-100', 'text-sky-600');
+        
+        document.querySelectorAll('.tab-content').forEach(content => {
+            content.classList.add('hidden');
+        });
+        
+        const activeContent = document.getElementById(`tab-${targetTab}`);
+        if (activeContent) activeContent.classList.remove('hidden');
+        
+        // إعادة تحميل بيانات الأصدقاء عند فتح التبويب
+        if (targetTab === 'friends') {
+            loadFriendRequests();
+            loadFriendsList();
+        }
+    }
+    
+    // بدء التحميل
+    initFriends();
+    
+    // إعداد التبويبات بعد تحميل DOM
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', setupTabs);
+    } else {
+        setupTabs();
+    }
+})();
 </script>
