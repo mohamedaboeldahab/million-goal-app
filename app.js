@@ -145,7 +145,122 @@ if (pageName !== 'profile') {
             if (typeof setActiveNavLink === 'function') setActiveNavLink(pageName);
         } catch (e) { content.innerHTML = `<div class="text-center py-20 text-slate-400">قريباً..</div>`; }
     },
+  async sendFriendRequest(toUserId) {
+        const fromUserId = auth.currentUser.uid;
+        if (!fromUserId || !toUserId || fromUserId === toUserId) {
+            this.showToast('لا يمكن إرسال طلب صداقة');
+            return;
+        }
 
+        // التحقق من عدم وجود طلب سابق
+        const existingQuery = query(
+            collection(db, "friend_requests"),
+            where("fromUserId", "==", fromUserId),
+            where("toUserId", "==", toUserId),
+            where("status", "==", "pending")
+        );
+        const existingSnap = await getDocs(existingQuery);
+        if (!existingSnap.empty) {
+            this.showToast('تم إرسال طلب صداقة بالفعل');
+            return;
+        }
+
+        // التحقق من أنهم ليسوا أصدقاء بالفعل
+        const friendshipCheck = await this.checkFriendship(fromUserId, toUserId);
+        if (friendshipCheck) {
+            this.showToast('أنتما أصدقاء بالفعل');
+            return;
+        }
+
+        try {
+            const profile = await this.getOrCreateUserProfile();
+            await addDoc(collection(db, "friend_requests"), {
+                fromUserId,
+                toUserId,
+                fromUserName: profile.displayName || auth.currentUser.displayName,
+                fromPhotoURL: profile.photoURL || auth.currentUser.photoURL,
+                status: 'pending',
+                createdAt: serverTimestamp()
+            });
+            this.showToast('تم إرسال طلب الصداقة ✅');
+        } catch (e) {
+            this.showToast('فشل إرسال الطلب ⚠️');
+        }
+    },
+
+    // التحقق من وجود صداقة
+    async checkFriendship(user1, user2) {
+        const q1 = query(collection(db, "friendships"), where("user1", "==", user1), where("user2", "==", user2));
+        const q2 = query(collection(db, "friendships"), where("user1", "==", user2), where("user2", "==", user1));
+        
+        const [snap1, snap2] = await Promise.all([getDocs(q1), getDocs(q2)]);
+        return !snap1.empty || !snap2.empty;
+    },
+
+    // قبول طلب الصداقة
+    async acceptFriendRequest(requestId, fromUserId) {
+        const currentUserId = auth.currentUser.uid;
+        try {
+            // تحديث حالة الطلب
+            await updateDoc(doc(db, "friend_requests", requestId), { status: 'accepted' });
+            
+            // إنشاء علاقة صداقة
+            await addDoc(collection(db, "friendships"), {
+                user1: currentUserId,
+                user2: fromUserId,
+                createdAt: serverTimestamp()
+            });
+            
+            this.showToast('تم قبول الصداقة 🎉');
+            this.loadFriendRequests(); // إعادة تحميل القائمة
+        } catch (e) {
+            this.showToast('فشل قبول الطلب ⚠️');
+        }
+    },
+
+    // رفض طلب الصداقة
+    async rejectFriendRequest(requestId) {
+        try {
+            await updateDoc(doc(db, "friend_requests", requestId), { status: 'rejected' });
+            this.showToast('تم رفض الطلب');
+            this.loadFriendRequests();
+        } catch (e) {
+            this.showToast('فشل رفض الطلب ⚠️');
+        }
+    },
+
+    // إرسال رسالة
+    async sendMessage(receiverId, receiverName) {
+        const senderId = auth.currentUser.uid;
+        let messageText = prompt(`إرسال رسالة إلى ${receiverName}:`);
+        if (!messageText || !messageText.trim()) return;
+
+        try {
+            await addDoc(collection(db, "messages"), {
+                senderId,
+                receiverId,
+                text: messageText.trim(),
+                senderName: auth.currentUser.displayName,
+                createdAt: serverTimestamp(),
+                read: false
+            });
+            this.showToast('تم إرسال الرسالة 📩');
+        } catch (e) {
+            this.showToast('فشل إرسال الرسالة ⚠️');
+        }
+    },
+
+    // تحميل طلبات الصداقة الواردة
+    async loadFriendRequests() {
+        const currentUserId = auth.currentUser.uid;
+        // يمكن استدعاء هذه الدالة من صفحة مخصصة أو من تبويب في البروفايل
+        const q = query(
+            collection(db, "friend_requests"),
+            where("toUserId", "==", currentUserId),
+            where("status", "==", "pending")
+        );
+        // ... عرض الطلبات في واجهة المستخدم ...
+    },
     // ==================== محفظة الأصول ====================
     async loadAssets(containerId) {
         const userId = auth.currentUser?.uid;
