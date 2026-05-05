@@ -133,43 +133,61 @@
 </div>
 
 <!-- ========== سكريبت تحميل البيانات ========== -->
+<!-- ========== سكريبت تحميل البيانات ========== -->
 <script>
     (function() {
         // منع تكرار التحميل
         if (window._profileLoaded) return;
         window._profileLoaded = true;
         
+        async function updateAllStats() {
+            if (!window.auth?.currentUser) {
+                console.log("انتظار تسجيل الدخول...");
+                return;
+            }
+            
+            const userId = window.auth.currentUser.uid;
+            console.log("تحديث الإحصائيات للمستخدم:", userId);
+            
+            try {
+                // عدد المنشورات
+                const postsQuery = query(collection(window.db, "posts"), where("authorId", "==", userId));
+                const postsSnap = await getDocs(postsQuery);
+                const postsCount = document.getElementById('postsCount');
+                if (postsCount) {
+                    postsCount.textContent = postsSnap.size;
+                    console.log("✅ تم تحميل المنشورات:", postsSnap.size);
+                }
+            } catch(e) { console.error("خطأ في المنشورات:", e); }
+            
+            try {
+                // عدد الأصدقاء
+                const q1 = query(collection(window.db, "friendships"), where("user1", "==", userId));
+                const q2 = query(collection(window.db, "friendships"), where("user2", "==", userId));
+                const [snap1, snap2] = await Promise.all([getDocs(q1), getDocs(q2)]);
+                const friendsCount = document.getElementById('friendsCount');
+                if (friendsCount) {
+                    const total = snap1.size + snap2.size;
+                    friendsCount.textContent = total;
+                    console.log("✅ تم تحميل الأصدقاء:", total);
+                }
+            } catch(e) { console.error("خطأ في الأصدقاء:", e); }
+        }
+        
         function waitForEngine() {
-            if (window.engine && window.engine.listenToProfilePosts) {
+            if (window.engine && window.engine.listenToProfilePosts && window.auth?.currentUser) {
+                console.log("Engine جاهز، بدء تحميل البروفايل...");
                 window.engine.listenToProfilePosts('userPostsContainer');
                 window.engine.activateProfile();
                 
-                // تحديث الإحصائيات
+                // تحديث الإحصائيات بعد 1 ثانية
                 setTimeout(() => {
-                    updateStats();
-                }, 500);
+                    updateAllStats();
+                }, 1000);
             } else {
-                setTimeout(waitForEngine, 100);
+                console.log("انتظار تحميل Engine...");
+                setTimeout(waitForEngine, 200);
             }
-        }
-        
-        // تحديث إحصائيات المستخدم
-        async function updateStats() {
-            const userId = window.auth.currentUser?.uid;
-            if (!userId) return;
-            
-            // عدد المنشورات
-            const postsQuery = query(collection(window.db, "posts"), where("authorId", "==", userId));
-            const postsSnap = await getDocs(postsQuery);
-            const postsCount = document.getElementById('postsCount');
-            if (postsCount) postsCount.textContent = postsSnap.size;
-            
-            // عدد الأصدقاء
-            const q1 = query(collection(window.db, "friendships"), where("user1", "==", userId));
-            const q2 = query(collection(window.db, "friendships"), where("user2", "==", userId));
-            const [snap1, snap2] = await Promise.all([getDocs(q1), getDocs(q2)]);
-            const friendsCount = document.getElementById('friendsCount');
-            if (friendsCount) friendsCount.textContent = snap1.size + snap2.size;
         }
         
         // تاريخ الانضمام
@@ -177,6 +195,7 @@
         if (joinDateSpan && window.auth?.currentUser?.metadata?.creationTime) {
             const date = new Date(window.auth.currentUser.metadata.creationTime);
             joinDateSpan.textContent = date.toLocaleDateString('ar-EG');
+            console.log("تاريخ الانضمام:", joinDateSpan.textContent);
         }
         
         waitForEngine();
@@ -187,7 +206,6 @@
             tabs.forEach(tab => {
                 tab.addEventListener('click', function() {
                     const targetTab = this.dataset.tab;
-                    
                     tabs.forEach(t => {
                         t.classList.remove('active', 'bg-gray-100');
                         t.classList.add('text-gray-500');
@@ -200,6 +218,10 @@
                     document.getElementById('tab-friends').classList.add('hidden');
                     
                     document.getElementById(`tab-${targetTab}`).classList.remove('hidden');
+                    
+                    if (targetTab === 'friends') {
+                        updateAllStats();
+                    }
                 });
             });
         }
@@ -209,5 +231,8 @@
         } else {
             setupTabs();
         }
+        
+        // تحديث الإحصائيات كل 10 ثواني
+        setInterval(updateAllStats, 10000);
     })();
 </script>
