@@ -26,7 +26,24 @@
         #storyPlayer { position: fixed; inset: 0; background: radial-gradient(circle at center, #1e293b, #0f172a); z-index: 99999; display: none; flex-direction: column; align-items: center; justify-content: center; }
         #storyPlayer.active { display: flex !important; }
         .story-item { touch-action: manipulation; -webkit-user-select: none; user-select: none; }
-        
+        @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in {
+    animation: fadeIn 0.3s ease-out;
+}
+#chatMessagesContainer::-webkit-scrollbar {
+    width: 5px;
+}
+#chatMessagesContainer::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+#chatMessagesContainer::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 10px;
+}
         /* زر التحديث يختفي افتراضياً ويظهر فقط عند الحاجة */
         .refresh-btn { display: none; }
         .refresh-btn.visible { display: flex; }
