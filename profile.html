@@ -136,43 +136,8 @@
 <!-- ========== سكريبت تحميل البيانات ========== -->
 <script>
     (function() {
-        // منع تكرار التحميل
         if (window._profileLoaded) return;
         window._profileLoaded = true;
-        
-        async function updateAllStats() {
-            if (!window.auth?.currentUser) {
-                console.log("انتظار تسجيل الدخول...");
-                return;
-            }
-            
-            const userId = window.auth.currentUser.uid;
-            console.log("تحديث الإحصائيات للمستخدم:", userId);
-            
-            try {
-                // عدد المنشورات
-                const postsQuery = query(collection(window.db, "posts"), where("authorId", "==", userId));
-                const postsSnap = await getDocs(postsQuery);
-                const postsCount = document.getElementById('postsCount');
-                if (postsCount) {
-                    postsCount.textContent = postsSnap.size;
-                    console.log("✅ تم تحميل المنشورات:", postsSnap.size);
-                }
-            } catch(e) { console.error("خطأ في المنشورات:", e); }
-            
-            try {
-                // عدد الأصدقاء
-                const q1 = query(collection(window.db, "friendships"), where("user1", "==", userId));
-                const q2 = query(collection(window.db, "friendships"), where("user2", "==", userId));
-                const [snap1, snap2] = await Promise.all([getDocs(q1), getDocs(q2)]);
-                const friendsCount = document.getElementById('friendsCount');
-                if (friendsCount) {
-                    const total = snap1.size + snap2.size;
-                    friendsCount.textContent = total;
-                    console.log("✅ تم تحميل الأصدقاء:", total);
-                }
-            } catch(e) { console.error("خطأ في الأصدقاء:", e); }
-        }
         
         function waitForEngine() {
             if (window.engine && window.engine.listenToProfilePosts && window.auth?.currentUser) {
@@ -180,9 +145,16 @@
                 window.engine.listenToProfilePosts('userPostsContainer');
                 window.engine.activateProfile();
                 
-                // تحديث الإحصائيات بعد 1 ثانية
+                // استخدام دالة engine لتحديث الإحصائيات
                 setTimeout(() => {
-                    updateAllStats();
+                    if (window.engine.updateProfileStats) {
+                        window.engine.updateProfileStats();
+                    } else {
+                        console.log("دالة updateProfileStats غير موجودة في engine");
+                    }
+                    if (window.engine.updateJoinDate) {
+                        window.engine.updateJoinDate();
+                    }
                 }, 1000);
             } else {
                 console.log("انتظار تحميل Engine...");
@@ -190,17 +162,9 @@
             }
         }
         
-        // تاريخ الانضمام
-        const joinDateSpan = document.getElementById('joinDate');
-        if (joinDateSpan && window.auth?.currentUser?.metadata?.creationTime) {
-            const date = new Date(window.auth.currentUser.metadata.creationTime);
-            joinDateSpan.textContent = date.toLocaleDateString('ar-EG');
-            console.log("تاريخ الانضمام:", joinDateSpan.textContent);
-        }
-        
         waitForEngine();
         
-        // إعداد التبويبات
+        // إعداد التبويبات ببساطة
         function setupTabs() {
             const tabs = document.querySelectorAll('.tab-btn');
             tabs.forEach(tab => {
@@ -213,14 +177,17 @@
                     this.classList.add('active', 'bg-gray-100');
                     this.classList.remove('text-gray-500');
                     
-                    document.getElementById('tab-posts').classList.add('hidden');
-                    document.getElementById('tab-about').classList.add('hidden');
-                    document.getElementById('tab-friends').classList.add('hidden');
+                    document.getElementById('tab-posts')?.classList.add('hidden');
+                    document.getElementById('tab-about')?.classList.add('hidden');
+                    document.getElementById('tab-friends')?.classList.add('hidden');
                     
-                    document.getElementById(`tab-${targetTab}`).classList.remove('hidden');
+                    document.getElementById(`tab-${targetTab}`)?.classList.remove('hidden');
                     
-                    if (targetTab === 'friends') {
-                        updateAllStats();
+                    if (targetTab === 'friends' && window.engine?.loadFriendsData) {
+                        window.engine.loadFriendsData();
+                    }
+                    if (targetTab === 'about' && window.engine?.updateJoinDate) {
+                        window.engine.updateJoinDate();
                     }
                 });
             });
@@ -231,8 +198,5 @@
         } else {
             setupTabs();
         }
-        
-        // تحديث الإحصائيات كل 10 ثواني
-        setInterval(updateAllStats, 10000);
     })();
 </script>
