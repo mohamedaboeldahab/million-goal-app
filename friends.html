@@ -1,0 +1,90 @@
+<div class="p-4 text-right" dir="rtl">
+    <h2 class="text-lg font-bold mb-4">طلبات الصداقة</h2>
+    <div id="friendRequestsList" class="space-y-3 mb-8">
+        <p class="text-gray-400 text-sm">لا توجد طلبات صداقة</p>
+    </div>
+
+    <h2 class="text-lg font-bold mb-4">أصدقائي</h2>
+    <div id="friendsList" class="space-y-3">
+        <p class="text-gray-400 text-sm">قائمة الأصدقاء فارغة</p>
+    </div>
+</div>
+
+<script>
+    (function() {
+        function waitForEngine() {
+            if (window.engine && window.db) {
+                loadRequests();
+                loadFriends();
+            } else {
+                setTimeout(waitForEngine, 100);
+            }
+        }
+
+        async function loadRequests() {
+            const userId = window.auth.currentUser.uid;
+            const q = query(
+                collection(window.db, "friend_requests"),
+                where("toUserId", "==", userId),
+                where("status", "==", "pending")
+            );
+            const snap = await getDocs(q);
+            const container = document.getElementById('friendRequestsList');
+            container.innerHTML = '';
+            if (snap.empty) {
+                container.innerHTML = '<p class="text-gray-400 text-sm">لا توجد طلبات صداقة</p>';
+                return;
+            }
+            snap.forEach(doc => {
+                const data = doc.data();
+                container.innerHTML += `
+                <div class="flex items-center justify-between bg-white p-3 rounded-xl shadow-sm">
+                    <div class="flex items-center gap-2">
+                        <img src="${data.fromPhotoURL}" class="w-8 h-8 rounded-full">
+                        <span class="font-bold text-sm">${data.fromUserName}</span>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="engine.acceptFriendRequest('${doc.id}', '${data.fromUserId}')" class="bg-green-500 text-white px-3 py-1 rounded-lg text-xs">قبول</button>
+                        <button onclick="engine.rejectFriendRequest('${doc.id}')" class="bg-red-500 text-white px-3 py-1 rounded-lg text-xs">رفض</button>
+                    </div>
+                </div>`;
+            });
+        }
+
+        async function loadFriends() {
+            const userId = window.auth.currentUser.uid;
+            const q1 = query(collection(window.db, "friendships"), where("user1", "==", userId));
+            const q2 = query(collection(window.db, "friendships"), where("user2", "==", userId));
+            
+            const [snap1, snap2] = await Promise.all([getDocs(q1), getDocs(q2)]);
+            const container = document.getElementById('friendsList');
+            container.innerHTML = '';
+            const friends = [];
+            
+            snap1.forEach(d => friends.push(d.data().user2));
+            snap2.forEach(d => friends.push(d.data().user1));
+            
+            if (friends.length === 0) {
+                container.innerHTML = '<p class="text-gray-400 text-sm">قائمة الأصدقاء فارغة</p>';
+                return;
+            }
+            
+            for (let friendId of friends) {
+                const friendSnap = await getDoc(doc(window.db, "users", friendId));
+                if (friendSnap.exists()) {
+                    const friend = friendSnap.data();
+                    container.innerHTML += `
+                    <div class="flex items-center justify-between bg-white p-3 rounded-xl shadow-sm">
+                        <div class="flex items-center gap-2">
+                            <img src="${friend.photoURL}" class="w-8 h-8 rounded-full">
+                            <span class="font-bold text-sm">${friend.displayName}</span>
+                        </div>
+                        <button onclick="engine.sendMessage('${friendId}', '${friend.displayName}')" class="bg-sky-500 text-white px-3 py-1 rounded-lg text-xs">رسالة</button>
+                    </div>`;
+                }
+            }
+        }
+
+        waitForEngine();
+    })();
+</script>
