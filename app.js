@@ -111,46 +111,57 @@ window.engine = {
     async logout() { if (confirm("هل تريد مغادرة المحيط؟")) { await signOut(auth); location.reload(); } },
 
     async loadPage(pageName) {
-        const content = document.getElementById('app-content');
-        if (!content) return;
-        document.querySelectorAll('.nav-link').forEach(l => l.classList.toggle('active', l.dataset.page === pageName));
-        content.innerHTML = '<div class="flex justify-center py-20"><div class="w-8 h-8 border-4 border-sky-500 border-t-transparent rounded-full animate-spin"></div></div>';
-        if (pageName !== 'profile') {
-            sessionStorage.removeItem('viewingProfileUID');
-        }
-        if (this._observer) {
-            this._observer.disconnect();
-            this._observer = null;
-        }
+    const content = document.getElementById('app-content');
+    if (!content) return;
+    
+    document.querySelectorAll('.nav-link').forEach(l => l.classList.toggle('active', l.dataset.page === pageName));
+    content.innerHTML = '<div class="flex justify-center py-20"><div class="w-8 h-8 border-4 border-sky-500 border-t-transparent rounded-full animate-spin"></div></div>';
+    
+    // إذا كانت الصفحة الرئيسية، مسح التخزين
+    if (pageName === 'home') {
+        sessionStorage.removeItem('viewingProfileUID');
+    }
+    
+    // إذا كانت صفحة البروفايل وليس هناك uid مخزن، هذا يعني بروفايل المستخدم الحالي
+    if (pageName === 'profile' && !sessionStorage.getItem('viewingProfileUID')) {
+        // لا تفعل شيء، هذا بروفايل المستخدم الحالي
+    }
+    
+    if (this._observer) {
+        this._observer.disconnect();
+        this._observer = null;
+    }
 
-        try {
-            const response = await fetch(`${pageName}.html`);
-            const html = await response.text();
-            content.innerHTML = html;
-            content.querySelectorAll('script').forEach(oldScript => {
-                const newScript = document.createElement('script');
-                newScript.textContent = oldScript.textContent;
-                oldScript.replaceWith(newScript);
-            });
+    try {
+        const response = await fetch(`${pageName}.html`);
+        const html = await response.text();
+        content.innerHTML = html;
+        content.querySelectorAll('script').forEach(oldScript => {
+            const newScript = document.createElement('script');
+            newScript.textContent = oldScript.textContent;
+            oldScript.replaceWith(newScript);
+        });
 
-            if (pageName === 'home') {
-                setTimeout(() => {
-                    this.listenToPosts();
-                    this.activateCharCounter();
-                    this.updateTypeButtons();
-                    this.updateCreatorAvatar();
-                    this.renderBgPicker();
-                    this.watchStoriesContainer();
-                }, 50);
-            } else if (pageName === 'profile') {
-                setTimeout(() => {
-                    this.listenToProfilePosts('userPostsContainer');
-                    this.activateProfile();
-                }, 150);
-            }
-            if (typeof setActiveNavLink === 'function') setActiveNavLink(pageName);
-        } catch (e) { content.innerHTML = `<div class="text-center py-20 text-slate-400">قريباً..</div>`; }
-    },
+        if (pageName === 'home') {
+            setTimeout(() => {
+                this.listenToPosts();
+                this.activateCharCounter();
+                this.updateTypeButtons();
+                this.updateCreatorAvatar();
+                this.renderBgPicker();
+                this.watchStoriesContainer();
+            }, 50);
+        } else if (pageName === 'profile') {
+            setTimeout(() => {
+                this.listenToProfilePosts('userPostsContainer');
+                this.activateProfile();
+            }, 150);
+        }
+        if (typeof setActiveNavLink === 'function') setActiveNavLink(pageName);
+    } catch (e) { 
+        content.innerHTML = `<div class="text-center py-20 text-slate-400">قريباً..</div>`; 
+    }
+},
 
     async sendFriendRequest(toUserId) {
         const fromUserId = auth.currentUser.uid;
