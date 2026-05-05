@@ -18,7 +18,7 @@
         </button>
     </div>
 
-    <!-- أزرار الفئات الفرعية (تُملأ ديناميكياً) -->
+    <!-- أزرار الفئات الفرعية -->
     <div id="subcategoryFilter" class="flex gap-2 overflow-x-auto pb-1"></div>
 
     <!-- قائمة البطاقات -->
@@ -28,7 +28,7 @@
     <div id="contentModal" class="hidden fixed inset-0 bg-black/90 z-[200] flex items-center justify-center p-4" onclick="if(event.target===this)academy.closeContentModal()">
         <div class="bg-white w-full max-w-lg rounded-2xl overflow-hidden shadow-2xl" style="max-height:90vh;">
             <div class="flex justify-between items-center p-4 border-b">
-                <h3 id="modalTitle" class="font-black text-gray-800 text-base"></h3>
+                <h3 id="modalTitle" class="font-black text-gray-800 text-base break-words flex-1 ml-2"></h3>
                 <button onclick="academy.closeContentModal()" class="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
             </div>
             <div id="modalVideo" class="hidden w-full" style="aspect-ratio: 16/9; background:#000;"></div>
@@ -51,7 +51,6 @@
         <div class="bg-white w-full max-w-md rounded-2xl p-5 space-y-3 shadow-2xl">
             <h3 class="font-black text-gray-800 text-lg">إضافة محتوى</h3>
             
-            <!-- الفئة الرئيسية -->
             <div>
                 <label class="text-xs font-bold text-gray-500 mb-1 block">النوع</label>
                 <select id="acadCategory" class="w-full bg-gray-100 border-none rounded-xl p-3 text-sm">
@@ -61,7 +60,6 @@
                 </select>
             </div>
 
-            <!-- الفئة الفرعية -->
             <div>
                 <label class="text-xs font-bold text-gray-500 mb-1 block">المجال</label>
                 <select id="acadSubcategory" class="w-full bg-gray-100 border-none rounded-xl p-3 text-sm">
@@ -86,6 +84,31 @@
         </div>
     </div>
 </div>
+
+<style>
+    /* إزالة تقطيع النصوص */
+    .line-clamp-1 {
+        display: block;
+        white-space: normal;
+        word-wrap: break-word;
+        overflow: visible;
+    }
+    .line-clamp-2 {
+        display: block;
+        white-space: normal;
+        word-wrap: break-word;
+        overflow: visible;
+    }
+    /* تنسيق أفضل للعناوين الطويلة */
+    .card-title {
+        font-weight: 800;
+        font-size: 0.9rem;
+        color: #1f2937;
+        margin-bottom: 0.25rem;
+        word-break: break-word;
+        line-height: 1.4;
+    }
+</style>
 
 <script>
 function waitForGlobals(cb) {
@@ -120,7 +143,9 @@ waitForGlobals(() => {
             this.currentSubcategory = 'الكل';
             ['courses','articles','videos'].forEach(t => {
                 const btn = document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1));
-                btn.className = t === tab ? 'flex-1 py-2.5 rounded-xl font-bold text-xs bg-sky-500 text-white shadow-sm transition' : 'flex-1 py-2.5 rounded-xl font-bold text-xs text-gray-500 transition';
+                if (btn) {
+                    btn.className = t === tab ? 'flex-1 py-2.5 rounded-xl font-bold text-xs bg-sky-500 text-white shadow-sm transition' : 'flex-1 py-2.5 rounded-xl font-bold text-xs text-gray-500 transition';
+                }
             });
             this.loadData();
         },
@@ -137,7 +162,6 @@ waitForGlobals(() => {
                 const q = query(collection(db, col), orderBy('createdAt', 'desc'));
                 const snap = await getDocs(q);
                 
-                // استخراج الفئات الفرعية الموجودة لبناء الأزرار
                 const subcats = new Set(['الكل']);
                 const docsArray = [];
                 snap.forEach(d => {
@@ -153,18 +177,16 @@ waitForGlobals(() => {
                     return;
                 }
 
-                // عرض أزرار الفئات الفرعية
                 const subcatsArray = Array.from(subcats);
                 this.renderSubcategoryChips(subcatsArray);
 
-                // تصفية حسب الفئة الفرعية المختارة
                 const filtered = this.currentSubcategory === 'الكل' ? docsArray : docsArray.filter(d => d.subcategory === this.currentSubcategory);
 
                 let html = '';
                 filtered.forEach(d => {
                     const title = d.title || 'بدون عنوان';
                     const desc = d.desc || '';
-                    const shortDesc = desc.length > 80 ? desc.substring(0,80)+'...' : desc;
+                    const shortDesc = desc.length > 100 ? desc.substring(0,100)+'...' : desc;
                     const authorName = d.authorName || 'Shark UP';
                     const authorPhoto = d.authorPhoto || '';
                     const date = d.createdAt ? new Date(d.createdAt.seconds*1000).toLocaleDateString('ar-EG') : '';
@@ -181,16 +203,16 @@ waitForGlobals(() => {
                          data-photo="${authorPhoto.replace(/"/g,'&quot;')}" data-date="${date}" data-video="${videoLink.replace(/"/g,'&quot;')}"
                          data-tab="${this.currentTab}" onclick="academy.openFromElement(this)">
                         <div class="flex items-start gap-3">
-                            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-sky-100 to-blue-100 flex items-center justify-center text-xl flex-shrink-0">${icon}</div>
+                            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-sky-100 to-blue-100 flex items-center justify-center text-2xl flex-shrink-0">${icon}</div>
                             <div class="flex-1 min-w-0">
-                                <div class="flex justify-between items-start">
-                                    <h4 class="font-extrabold text-gray-800 text-sm mb-1 line-clamp-1">${title}</h4>
-                                    <span class="text-[10px] bg-gray-100 px-2 py-0.5 rounded-full text-gray-600 whitespace-nowrap mr-2">${subcategory}</span>
+                                <div class="flex flex-wrap justify-between items-start gap-2">
+                                    <h4 class="card-title flex-1">${title}</h4>
+                                    <span class="text-[10px] bg-gray-100 px-2 py-0.5 rounded-full text-gray-600 whitespace-nowrap">${subcategory}</span>
                                 </div>
-                                <p class="text-xs text-gray-500 line-clamp-2 mb-2">${shortDesc}</p>
-                                <div class="flex items-center gap-1 text-[10px] text-gray-400">
-                                    <img src="${authorPhoto}" class="w-4 h-4 rounded-full" onerror="this.style.display='none'">
-                                    <span class="font-bold">${authorName}</span>
+                                <p class="text-xs text-gray-500 mt-2 mb-2 leading-relaxed">${shortDesc}</p>
+                                <div class="flex items-center gap-2 text-[10px] text-gray-400 mt-1">
+                                    ${authorPhoto ? `<img src="${authorPhoto}" class="w-5 h-5 rounded-full object-cover">` : '<div class="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center text-[8px]">🦈</div>'}
+                                    <span class="font-bold text-gray-500">${authorName}</span>
                                     <span>·</span>
                                     <span>${date}</span>
                                 </div>
@@ -200,6 +222,7 @@ waitForGlobals(() => {
                 });
                 grid.innerHTML = html || '<div class="text-center py-16 text-gray-400 text-sm">لا يوجد محتوى في هذه الفئة</div>';
             } catch(e) {
+                console.error(e);
                 grid.innerHTML = '<div class="text-center py-16 text-red-400 text-sm">⚠️ فشل الاتصال</div>';
             }
         },
@@ -210,7 +233,7 @@ waitForGlobals(() => {
             let html = '';
             subcats.forEach(sub => {
                 const active = this.currentSubcategory === sub;
-                html += `<button class="whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-bold transition ${active ? 'bg-sky-500 text-white' : 'bg-gray-100 text-gray-600'}" onclick="academy.filterBySubcategory('${sub}')">${sub === 'الكل' ? '🌐 الكل' : sub}</button>`;
+                html += `<button class="whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-bold transition ${active ? 'bg-sky-500 text-white' : 'bg-gray-100 text-gray-600'}" onclick="academy.filterBySubcategory('${sub.replace(/'/g, "\\'")}')">${sub === 'الكل' ? '🌐 الكل' : sub}</button>`;
             });
             container.innerHTML = html;
         },
@@ -245,7 +268,7 @@ waitForGlobals(() => {
             modalVideo.classList.add('hidden');
             modalVideo.innerHTML = '';
             modalContent.classList.add('hidden');
-            modalContent.textContent = '';
+            modalContent.innerHTML = '';
 
             if (tabType === 'videos' && videoLink) {
                 const videoID = extractYouTubeID(videoLink);
@@ -254,20 +277,25 @@ waitForGlobals(() => {
                     modalVideo.innerHTML = `<iframe class="w-full h-full" src="https://www.youtube.com/embed/${videoID}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="border:0; pointer-events:auto;"></iframe>`;
                     return;
                 } else {
-                    modalContent.textContent = '⚠️ رابط الفيديو غير صالح.';
+                    modalContent.innerHTML = '⚠️ رابط الفيديو غير صالح.';
                     modalContent.classList.remove('hidden');
                     return;
                 }
             }
 
-            modalContent.textContent = 'جاري التحميل...';
+            modalContent.innerHTML = '<div class="text-center py-4"><i class="fa-solid fa-spinner fa-spin"></i> جاري التحميل...</div>';
             modalContent.classList.remove('hidden');
             const map = { courses: 'academy_courses', articles: 'academy_articles', videos: 'academy_videos' };
             const col = map[tabType] || 'academy_articles';
             getDoc(doc(db, col, id)).then(snap => {
-                if (snap.exists()) modalContent.textContent = snap.data().desc || 'لا يوجد وصف.';
-                else modalContent.textContent = 'المحتوى غير متوفر.';
-            }).catch(() => modalContent.textContent = 'تعذر التحميل.');
+                if (snap.exists()) {
+                    modalContent.innerHTML = snap.data().desc || 'لا يوجد وصف.';
+                } else {
+                    modalContent.innerHTML = 'المحتوى غير متوفر.';
+                }
+            }).catch(() => {
+                modalContent.innerHTML = 'تعذر التحميل.';
+            });
         },
 
         closeContentModal() {
@@ -295,10 +323,18 @@ waitForGlobals(() => {
             const desc = document.getElementById('acadDesc').value.trim();
             const videoLink = document.getElementById('acadVideoLink')?.value.trim() || '';
 
-            if (!title || !desc) return;
+            if (!title) {
+                alert('الرجاء إدخال عنوان');
+                return;
+            }
+            if (!desc) {
+                alert('الرجاء إدخال وصف');
+                return;
+            }
 
             const btn = document.getElementById('acadBtnSave');
-            btn.disabled = true; btn.innerText = 'جاري النشر...';
+            btn.disabled = true; 
+            btn.innerText = 'جاري النشر...';
 
             try {
                 const user = auth.currentUser;
@@ -323,14 +359,19 @@ waitForGlobals(() => {
                 this.closeAddModal();
                 this.loadData();
             } catch(e) {
+                console.error(e);
                 alert('حدث خطأ أثناء النشر');
             } finally {
-                btn.disabled = false; btn.innerText = 'حفظ ونشر';
+                btn.disabled = false; 
+                btn.innerText = 'حفظ ونشر';
             }
         }
     };
 
-    document.getElementById('acadCategory').addEventListener('change', () => window.academy.toggleVideoLink());
+    const categorySelect = document.getElementById('acadCategory');
+    if (categorySelect) {
+        categorySelect.addEventListener('change', () => window.academy.toggleVideoLink());
+    }
     window.academy.loadData();
 });
 </script>
