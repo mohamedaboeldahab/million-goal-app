@@ -648,23 +648,28 @@ window.engine = {
     },
 
     // ========== صفحة البروفايل ==========
-    listenToProfilePosts(containerId) {
-        const userId = auth.currentUser?.uid;
-        if (!userId) return;
-        const q = query(collection(db, "posts"), where("authorId", "==", userId));
+   listenToProfilePosts(containerId) {
+        // استخدام uid المخزن إذا كان المستخدم يشاهد بروفايل شخص آخر
+        const targetUID = sessionStorage.getItem('viewingProfileUID') || auth.currentUser?.uid;
+        if (!targetUID) return;
+
+        const q = query(collection(db, "posts"), where("authorId", "==", targetUID));
         onSnapshot(q, (snapshot) => {
             const container = document.getElementById(containerId);
             if (!container) return;
+
             if (snapshot.empty) {
                 container.innerHTML = '<p class="text-gray-400 text-sm text-center py-8">لا توجد منشورات بعد</p>';
                 return;
             }
+
             const docs = snapshot.docs.map(doc => ({ id: doc.id, data: doc.data() }));
             docs.sort((a, b) => {
                 const timeA = a.data.createdAt?.toDate?.()?.getTime?.() || 0;
                 const timeB = b.data.createdAt?.toDate?.()?.getTime?.() || 0;
                 return timeB - timeA;
             });
+
             container.innerHTML = docs.map(doc => this.postHTML(doc.id, doc.data)).join('');
             docs.forEach(doc => this.listenToComments(doc.id));
         }, error => {
@@ -672,8 +677,19 @@ window.engine = {
             if (container) container.innerHTML = '<p class="text-center text-red-500">تعذر تحميل المنشورات</p>';
         });
     },
+    async activateProfile() {
+        const targetUID = sessionStorage.getItem('viewingProfileUID') || auth.currentUser?.uid;
+        
+        // جلب بيانات المستخدم المستهدف
+        let profile = {};
+        if (targetUID !== auth.currentUser?.uid) {
+            const ref = doc(db, "users", targetUID);
+            const snap = await getDoc(ref);
+            profile = snap.exists() ? snap.data() : {};
+        } else {
+            profile = await this.getOrCreateUserProfile();
+        }
 
-    activateProfile() {
         // تبويبات التبديل
         document.querySelectorAll('.tab-btn').forEach(btn => {
             btn.addEventListener('click', () => {
@@ -691,80 +707,92 @@ window.engine = {
         const emailEl = document.getElementById('profileEmail');
         const bioEl = document.getElementById('profileBio');
         const aboutEl = document.getElementById('aboutBio');
-
-        if (avatarImg && nameEl) {
-            this.getOrCreateUserProfile().then(profile => {
-                const u = auth.currentUser;
-                avatarImg.src = fixPhotoUrl(profile.photoURL || u.photoURL);
-                nameEl.textContent = profile.displayName || u.displayName || 'مستخدم';
-                const bio = profile.bio || '🦈 عضو في Shark Up';
-                if (bioEl) bioEl.textContent = bio;
-                if (aboutEl) aboutEl.textContent = bio;
-                if (emailEl) emailEl.textContent = u.email || '';
-            });
-        }
-
         const editBtn = document.getElementById('editProfileBtn');
         const saveBtn = document.getElementById('saveProfileBtn');
-        if (editBtn && saveBtn) {
-            editBtn.addEventListener('click', () => {
-                if (nameEl) { nameEl.contentEditable = 'true'; nameEl.classList.add('bg-yellow-50','px-2','rounded','outline-none'); }
-                if (bioEl) { bioEl.contentEditable = 'true'; bioEl.classList.add('bg-yellow-50','px-2','rounded','outline-none'); }
-                editBtn.classList.add('hidden'); saveBtn.classList.remove('hidden');
-            });
-            saveBtn.addEventListener('click', async () => {
-                if (nameEl) { nameEl.contentEditable = 'false'; nameEl.classList.remove('bg-yellow-50','px-2','rounded','outline-none'); }
-                if (bioEl) { bioEl.contentEditable = 'false'; bioEl.classList.remove('bg-yellow-50','px-2','rounded','outline-none'); }
-                editBtn.classList.remove('hidden'); saveBtn.classList.add('hidden');
-                const n = nameEl ? nameEl.textContent.trim() : '';
-                const b = bioEl ? bioEl.textContent.trim() : '';
-                try {
-                    await this.updateUserProfile({ displayName: n, bio: b });
-                    if (aboutEl) aboutEl.textContent = b;
-                    this.showToast('تم حفظ البيانات ☁️');
-                } catch(e) {
-                    this.showToast('فشل الحفظ ⚠️');
-                }
-            });
+        const logoutBtn = document.querySelector('[onclick="engine.logout()"]');
+
+        // تعبئة بيانات المستخدم
+        if (avatarImg && nameEl) {
+            avatarImg.src = fixPhotoUrl(profile.photoURL || '');
+            nameEl.textContent = profile.displayName || 'مستخدم';
+            const bio = profile.bio || '🦈 عضو في Shark Up';
+            if (bioEl) bioEl.textContent = bio;
+            if (aboutEl) aboutEl.textContent = bio;
         }
 
-        // رفع الصورة مع ضغط
-        document.getElementById('avatarOverlay')?.addEventListener('click', () => document.getElementById('avatarFileInput').click());
-        document.getElementById('avatarFileInput')?.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
+        // إظهار/إخفاء الأزرار بناءً على ما إذا كان البروفايل يخص المستخدم الحالي
+        if (targetUID !== auth.currentUser?.uid) {
+            // إخفاء أزرار التعديل والتسجيل
+            if (editBtn) editBtn.classList.add('hidden');
+            if (saveBtn) saveBtn.classList.add('hidden');
+            if (logoutBtn) logoutBtn.classList.add('hidden');
+            // عدم إظهار البريد الإلكتروني للآخرين
+            if (emailEl) emailEl.textContent = '';
+        } else {
+            // إظهار الأزرار للمستخدم الحالي
+            if (editBtn) editBtn.classList.remove('hidden');
+            if (logoutBtn) {
+                logoutBtn.classList.remove('hidden');
+                logoutBtn.classList.add('flex'); // لأنه قد يكون لديه display: flex
+            }
+            if (emailEl) emailEl.textContent = auth.currentUser.email || '';
 
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                const img = new Image();
-                img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    const maxSize = 200;
-                    let width = img.width, height = img.height;
-                    if (width > height) {
-                        if (width > maxSize) { height *= maxSize / width; width = maxSize; }
-                    } else {
-                        if (height > maxSize) { width *= maxSize / height; height = maxSize; }
-                    }
-                    canvas.width = width; canvas.height = height;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, width, height);
-                    const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.6);
-                    
-                    if (avatarImg) avatarImg.src = compressedDataUrl;
-                    
-                    this.updateUserProfile({ photoURL: compressedDataUrl })
-                        .then(() => this.showToast('تم تغيير الصورة وحفظها ☁️'))
-                        .catch(() => this.showToast('تعذر حفظ الصورة (حاول مجدداً) ⚠️'));
+            // تفعيل أزرار التعديل (خاصة بالبروفايل الشخصي)
+            if (editBtn && saveBtn) {
+                editBtn.addEventListener('click', () => {
+                    if (nameEl) { nameEl.contentEditable = 'true'; nameEl.classList.add('bg-yellow-50','px-2','rounded','outline-none'); }
+                    if (bioEl) { bioEl.contentEditable = 'true'; bioEl.classList.add('bg-yellow-50','px-2','rounded','outline-none'); }
+                    editBtn.classList.add('hidden'); saveBtn.classList.remove('hidden');
+                });
+                saveBtn.addEventListener('click', async () => {
+                    if (nameEl) { nameEl.contentEditable = 'false'; nameEl.classList.remove('bg-yellow-50','px-2','rounded','outline-none'); }
+                    if (bioEl) { bioEl.contentEditable = 'false'; bioEl.classList.remove('bg-yellow-50','px-2','rounded','outline-none'); }
+                    editBtn.classList.remove('hidden'); saveBtn.classList.add('hidden');
+                    const n = nameEl ? nameEl.textContent.trim() : '';
+                    const b = bioEl ? bioEl.textContent.trim() : '';
+                    try {
+                        await this.updateUserProfile({ displayName: n, bio: b });
+                        if (aboutEl) aboutEl.textContent = b;
+                        this.showToast('تم حفظ البيانات ☁️');
+                    } catch(e) { this.showToast('فشل الحفظ ⚠️'); }
+                });
+            }
+
+            // رفع الصورة مع ضغط (للمستخدم الحالي فقط)
+            document.getElementById('avatarOverlay')?.addEventListener('click', () => document.getElementById('avatarFileInput').click());
+            document.getElementById('avatarFileInput')?.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        const maxSize = 200;
+                        let width = img.width, height = img.height;
+                        if (width > height) {
+                            if (width > maxSize) { height *= maxSize / width; width = maxSize; }
+                        } else {
+                            if (height > maxSize) { width *= maxSize / height; height = maxSize; }
+                        }
+                        canvas.width = width; canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+                        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.6);
+                        if (avatarImg) avatarImg.src = compressedDataUrl;
+                        this.updateUserProfile({ photoURL: compressedDataUrl })
+                            .then(() => this.showToast('تم تغيير الصورة وحفظها ☁️'))
+                            .catch(() => this.showToast('تعذر حفظ الصورة (حاول مجدداً) ⚠️'));
+                    };
+                    img.src = event.target.result;
                 };
-                img.src = event.target.result;
-            };
-            reader.readAsDataURL(file);
-        });
+                reader.readAsDataURL(file);
+            });
+        }
     },
-
-    viewUserProfile(uid) {
-        // الانتقال إلى صفحة البروفايل الشخصي حالياً
+   viewUserProfile(uid) {
+        // تخزين uid للانتقال إلى صفحة البروفايل المطلوبة
+        sessionStorage.setItem('viewingProfileUID', uid);
         this.loadPage('profile');
     },
 
