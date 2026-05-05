@@ -111,57 +111,51 @@ window.engine = {
     async logout() { if (confirm("هل تريد مغادرة المحيط؟")) { await signOut(auth); location.reload(); } },
 
     async loadPage(pageName) {
-    const content = document.getElementById('app-content');
-    if (!content) return;
-    
-    document.querySelectorAll('.nav-link').forEach(l => l.classList.toggle('active', l.dataset.page === pageName));
-    content.innerHTML = '<div class="flex justify-center py-20"><div class="w-8 h-8 border-4 border-sky-500 border-t-transparent rounded-full animate-spin"></div></div>';
-    
-    // إذا كانت الصفحة الرئيسية، مسح التخزين
-    if (pageName === 'home') {
-        sessionStorage.removeItem('viewingProfileUID');
-    }
-    
-    // إذا كانت صفحة البروفايل وليس هناك uid مخزن، هذا يعني بروفايل المستخدم الحالي
-    if (pageName === 'profile' && !sessionStorage.getItem('viewingProfileUID')) {
-        // لا تفعل شيء، هذا بروفايل المستخدم الحالي
-    }
-    
-    if (this._observer) {
-        this._observer.disconnect();
-        this._observer = null;
-    }
-
-    try {
-        const response = await fetch(`${pageName}.html`);
-        const html = await response.text();
-        content.innerHTML = html;
-        content.querySelectorAll('script').forEach(oldScript => {
-            const newScript = document.createElement('script');
-            newScript.textContent = oldScript.textContent;
-            oldScript.replaceWith(newScript);
-        });
-
+        const content = document.getElementById('app-content');
+        if (!content) return;
+        
+        document.querySelectorAll('.nav-link').forEach(l => l.classList.toggle('active', l.dataset.page === pageName));
+        content.innerHTML = '<div class="flex justify-center py-20"><div class="w-8 h-8 border-4 border-sky-500 border-t-transparent rounded-full animate-spin"></div></div>';
+        
         if (pageName === 'home') {
-            setTimeout(() => {
-                this.listenToPosts();
-                this.activateCharCounter();
-                this.updateTypeButtons();
-                this.updateCreatorAvatar();
-                this.renderBgPicker();
-                this.watchStoriesContainer();
-            }, 50);
-        } else if (pageName === 'profile') {
-            setTimeout(() => {
-                this.listenToProfilePosts('userPostsContainer');
-                this.activateProfile();
-            }, 150);
+            sessionStorage.removeItem('viewingProfileUID');
         }
-        if (typeof setActiveNavLink === 'function') setActiveNavLink(pageName);
-    } catch (e) { 
-        content.innerHTML = `<div class="text-center py-20 text-slate-400">قريباً..</div>`; 
-    }
-},
+        
+        if (this._observer) {
+            this._observer.disconnect();
+            this._observer = null;
+        }
+
+        try {
+            const response = await fetch(`${pageName}.html`);
+            const html = await response.text();
+            content.innerHTML = html;
+            content.querySelectorAll('script').forEach(oldScript => {
+                const newScript = document.createElement('script');
+                newScript.textContent = oldScript.textContent;
+                oldScript.replaceWith(newScript);
+            });
+
+            if (pageName === 'home') {
+                setTimeout(() => {
+                    this.listenToPosts();
+                    this.activateCharCounter();
+                    this.updateTypeButtons();
+                    this.updateCreatorAvatar();
+                    this.renderBgPicker();
+                    this.watchStoriesContainer();
+                }, 50);
+            } else if (pageName === 'profile') {
+                setTimeout(() => {
+                    this.listenToProfilePosts('userPostsContainer');
+                    this.activateProfile();
+                }, 150);
+            }
+            if (typeof setActiveNavLink === 'function') setActiveNavLink(pageName);
+        } catch (e) { 
+            content.innerHTML = `<div class="text-center py-20 text-slate-400">قريباً..</div>`; 
+        }
+    },
 
     async sendFriendRequest(toUserId) {
         const fromUserId = auth.currentUser.uid;
@@ -963,38 +957,45 @@ window.engine = {
     },
 
     async activateProfile() {
-        if (!sessionStorage.getItem('viewingProfileUID')) {
+        // الحصول على الـ UID المستهدف
+        let targetUID = sessionStorage.getItem('viewingProfileUID');
+        const currentUID = auth.currentUser?.uid;
+        
+        // إذا كان targetUID موجود ويساوي المستخدم الحالي، نمسحه
+        if (targetUID === currentUID) {
             sessionStorage.removeItem('viewingProfileUID');
+            targetUID = null;
         }
         
-        const targetUID = sessionStorage.getItem('viewingProfileUID') || auth.currentUser?.uid;
-        const isOwnProfile = targetUID === auth.currentUser?.uid;
+        // إذا لا يوجد targetUID، نعرض بروفايل المستخدم الحالي
+        const isOwnProfile = !targetUID || targetUID === currentUID;
+        const finalUID = isOwnProfile ? currentUID : targetUID;
         
+        // إظهار/إخفاء تبويب الأصدقاء
         const friendsTab = document.getElementById('friendsTabBtn');
         if (friendsTab) {
             friendsTab.classList.toggle('hidden', !isOwnProfile);
         }
 
+        // جلب بيانات المستخدم
         let profile = {};
         if (!isOwnProfile) {
-            const ref = doc(db, "users", targetUID);
+            const ref = doc(db, "users", finalUID);
             const snap = await getDoc(ref);
             profile = snap.exists() ? snap.data() : {};
         } else {
             profile = await this.getOrCreateUserProfile();
         }
 
-        document.querySelectorAll('.tab-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                document.querySelectorAll('.tab-btn').forEach(b => { b.classList.remove('active','bg-gray-100'); b.classList.add('text-gray-500'); });
-                btn.classList.add('active','bg-gray-100');
-                btn.classList.remove('text-gray-500');
-                const target = btn.dataset.tab;
-                document.getElementById('tab-posts').classList.toggle('hidden', target !== 'posts');
-                document.getElementById('tab-about').classList.toggle('hidden', target !== 'about');
-                document.getElementById('tab-friends').classList.toggle('hidden', target !== 'friends');
-            });
-        });
+        // تعيين عنوان الصفحة
+        if (isOwnProfile) {
+            document.title = "ملفي الشخصي - Shark Up";
+        } else {
+            document.title = `${profile.displayName || 'مستخدم'} - Shark Up`;
+        }
+
+        // إعداد التبويبات
+        this.setupProfileTabs();
 
         const avatarImg = document.getElementById('profileAvatar');
         const nameEl = document.getElementById('profileName');
@@ -1013,18 +1014,20 @@ window.engine = {
         }
 
         actionsContainer.innerHTML = '';
+        
         if (!isOwnProfile) {
+            // أزرار لبروفايل شخص آخر
             const msgBtn = document.createElement('button');
-            msgBtn.className = 'bg-sky-500 hover:bg-sky-600 text-white font-bold py-1.5 px-4 rounded-lg text-xs sm:text-sm';
+            msgBtn.className = 'bg-sky-500 hover:bg-sky-600 text-white font-bold py-2 px-4 rounded-lg text-sm';
             msgBtn.innerHTML = '<i class="fa-solid fa-message ml-1"></i> إرسال رسالة';
-            msgBtn.onclick = () => engine.sendMessage(targetUID, profile.displayName || 'مستخدم');
+            msgBtn.onclick = () => this.sendMessage(finalUID, profile.displayName || 'مستخدم');
             actionsContainer.appendChild(msgBtn);
 
-            const isFriend = await this.checkFriendship(targetUID, auth.currentUser.uid);
-            const hasPending = await this.hasPendingRequest(targetUID);
+            const isFriend = await this.checkFriendship(finalUID, currentUID);
+            const hasPending = await this.hasPendingRequest(finalUID);
             
             const friendBtn = document.createElement('button');
-            friendBtn.className = 'friend-action-btn ' + (isFriend ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-800') + ' font-bold py-1.5 px-4 rounded-lg text-xs sm:text-sm';
+            friendBtn.className = 'friend-action-btn ' + (isFriend ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-800') + ' font-bold py-2 px-4 rounded-lg text-sm';
             
             if (isFriend) {
                 friendBtn.innerHTML = '<i class="fa-solid fa-user-check ml-1"></i> أصدقاء';
@@ -1034,27 +1037,38 @@ window.engine = {
                 friendBtn.onclick = () => this.showToast('طلب صداقة قيد الانتظار ⏳');
             } else {
                 friendBtn.innerHTML = '<i class="fa-solid fa-user-plus ml-1"></i> إضافة صديق';
-                friendBtn.onclick = () => this.sendFriendRequest(targetUID);
+                friendBtn.onclick = () => this.sendFriendRequest(finalUID);
             }
             actionsContainer.appendChild(friendBtn);
 
             if (emailEl) emailEl.textContent = '';
 
+            // إضافة زر العودة للملف الشخصي
+            const backBtn = document.createElement('button');
+            backBtn.className = 'bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg text-sm';
+            backBtn.innerHTML = '<i class="fa-solid fa-arrow-right ml-1"></i> ملفي الشخصي';
+            backBtn.onclick = () => {
+                sessionStorage.removeItem('viewingProfileUID');
+                this.loadPage('profile');
+            };
+            actionsContainer.appendChild(backBtn);
+
         } else {
+            // أزرار للملف الشخصي الخاص
             const editBtn = document.createElement('button');
             editBtn.id = 'editProfileBtn';
-            editBtn.className = 'bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-1.5 px-4 rounded-lg text-xs sm:text-sm';
+            editBtn.className = 'bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg text-sm';
             editBtn.innerHTML = '<i class="fa-solid fa-pen-to-square"></i> تعديل';
             actionsContainer.appendChild(editBtn);
 
             const saveBtn = document.createElement('button');
             saveBtn.id = 'saveProfileBtn';
-            saveBtn.className = 'bg-sky-500 hover:bg-sky-600 text-white font-bold py-1.5 px-4 rounded-lg text-xs sm:text-sm hidden';
+            saveBtn.className = 'bg-sky-500 hover:bg-sky-600 text-white font-bold py-2 px-4 rounded-lg text-sm hidden';
             saveBtn.innerHTML = '<i class="fa-solid fa-check"></i> حفظ';
             actionsContainer.appendChild(saveBtn);
 
             const logoutBtn = document.createElement('button');
-            logoutBtn.className = 'bg-white border border-red-200 text-red-500 hover:bg-red-50 font-bold py-1.5 px-4 rounded-lg text-xs sm:text-sm';
+            logoutBtn.className = 'bg-white border border-red-200 text-red-500 hover:bg-red-50 font-bold py-2 px-4 rounded-lg text-sm';
             logoutBtn.innerHTML = '<i class="fa-solid fa-right-from-bracket"></i> خروج';
             logoutBtn.onclick = () => this.logout();
             actionsContainer.appendChild(logoutBtn);
@@ -1062,23 +1076,41 @@ window.engine = {
             if (emailEl) emailEl.textContent = auth.currentUser.email || '';
 
             editBtn.addEventListener('click', () => {
-                if (nameEl) { nameEl.contentEditable = 'true'; nameEl.classList.add('bg-yellow-50','px-2','rounded','outline-none'); }
-                if (bioEl) { bioEl.contentEditable = 'true'; bioEl.classList.add('bg-yellow-50','px-2','rounded','outline-none'); }
-                editBtn.classList.add('hidden'); saveBtn.classList.remove('hidden');
+                if (nameEl) { 
+                    nameEl.contentEditable = 'true'; 
+                    nameEl.classList.add('bg-yellow-50', 'px-2', 'rounded', 'outline-none'); 
+                }
+                if (bioEl) { 
+                    bioEl.contentEditable = 'true'; 
+                    bioEl.classList.add('bg-yellow-50', 'px-2', 'rounded', 'outline-none'); 
+                }
+                editBtn.classList.add('hidden'); 
+                saveBtn.classList.remove('hidden');
             });
+            
             saveBtn.addEventListener('click', async () => {
-                if (nameEl) { nameEl.contentEditable = 'false'; nameEl.classList.remove('bg-yellow-50','px-2','rounded','outline-none'); }
-                if (bioEl) { bioEl.contentEditable = 'false'; bioEl.classList.remove('bg-yellow-50','px-2','rounded','outline-none'); }
-                editBtn.classList.remove('hidden'); saveBtn.classList.add('hidden');
+                if (nameEl) { 
+                    nameEl.contentEditable = 'false'; 
+                    nameEl.classList.remove('bg-yellow-50', 'px-2', 'rounded', 'outline-none'); 
+                }
+                if (bioEl) { 
+                    bioEl.contentEditable = 'false'; 
+                    bioEl.classList.remove('bg-yellow-50', 'px-2', 'rounded', 'outline-none'); 
+                }
+                editBtn.classList.remove('hidden'); 
+                saveBtn.classList.add('hidden');
                 const n = nameEl ? nameEl.textContent.trim() : '';
                 const b = bioEl ? bioEl.textContent.trim() : '';
                 try {
                     await this.updateUserProfile({ displayName: n, bio: b });
                     if (aboutEl) aboutEl.textContent = b;
                     this.showToast('تم حفظ البيانات ☁️');
-                } catch(e) { this.showToast('فشل الحفظ ⚠️'); }
+                } catch(e) { 
+                    this.showToast('فشل الحفظ ⚠️'); 
+                }
             });
 
+            // رفع الصورة
             document.getElementById('avatarOverlay')?.addEventListener('click', () => document.getElementById('avatarFileInput').click());
             document.getElementById('avatarFileInput')?.addEventListener('change', (e) => {
                 const file = e.target.files[0];
@@ -1113,6 +1145,29 @@ window.engine = {
         if (isOwnProfile) {
             this.loadFriendsData();
         }
+    },
+
+    setupProfileTabs() {
+        const tabs = document.querySelectorAll('.tab-btn');
+        tabs.forEach(btn => {
+            btn.removeEventListener('click', this.handleTabClick);
+            btn.addEventListener('click', (e) => {
+                const target = e.currentTarget.dataset.tab;
+                document.querySelectorAll('.tab-btn').forEach(b => { 
+                    b.classList.remove('active', 'bg-gray-100', 'text-sky-600');
+                    b.classList.add('text-gray-500');
+                });
+                e.currentTarget.classList.add('active', 'bg-gray-100', 'text-sky-600');
+                
+                document.getElementById('tab-posts').classList.toggle('hidden', target !== 'posts');
+                document.getElementById('tab-about').classList.toggle('hidden', target !== 'about');
+                document.getElementById('tab-friends').classList.toggle('hidden', target !== 'friends');
+                
+                if (target === 'friends') {
+                    this.loadFriendsData();
+                }
+            });
+        });
     },
 
     async loadFriendsData() {
@@ -1245,11 +1300,11 @@ window.engine = {
         if (friendBtn) {
             if (isFriend) {
                 friendBtn.innerHTML = '<i class="fa-solid fa-user-check ml-1"></i> أصدقاء';
-                friendBtn.className = 'bg-green-100 hover:bg-green-200 text-green-700 font-bold py-1.5 px-4 rounded-lg text-xs sm:text-sm friend-action-btn';
+                friendBtn.className = 'bg-green-100 hover:bg-green-200 text-green-700 font-bold py-2 px-4 rounded-lg text-sm friend-action-btn';
                 friendBtn.onclick = () => this.showToast('أنتما أصدقاء بالفعل 🎉');
             } else {
                 friendBtn.innerHTML = '<i class="fa-solid fa-user-plus ml-1"></i> إضافة صديق';
-                friendBtn.className = 'bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-1.5 px-4 rounded-lg text-xs sm:text-sm friend-action-btn';
+                friendBtn.className = 'bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg text-sm friend-action-btn';
                 friendBtn.onclick = () => this.sendFriendRequest(userId);
             }
         }
@@ -1267,18 +1322,16 @@ window.engine = {
         return !snap.empty;
     },
 
- viewUserProfile(uid) {
-    // التحقق: إذا كان uid هو نفس المستخدم الحالي
-    if (uid === auth.currentUser?.uid) {
-        // مسح التخزين المؤقت للبروفايل
-        sessionStorage.removeItem('viewingProfileUID');
-        this.loadPage('profile');
-    } else {
-        // تخزين uid للشخص الآخر
-        sessionStorage.setItem('viewingProfileUID', uid);
-        this.loadPage('profile');
-    }
-},
+    viewUserProfile(uid) {
+        if (uid === auth.currentUser?.uid) {
+            sessionStorage.removeItem('viewingProfileUID');
+            this.loadPage('profile');
+        } else {
+            sessionStorage.setItem('viewingProfileUID', uid);
+            this.loadPage('profile');
+        }
+    },
+
     showToast(message) {
         const toast = document.createElement('div');
         toast.className = 'fixed bottom-4 right-4 bg-gray-800 text-white px-4 py-2 rounded-lg text-sm z-50 shadow-lg';
