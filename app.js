@@ -1167,71 +1167,155 @@ async rejectFriendRequest(requestId) {
     },
 
     // دالة تحميل بيانات الأصدقاء (للاستخدام من profile.html)
-    async loadFriendsData() {
-        const userId = auth.currentUser.uid;
-        if (!userId) return;
+  // دالة تحميل بيانات الأصدقاء (للاستخدام من profile.html)
+async loadFriendsData() {
+    const userId = auth.currentUser.uid;
+    if (!userId) return;
 
-        // --- تحميل طلبات الصداقة الواردة ---
-        const requestsQuery = query(
-            collection(db, "friend_requests"),
-            where("toUserId", "==", userId),
-            where("status", "==", "pending")
-        );
-        const requestsSnap = await getDocs(requestsQuery);
-        const requestsContainer = document.getElementById('friendRequestsList');
-        if (requestsContainer) {
-            requestsContainer.innerHTML = '';
-            if (requestsSnap.empty) {
-                requestsContainer.innerHTML = '<p class="text-gray-400 text-sm">لا توجد طلبات صداقة</p>';
-            } else {
-                requestsSnap.forEach(doc => {
-                    const data = doc.data();
-                    requestsContainer.innerHTML += `
-                    <div class="flex items-center justify-between bg-white p-3 rounded-xl shadow-sm">
-                        <div class="flex items-center gap-2">
-                            <img src="${data.fromPhotoURL}" class="w-8 h-8 rounded-full" onerror="this.src='${DEFAULT_AVATAR}'">
-                            <span class="font-bold text-sm">${data.fromUserName}</span>
+    // --- تحميل طلبات الصداقة الواردة ---
+    const requestsQuery = query(
+        collection(db, "friend_requests"),
+        where("toUserId", "==", userId),
+        where("status", "==", "pending")
+    );
+    const requestsSnap = await getDocs(requestsQuery);
+    const requestsContainer = document.getElementById('friendRequestsList');
+    if (requestsContainer) {
+        requestsContainer.innerHTML = '';
+        if (requestsSnap.empty) {
+            requestsContainer.innerHTML = '<p class="text-gray-400 text-sm text-center">✨ لا توجد طلبات صداقة</p>';
+        } else {
+            for (const doc of requestsSnap.docs) {
+                const data = doc.data();
+                const div = document.createElement('div');
+                div.className = 'flex items-center justify-between bg-gray-50 p-3 rounded-xl';
+                div.innerHTML = `
+                    <div class="flex items-center gap-3 flex-1 cursor-pointer" onclick="engine.viewUserProfile('${data.fromUserId}')">
+                        <img src="${fixPhotoUrl(data.fromPhotoURL)}" class="w-10 h-10 rounded-full object-cover" onerror="this.src='${DEFAULT_AVATAR}'">
+                        <div>
+                            <span class="font-bold text-gray-800 text-sm block">${data.fromUserName || 'مستخدم'}</span>
+                            <span class="text-xs text-gray-400">يريد إضافتك كصديق</span>
                         </div>
-                        <div class="flex gap-2">
-                            <button onclick="engine.acceptFriendRequest('${doc.id}', '${data.fromUserId}')" class="bg-green-500 text-white px-3 py-1 rounded-lg text-xs">قبول</button>
-                            <button onclick="engine.rejectFriendRequest('${doc.id}')" class="bg-red-500 text-white px-3 py-1 rounded-lg text-xs">رفض</button>
-                        </div>
-                    </div>`;
-                });
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="event.stopPropagation(); engine.acceptFriendRequest('${doc.id}', '${data.fromUserId}')" class="bg-green-500 hover:bg-green-600 text-white px-4 py-1.5 rounded-lg text-xs font-bold transition">
+                            قبول
+                        </button>
+                        <button onclick="event.stopPropagation(); engine.rejectFriendRequest('${doc.id}')" class="bg-red-500 hover:bg-red-600 text-white px-4 py-1.5 rounded-lg text-xs font-bold transition">
+                            رفض
+                        </button>
+                    </div>
+                `;
+                requestsContainer.appendChild(div);
             }
         }
+    }
 
-        // --- تحميل قائمة الأصدقاء ---
-        const q1 = query(collection(db, "friendships"), where("user1", "==", userId));
-        const q2 = query(collection(db, "friendships"), where("user2", "==", userId));
-        const [snap1, snap2] = await Promise.all([getDocs(q1), getDocs(q2)]);
-        const friendsContainer = document.getElementById('friendsList');
-        if (friendsContainer) {
-            friendsContainer.innerHTML = '';
-            const friends = [];
-            snap1.forEach(d => friends.push(d.data().user2));
-            snap2.forEach(d => friends.push(d.data().user1));
-            
-            if (friends.length === 0) {
-                friendsContainer.innerHTML = '<p class="text-gray-400 text-sm">قائمة الأصدقاء فارغة</p>';
-            } else {
-                for (let friendId of friends) {
-                    const friendSnap = await getDoc(doc(db, "users", friendId));
-                    if (friendSnap.exists()) {
-                        const friend = friendSnap.data();
-                        friendsContainer.innerHTML += `
-                        <div class="flex items-center justify-between bg-white p-3 rounded-xl shadow-sm">
-                            <div class="flex items-center gap-2">
-                                <img src="${fixPhotoUrl(friend.photoURL)}" class="w-8 h-8 rounded-full" onerror="this.src='${DEFAULT_AVATAR}'">
-                                <span class="font-bold text-sm">${friend.displayName || 'مستخدم'}</span>
+    // --- تحميل قائمة الأصدقاء ---
+    const q1 = query(collection(db, "friendships"), where("user1", "==", userId));
+    const q2 = query(collection(db, "friendships"), where("user2", "==", userId));
+    const [snap1, snap2] = await Promise.all([getDocs(q1), getDocs(q2)]);
+    const friendsContainer = document.getElementById('friendsList');
+    if (friendsContainer) {
+        friendsContainer.innerHTML = '';
+        const friends = [];
+        snap1.forEach(d => friends.push({ userId: d.data().user2, docId: d.id }));
+        snap2.forEach(d => friends.push({ userId: d.data().user1, docId: d.id }));
+        
+        if (friends.length === 0) {
+            friendsContainer.innerHTML = '<p class="text-gray-400 text-sm text-center">💙 لا يوجد أصدقاء بعد</p>';
+        } else {
+            for (let friend of friends) {
+                const friendSnap = await getDoc(doc(db, "users", friend.userId));
+                if (friendSnap.exists()) {
+                    const friendData = friendSnap.data();
+                    const div = document.createElement('div');
+                    div.className = 'flex items-center justify-between bg-gray-50 p-3 rounded-xl';
+                    div.innerHTML = `
+                        <div class="flex items-center gap-3 flex-1 cursor-pointer" onclick="engine.viewUserProfile('${friend.userId}')">
+                            <img src="${fixPhotoUrl(friendData.photoURL)}" class="w-10 h-10 rounded-full object-cover" onerror="this.src='${DEFAULT_AVATAR}'">
+                            <div>
+                                <span class="font-bold text-gray-800 text-sm block">${friendData.displayName || 'مستخدم'}</span>
+                                <span class="text-xs text-green-600">✓ صديق</span>
                             </div>
-                            <button onclick="engine.sendMessage('${friendId}', '${friend.displayName || 'مستخدم'}')" class="bg-sky-500 text-white px-3 py-1 rounded-lg text-xs">📩 رسالة</button>
-                        </div>`;
-                    }
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="event.stopPropagation(); engine.openChat('${friend.userId}', '${friendData.displayName}')" class="bg-sky-500 hover:bg-sky-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition">
+                                <i class="fa-regular fa-comment"></i> رسالة
+                            </button>
+                            <button onclick="event.stopPropagation(); engine.removeFriend('${friend.userId}', '${friend.docId}')" class="bg-red-100 hover:bg-red-200 text-red-600 px-3 py-1.5 rounded-lg text-xs font-bold transition">
+                                <i class="fa-solid fa-user-minus"></i> إلغاء
+                            </button>
+                        </div>
+                    `;
+                    friendsContainer.appendChild(div);
                 }
             }
         }
-    },
+    }
+},
+
+// إضافة دالة إلغاء الصداقة
+async removeFriend(friendId, friendshipDocId) {
+    if (!confirm('هل أنت متأكد من إلغاء الصداقة؟')) return;
+    
+    try {
+        // حذف علاقة الصداقة
+        await deleteDoc(doc(db, "friendships", friendshipDocId));
+        
+        // حذف أي طلبات صداقة معلقة بينهما
+        const q1 = query(
+            collection(db, "friend_requests"),
+            where("fromUserId", "==", auth.currentUser.uid),
+            where("toUserId", "==", friendId)
+        );
+        const q2 = query(
+            collection(db, "friend_requests"),
+            where("fromUserId", "==", friendId),
+            where("toUserId", "==", auth.currentUser.uid)
+        );
+        
+        const [snap1, snap2] = await Promise.all([getDocs(q1), getDocs(q2)]);
+        for (const doc of [...snap1.docs, ...snap2.docs]) {
+            await deleteDoc(doc.ref);
+        }
+        
+        this.showToast('🗑️ تم إلغاء الصداقة');
+        
+        // تحديث الواجهة
+        if (document.getElementById('friendsList')) {
+            this.loadFriendsData();
+        }
+        
+        // تحديث زر الإضافة في صفحة البروفايل إذا كانت مفتوحة
+        this.updateProfileFriendButton(friendId);
+    } catch (e) {
+        console.error(e);
+        this.showToast('⚠️ فشل إلغاء الصداقة');
+    }
+},
+
+// تحديث زر الصداقة في صفحة البروفايل
+async updateProfileFriendButton(userId) {
+    // التحقق من وجود الصفحة المفتوحة
+    const profileActions = document.getElementById('profileActions');
+    if (!profileActions) return;
+    
+    const isFriend = await this.checkFriendship(auth.currentUser.uid, userId);
+    const addFriendBtn = profileActions.querySelector('.friend-action-btn');
+    
+    if (addFriendBtn) {
+        if (isFriend) {
+            addFriendBtn.innerHTML = '<i class="fa-solid fa-user-check ml-1"></i> أصدقاء';
+            addFriendBtn.className = 'bg-green-100 hover:bg-green-200 text-green-700 font-bold py-1.5 px-4 rounded-lg text-xs sm:text-sm friend-action-btn';
+            addFriendBtn.onclick = () => this.showToast('أنتما أصدقاء بالفعل 🎉');
+        } else {
+            addFriendBtn.innerHTML = '<i class="fa-solid fa-user-plus ml-1"></i> إضافة صديق';
+            addFriendBtn.className = 'bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-1.5 px-4 rounded-lg text-xs sm:text-sm friend-action-btn';
+            addFriendBtn.onclick = () => engine.sendFriendRequest(userId);
+        }
+    }
+},
    viewUserProfile(uid) {
         // تخزين uid للانتقال إلى صفحة البروفايل المطلوبة
         sessionStorage.setItem('viewingProfileUID', uid);
