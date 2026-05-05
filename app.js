@@ -262,7 +262,39 @@ window.engine = {
         
         setTimeout(() => input.focus(), 300);
     },
+// تحديث إحصائيات المستخدم
+async updateProfileStats(uid = null) {
+    const userId = uid || auth.currentUser?.uid;
+    if (!userId) return;
+    
+    try {
+        // عدد المنشورات
+        const postsQuery = query(collection(db, "posts"), where("authorId", "==", userId));
+        const postsSnap = await getDocs(postsQuery);
+        const postsCount = document.getElementById('postsCount');
+        if (postsCount) postsCount.textContent = postsSnap.size;
+        
+        // عدد الأصدقاء
+        const q1 = query(collection(db, "friendships"), where("user1", "==", userId));
+        const q2 = query(collection(db, "friendships"), where("user2", "==", userId));
+        const [snap1, snap2] = await Promise.all([getDocs(q1), getDocs(q2)]);
+        const friendsCount = document.getElementById('friendsCount');
+        if (friendsCount) friendsCount.textContent = snap1.size + snap2.size;
+        
+        console.log(`الاحصائيات - منشورات: ${postsSnap.size}, أصدقاء: ${snap1.size + snap2.size}`);
+    } catch (error) {
+        console.error("خطأ في تحديث الإحصائيات:", error);
+    }
+},
 
+// تحديث تاريخ الانضمام
+updateJoinDate() {
+    const joinDateSpan = document.getElementById('joinDate');
+    if (joinDateSpan && auth.currentUser?.metadata?.creationTime) {
+        const date = new Date(auth.currentUser.metadata.creationTime);
+        joinDateSpan.textContent = date.toLocaleDateString('ar-EG');
+    }
+},
     async sendMessageDirect(receiverId, receiverName, messageText) {
         const senderId = auth.currentUser.uid;
         try {
