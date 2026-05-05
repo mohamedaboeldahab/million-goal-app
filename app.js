@@ -198,36 +198,140 @@ if (pageName !== 'profile') {
     },
 
     // قبول طلب الصداقة
-    async acceptFriendRequest(requestId, fromUserId) {
-        const currentUserId = auth.currentUser.uid;
-        try {
-            // تحديث حالة الطلب
-            await updateDoc(doc(db, "friend_requests", requestId), { status: 'accepted' });
-            
-            // إنشاء علاقة صداقة
+  // فتح نافذة المحادثة المباشرة (بدلاً من الـ prompt)
+openChat(receiverId, receiverName) {
+    // إنشاء نافذة شات جميلة
+    const modal = document.createElement('div');
+    modal.className = 'fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4';
+    modal.innerHTML = `
+        <div class="bg-white rounded-2xl w-full max-w-md overflow-hidden shadow-xl">
+            <div class="bg-sky-500 text-white p-4 flex justify-between items-center">
+                <h3 class="font-bold">محادثة مع ${receiverName}</h3>
+                <button onclick="this.closest('.fixed').remove()" class="text-white text-xl">&times;</button>
+            </div>
+            <div id="chatMessages" class="h-96 overflow-y-auto p-4 space-y-3 bg-gray-50"></div>
+            <div class="p-4 border-t flex gap-2">
+                <input type="text" id="chatInput" placeholder="اكتب رسالتك..." class="flex-1 border rounded-xl px-4 py-2 focus:outline-none focus:border-sky-500">
+                <button id="sendMessageBtn" class="bg-sky-500 text-white px-4 py-2 rounded-xl font-bold">إرسال</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    
+    // تحميل الرسائل السابقة
+    this.loadChatMessages(receiverId, modal.querySelector('#chatMessages'));
+    
+    // إرسال رسالة
+    const sendBtn = modal.querySelector('#sendMessageBtn');
+    const input = modal.querySelector('#chatInput');
+    
+    const sendMessage = () => {
+        const text = input.value.trim();
+        if (!text) return;
+        this.sendMessageDirect(receiverId, receiverName, text);
+        input.value = '';
+    };
+    
+    sendBtn.onclick = sendMessage;
+    input.onkeypress = (e) => { if (e.key === 'Enter') sendMessage(); };
+},
+
+// إرسال رسالة مباشرة (للاستخدام في الشات)
+async sendMessageDirect(receiverId, receiverName, messageText) {
+    const senderId = auth.currentUser.uid;
+    try {
+        await addDoc(collection(db, "messages"), {
+            senderId,
+            receiverId,
+            text: messageText,
+            senderName: auth.currentUser.displayName,
+            senderPhoto: auth.currentUser.photoURL,
+            createdAt: serverTimestamp(),
+            read: false
+        });
+        this.showToast('✅ تم الإرسال');
+    } catch (e) {
+        this.showToast('❌ فشل الإرسال');
+    }
+},
+
+// تحميل رسائل الشات
+async loadChatMessages(receiverId, container) {
+    const senderId = auth.currentUser.uid;
+    const q = query(
+        collection(db, "messages"),
+        where("senderId", "in", [senderId, receiverId]),
+        where("receiverId", "in", [senderId, receiverId]),
+        orderBy("createdAt", "asc")
+    );
+    
+    onSnapshot(q, (snapshot) => {
+        container.innerHTML = '';
+        snapshot.forEach(doc => {
+            const msg = doc.data();
+            const isMe = msg.senderId === senderId;
+            const div = document.createElement('div');
+            div.className = `flex ${isMe ? 'justify-end' : 'justify-start'}`;
+            div.innerHTML = `
+                <div class="max-w-[70%] ${isMe ? 'bg-sky-500 text-white' : 'bg-white border'} rounded-2xl px-4 py-2">
+                    <p class="text-sm">${msg.text}</p>
+                    <span class="text-xs ${isMe ? 'text-sky-100' : 'text-gray-400'}">${msg.createdAt?.toDate?.().toLocaleTimeString() || ''}</span>
+                </div>
+            `;
+            container.appendChild(div);
+        });
+        container.scrollTop = container.scrollHeight;
+    });
+},
+
+// تحسين دالة acceptFriendRequest
+async acceptFriendRequest(requestId, fromUserId) {
+    const currentUserId = auth.currentUser.uid;
+    try {
+        // تحديث حالة الطلب
+        await updateDoc(doc(db, "friend_requests", requestId), { 
+            status: 'accepted',
+            updatedAt: serverTimestamp()
+        });
+        
+        // إنشاء علاقة صداقة (تجنب التكرار)
+        const existingCheck = await this.checkFriendship(currentUserId, fromUserId);
+        if (!existingCheck) {
             await addDoc(collection(db, "friendships"), {
                 user1: currentUserId,
                 user2: fromUserId,
                 createdAt: serverTimestamp()
             });
-            
-            this.showToast('تم قبول الصداقة 🎉');
-            this.loadFriendRequests(); // إعادة تحميل القائمة
-        } catch (e) {
-            this.showToast('فشل قبول الطلب ⚠️');
         }
-    },
+        
+        this.showToast('🎉 تم قبول الصداقة');
+        
+        // تحديث واجهة الأصدقاء إذا كانت مفتوحة
+        if (document.getElementById('friendRequestsList')) {
+            location.reload(); // إعادة تحميل بسيطة لتحديث البيانات
+        }
+    } catch (e) {
+        console.error(e);
+        this.showToast('⚠️ فشل قبول الطلب');
+    }
+},
 
-    // رفض طلب الصداقة
-    async rejectFriendRequest(requestId) {
-        try {
-            await updateDoc(doc(db, "friend_requests", requestId), { status: 'rejected' });
-            this.showToast('تم رفض الطلب');
-            this.loadFriendRequests();
-        } catch (e) {
-            this.showToast('فشل رفض الطلب ⚠️');
-        }
-    },
+// تحسين دالة rejectFriendRequest
+async rejectFriendRequest(requestId) {
+    try {
+        await updateDoc(doc(db, "friend_requests", requestId), { 
+            status: 'rejected',
+            updatedAt: serverTimestamp()
+        });
+        this.showToast('تم رفض الطلب');
+        
+        // تحديث الواجهة
+        const reqElement = document.querySelector(`button[onclick*="rejectFriendRequest('${requestId}')"]`)?.closest('.flex');
+        if (reqElement) reqElement.remove();
+    } catch (e) {
+        this.showToast('⚠️ فشل رفض الطلب');
+    }
+},
 
     // إرسال رسالة
     async sendMessage(receiverId, receiverName) {
