@@ -1414,6 +1414,7 @@ updateJoinDate() {
     }
 };
 
-window.__firestore_helpers = { collection, query, orderBy, getDocs, addDoc, serverTimestamp, doc, getDoc, where };
+window.__firestore_helpers = { collection, query, orderBy, getDocs, addDoc, serverTimestamp, doc, getDoc, where, limit, startAfter, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, arrayUnion, arrayRemove, increment };
+
 
 window.engine.init();
