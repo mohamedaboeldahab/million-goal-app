@@ -679,7 +679,7 @@ if (pageName !== 'profile') {
             if (container) container.innerHTML = '<p class="text-center text-red-500">تعذر تحميل المنشورات</p>';
         });
     },
-    async activateProfile() {
+     async activateProfile() {
         const targetUID = sessionStorage.getItem('viewingProfileUID') || auth.currentUser?.uid;
         
         // جلب بيانات المستخدم المستهدف
@@ -709,9 +709,8 @@ if (pageName !== 'profile') {
         const emailEl = document.getElementById('profileEmail');
         const bioEl = document.getElementById('profileBio');
         const aboutEl = document.getElementById('aboutBio');
-        const editBtn = document.getElementById('editProfileBtn');
-        const saveBtn = document.getElementById('saveProfileBtn');
-        const logoutBtn = document.querySelector('[onclick="engine.logout()"]');
+        const actionsContainer = document.getElementById('profileActions');
+        if (!actionsContainer) return;
 
         // تعبئة بيانات المستخدم
         if (avatarImg && nameEl) {
@@ -722,45 +721,69 @@ if (pageName !== 'profile') {
             if (aboutEl) aboutEl.textContent = bio;
         }
 
-        // إظهار/إخفاء الأزرار بناءً على ما إذا كان البروفايل يخص المستخدم الحالي
+        // بناء أزرار الإجراءات بناءً على من هو صاحب البروفايل
+        actionsContainer.innerHTML = '';
         if (targetUID !== auth.currentUser?.uid) {
-            // إخفاء أزرار التعديل والتسجيل
-            if (editBtn) editBtn.classList.add('hidden');
-            if (saveBtn) saveBtn.classList.add('hidden');
-            if (logoutBtn) logoutBtn.classList.add('hidden');
+            // --- أزرار لملف تعريف مستخدم آخر ---
+            // زر إرسال رسالة
+            const msgBtn = document.createElement('button');
+            msgBtn.className = 'bg-sky-500 hover:bg-sky-600 text-white font-bold py-1.5 px-4 sm:py-2 sm:px-5 rounded-lg text-xs sm:text-sm';
+            msgBtn.innerHTML = '<i class="fa-solid fa-message ml-1"></i> إرسال رسالة';
+            msgBtn.onclick = () => alert('سيتم تطوير ميزة المراسلة قريباً');
+            actionsContainer.appendChild(msgBtn);
+
+            // زر إضافة صديق
+            const addFriendBtn = document.createElement('button');
+            addFriendBtn.className = 'bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-1.5 px-4 sm:py-2 sm:px-5 rounded-lg text-xs sm:text-sm';
+            addFriendBtn.innerHTML = '<i class="fa-solid fa-user-plus ml-1"></i> إضافة صديق';
+            addFriendBtn.onclick = () => alert('سيتم تطوير ميزة الصداقة قريباً');
+            actionsContainer.appendChild(addFriendBtn);
+
             // عدم إظهار البريد الإلكتروني للآخرين
             if (emailEl) emailEl.textContent = '';
+
         } else {
-            // إظهار الأزرار للمستخدم الحالي
-            if (editBtn) editBtn.classList.remove('hidden');
-            if (logoutBtn) {
-                logoutBtn.classList.remove('hidden');
-                logoutBtn.classList.add('flex'); // لأنه قد يكون لديه display: flex
-            }
+            // --- أزرار للملف الشخصي الخاص بك ---
+            const editBtn = document.createElement('button');
+            editBtn.id = 'editProfileBtn';
+            editBtn.className = 'bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-1.5 px-4 sm:py-2 sm:px-5 rounded-lg text-xs sm:text-sm';
+            editBtn.innerHTML = '<i class="fa-solid fa-pen-to-square"></i> تعديل';
+            actionsContainer.appendChild(editBtn);
+
+            const saveBtn = document.createElement('button');
+            saveBtn.id = 'saveProfileBtn';
+            saveBtn.className = 'bg-sky-500 hover:bg-sky-600 text-white font-bold py-1.5 px-4 sm:py-2 sm:px-5 rounded-lg text-xs sm:text-sm hidden';
+            saveBtn.innerHTML = '<i class="fa-solid fa-check"></i> حفظ';
+            actionsContainer.appendChild(saveBtn);
+
+            const logoutBtn = document.createElement('button');
+            logoutBtn.className = 'bg-white border border-red-200 text-red-500 hover:bg-red-50 font-bold py-1.5 px-4 sm:py-2 sm:px-5 rounded-lg text-xs sm:text-sm';
+            logoutBtn.innerHTML = '<i class="fa-solid fa-right-from-bracket"></i> خروج';
+            logoutBtn.onclick = () => this.logout();
+            actionsContainer.appendChild(logoutBtn);
+            
             if (emailEl) emailEl.textContent = auth.currentUser.email || '';
 
-            // تفعيل أزرار التعديل (خاصة بالبروفايل الشخصي)
-            if (editBtn && saveBtn) {
-                editBtn.addEventListener('click', () => {
-                    if (nameEl) { nameEl.contentEditable = 'true'; nameEl.classList.add('bg-yellow-50','px-2','rounded','outline-none'); }
-                    if (bioEl) { bioEl.contentEditable = 'true'; bioEl.classList.add('bg-yellow-50','px-2','rounded','outline-none'); }
-                    editBtn.classList.add('hidden'); saveBtn.classList.remove('hidden');
-                });
-                saveBtn.addEventListener('click', async () => {
-                    if (nameEl) { nameEl.contentEditable = 'false'; nameEl.classList.remove('bg-yellow-50','px-2','rounded','outline-none'); }
-                    if (bioEl) { bioEl.contentEditable = 'false'; bioEl.classList.remove('bg-yellow-50','px-2','rounded','outline-none'); }
-                    editBtn.classList.remove('hidden'); saveBtn.classList.add('hidden');
-                    const n = nameEl ? nameEl.textContent.trim() : '';
-                    const b = bioEl ? bioEl.textContent.trim() : '';
-                    try {
-                        await this.updateUserProfile({ displayName: n, bio: b });
-                        if (aboutEl) aboutEl.textContent = b;
-                        this.showToast('تم حفظ البيانات ☁️');
-                    } catch(e) { this.showToast('فشل الحفظ ⚠️'); }
-                });
-            }
+            // تفعيل أزرار التحرير والحفظ
+            editBtn.addEventListener('click', () => {
+                if (nameEl) { nameEl.contentEditable = 'true'; nameEl.classList.add('bg-yellow-50','px-2','rounded','outline-none'); }
+                if (bioEl) { bioEl.contentEditable = 'true'; bioEl.classList.add('bg-yellow-50','px-2','rounded','outline-none'); }
+                editBtn.classList.add('hidden'); saveBtn.classList.remove('hidden');
+            });
+            saveBtn.addEventListener('click', async () => {
+                if (nameEl) { nameEl.contentEditable = 'false'; nameEl.classList.remove('bg-yellow-50','px-2','rounded','outline-none'); }
+                if (bioEl) { bioEl.contentEditable = 'false'; bioEl.classList.remove('bg-yellow-50','px-2','rounded','outline-none'); }
+                editBtn.classList.remove('hidden'); saveBtn.classList.add('hidden');
+                const n = nameEl ? nameEl.textContent.trim() : '';
+                const b = bioEl ? bioEl.textContent.trim() : '';
+                try {
+                    await this.updateUserProfile({ displayName: n, bio: b });
+                    if (aboutEl) aboutEl.textContent = b;
+                    this.showToast('تم حفظ البيانات ☁️');
+                } catch(e) { this.showToast('فشل الحفظ ⚠️'); }
+            });
 
-            // رفع الصورة مع ضغط (للمستخدم الحالي فقط)
+            // رفع الصورة مع ضغط
             document.getElementById('avatarOverlay')?.addEventListener('click', () => document.getElementById('avatarFileInput').click());
             document.getElementById('avatarFileInput')?.addEventListener('change', (e) => {
                 const file = e.target.files[0];
