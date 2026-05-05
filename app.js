@@ -108,7 +108,9 @@ window.engine = {
         if (!content) return;
         document.querySelectorAll('.nav-link').forEach(l => l.classList.toggle('active', l.dataset.page === pageName));
         content.innerHTML = '<div class="flex justify-center py-20"><div class="w-8 h-8 border-4 border-sky-500 border-t-transparent rounded-full animate-spin"></div></div>';
-
+if (pageName !== 'profile') {
+    sessionStorage.removeItem('viewingProfileUID');
+}
         // تدمير المراقب القديم قبل تحميل أي صفحة جديدة
         if (this._observer) {
             this._observer.disconnect();
