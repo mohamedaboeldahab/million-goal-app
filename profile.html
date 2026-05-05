@@ -74,3 +74,18 @@
         </div>
     </div>
 </div>
+
+<!-- ========== سكريبت تحميل المنشورات تلقائياً ========== -->
+<script>
+    (function() {
+        function waitForEngine() {
+            if (window.engine && window.engine.listenToProfilePosts) {
+                window.engine.listenToProfilePosts('userPostsContainer');
+                window.engine.activateProfile();
+            } else {
+                setTimeout(waitForEngine, 100);
+            }
+        }
+        waitForEngine();
+    })();
+</script>
