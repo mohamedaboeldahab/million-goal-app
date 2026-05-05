@@ -960,7 +960,12 @@ window.engine = {
         // الحصول على الـ UID المستهدف
         let targetUID = sessionStorage.getItem('viewingProfileUID');
         const currentUID = auth.currentUser?.uid;
-        
+           const fromNavBar = !window._lastProfileClick || window._lastProfileClick === 'navbar';
+    
+    if (fromNavBar) {
+        // إذا جاء من شريط التنقل، نمسح التخزين تماماً
+        sessionStorage.removeItem('viewingProfileUID');
+    }
         // إذا كان targetUID موجود ويساوي المستخدم الحالي، نمسحه
         if (targetUID === currentUID) {
             sessionStorage.removeItem('viewingProfileUID');
