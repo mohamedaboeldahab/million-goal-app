@@ -6,9 +6,12 @@
     <title>البروفايل – Shark UP</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Firebase scripts -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <!-- ✅ إضافة Firebase Storage للتعامل مع رفع الصور -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
     <style>
         body { font-family: 'Tajawal', sans-serif; background: #f0f2f5; margin: 0; }
         @keyframes swim { 0% { transform: translateX(-8px) rotate(-2deg); } 100% { transform: translateX(8px) rotate(2deg); } }
@@ -18,7 +21,7 @@
 </head>
 <body class="bg-gray-50">
 
-<!-- الهيدر المستقل (يظهر فقط عند الفتح المباشر) -->
+<!-- الهيدر المستقل -->
 <div id="standaloneHeader" class="bg-gradient-to-l from-sky-500 to-blue-600 text-white px-4 py-3 flex items-center gap-3 shadow-md sticky top-0 z-50" style="display:none;">
     <button id="backBtnInHeader" onclick="window.location.href='index.html'" class="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center text-white hover:bg-white/30 transition">
         <i class="fa-solid fa-arrow-right text-sm"></i>
@@ -45,22 +48,24 @@
     <div class="bg-white rounded-2xl shadow-xl -mt-10 px-5 pt-8 pb-5 relative z-10">
         <div class="flex items-start gap-4">
             <!-- الصورة المربعة -->
-            <div class="w-24 h-24 rounded-2xl border-4 border-white shadow-lg overflow-hidden bg-white relative -mt-14 group flex-shrink-0">
+            <div class="w-24 h-24 rounded-2xl border-4 border-white shadow-lg overflow-hidden bg-white relative -mt-14 group flex-shrink-0 cursor-pointer" id="avatarBox">
                 <img id="profileAvatar" class="w-full h-full object-cover" src="" alt="الصورة">
-                <div id="avatarOverlay" class="absolute inset-0 bg-black/30 hidden group-hover:flex items-center justify-center text-white cursor-pointer text-2xl">
+                <div id="avatarOverlay" class="absolute inset-0 bg-black/30 hidden group-hover:flex items-center justify-center text-white text-2xl">
                     <i class="fa-solid fa-camera"></i>
                 </div>
                 <input type="file" id="avatarFileInput" accept="image/*" class="hidden">
             </div>
-            <!-- الاسم -->
+            <!-- الاسم وقابل للتعديل -->
             <div class="mt-2 flex-1">
                 <div class="flex items-center gap-1 flex-wrap">
-                    <h1 id="profileName" class="text-lg font-black text-gray-800">جار التحميل...</h1>
+                    <span id="profileNameDisplay" class="text-lg font-black text-gray-800"></span>
+                    <input id="profileNameInput" class="hidden text-lg font-black text-gray-800 bg-gray-100 rounded px-2 py-1 w-full" placeholder="الاسم">
                     <span class="text-lg">🦈</span>
                     <span class="bg-sky-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold"><i class="fa-solid fa-shield-check"></i> موثّق</span>
                 </div>
                 <p id="profileEmail" class="text-xs text-gray-400 mt-1"></p>
                 <p id="profileBio" class="text-xs text-gray-500 mt-1"></p>
+                <textarea id="profileBioInput" class="hidden text-xs text-gray-500 mt-1 bg-gray-100 rounded p-2 w-full" rows="2" placeholder="نبذة عنك"></textarea>
             </div>
         </div>
 
@@ -90,7 +95,7 @@
         </div>
     </div>
 
-    <!-- شاشة "الحساب مغلق" -->
+    <!-- شاشة الحساب المغلق -->
     <div id="closedAccountScreen" class="bg-white rounded-2xl shadow-xl px-5 py-12 text-center mt-6 hidden">
         <div class="text-6xl mb-4">🔒</div>
         <h2 class="text-xl font-black text-gray-800 mb-2">هذا الحساب مغلق</h2>
@@ -112,6 +117,7 @@
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
     const auth = firebase.auth();
+    const storage = firebase.storage();
 
     function fixPhotoUrl(url) {
         if (!url) return "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='%23e2e8f0'/%3E%3Ctext x='50' y='67' font-size='60' text-anchor='middle' fill='%2394a3b8'%3E🦈%3C/text%3E%3C/svg%3E";
@@ -127,9 +133,11 @@
 
     const elements = {
         avatar: document.getElementById('profileAvatar'),
-        name: document.getElementById('profileName'),
+        nameDisplay: document.getElementById('profileNameDisplay'),
+        nameInput: document.getElementById('profileNameInput'),
         email: document.getElementById('profileEmail'),
         bio: document.getElementById('profileBio'),
+        bioInput: document.getElementById('profileBioInput'),
         about: document.getElementById('aboutBio'),
         posts: document.getElementById('userPostsContainer'),
         edit: document.getElementById('editProfileBtn'),
@@ -137,6 +145,7 @@
         logout: document.getElementById('logoutBtn'),
         overlay: document.getElementById('avatarOverlay'),
         fileInput: document.getElementById('avatarFileInput'),
+        avatarBox: document.getElementById('avatarBox'),
         header: document.getElementById('standaloneHeader'),
         container: document.getElementById('profileContainer'),
         closed: document.getElementById('closedAccountScreen')
@@ -168,7 +177,6 @@
         elements.closed.classList.remove('hidden');
     }
 
-    // عرض المنشورات بعد الترتيب اليدوي
     function renderPosts(docsArray) {
         elements.posts.innerHTML = '';
         if (docsArray.length === 0) {
@@ -192,7 +200,7 @@
         });
     }
 
-    // بروفايل عام
+    // تحميل بروفايل عام
     async function loadPublicProfile(uid) {
         if (!uid || uid === 'undefined' || uid.trim() === '') return showClosed();
         elements.edit.style.display = 'none';
@@ -200,12 +208,13 @@
         elements.logout.style.display = 'none';
         if (elements.overlay) elements.overlay.style.display = 'none';
         if (elements.fileInput) elements.fileInput.disabled = true;
+        if (elements.avatarBox) elements.avatarBox.style.cursor = 'default';
 
         try {
             const userDoc = await db.collection("users").doc(uid).get();
             if (!userDoc.exists) return showClosed();
             const userData = userDoc.data();
-            elements.name.textContent = userData.displayName || 'مستخدم';
+            elements.nameDisplay.textContent = userData.displayName || 'مستخدم';
             elements.avatar.src = fixPhotoUrl(userData.photoURL);
             elements.bio.textContent = userData.bio || '';
             elements.about.textContent = userData.bio || '';
@@ -220,7 +229,7 @@
         }
     }
 
-    // بروفايل شخصي
+    // تحميل البروفايل الشخصي
     async function loadOwnProfile() {
         const user = auth.currentUser;
         if (!user) {
@@ -230,10 +239,13 @@
         try {
             const userDoc = await db.collection("users").doc(user.uid).get();
             const userData = userDoc.data() || {};
+            const name = userData.displayName || user.displayName || 'مستخدم';
+            elements.nameDisplay.textContent = name;
+            elements.nameInput.value = name;
             elements.avatar.src = fixPhotoUrl(userData.photoURL || user.photoURL);
-            elements.name.textContent = userData.displayName || user.displayName || 'مستخدم';
             elements.bio.textContent = userData.bio || '';
-            elements.about.textContent = userData.bio || '';
+            elements.bioInput.value = userData.bio || '';
+            elements.about.textContent = userData.bio || '🦈 مؤسس في Shark Hub';
             elements.email.textContent = user.email || '';
 
             const snap = await db.collection("posts").where("authorId", "==", user.uid).get();
@@ -245,6 +257,95 @@
         }
     }
 
+    // ✅ تفعيل وضع التعديل
+    elements.edit.addEventListener('click', () => {
+        elements.nameDisplay.classList.add('hidden');
+        elements.nameInput.classList.remove('hidden');
+        elements.bio.classList.add('hidden');
+        elements.bioInput.classList.remove('hidden');
+        elements.edit.classList.add('hidden');
+        elements.save.classList.remove('hidden');
+    });
+
+    // ✅ حفظ التعديلات
+    elements.save.addEventListener('click', async () => {
+        const user = auth.currentUser;
+        if (!user) return;
+        const newName = elements.nameInput.value.trim();
+        const newBio = elements.bioInput.value.trim();
+        if (!newName) {
+            alert("الرجاء إدخال الاسم");
+            return;
+        }
+        elements.save.disabled = true;
+        try {
+            // تحديث في Firestore
+            await db.collection("users").doc(user.uid).set({
+                displayName: newName,
+                bio: newBio
+            }, { merge: true });
+
+            // تحديث الاسم في حساب المصادقة
+            await user.updateProfile({ displayName: newName });
+
+            // تحديث واجهة المستخدم
+            elements.nameDisplay.textContent = newName;
+            elements.bio.textContent = newBio || '';
+            elements.about.textContent = newBio || '🦈 مؤسس في Shark Hub';
+
+            // إخفاء الحقول والعودة للوضع الطبيعي
+            elements.nameDisplay.classList.remove('hidden');
+            elements.nameInput.classList.add('hidden');
+            elements.bio.classList.remove('hidden');
+            elements.bioInput.classList.add('hidden');
+            elements.edit.classList.remove('hidden');
+            elements.save.classList.add('hidden');
+        } catch (error) {
+            alert("فشل الحفظ: " + error.message);
+        } finally {
+            elements.save.disabled = false;
+        }
+    });
+
+    // ✅ رفع الصورة الشخصية
+    elements.avatarBox.addEventListener('click', () => {
+        if (elements.edit.style.display !== 'none') { // فقط في البروفايل الشخصي
+            elements.fileInput.click();
+        }
+    });
+
+    elements.fileInput.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        if (!file.type.startsWith('image/')) {
+            alert("الرجاء اختيار ملف صورة");
+            return;
+        }
+        const user = auth.currentUser;
+        if (!user) return;
+        
+        // إظهار مؤشر تحميل بسيط
+        elements.avatar.style.opacity = '0.5';
+        try {
+            // رفع الصورة إلى Firebase Storage
+            const storageRef = storage.ref(`avatars/${user.uid}/${Date.now()}_${file.name}`);
+            const snapshot = await storageRef.put(file);
+            const downloadURL = await snapshot.ref.getDownloadURL();
+
+            // تحديث Firestore
+            await db.collection("users").doc(user.uid).update({ photoURL: downloadURL });
+            // تحديث حساب المصادقة
+            await user.updateProfile({ photoURL: downloadURL });
+            // تحديث الواجهة
+            elements.avatar.src = fixPhotoUrl(downloadURL);
+        } catch (error) {
+            alert("فشل رفع الصورة: " + error.message);
+        } finally {
+            elements.avatar.style.opacity = '1';
+            elements.fileInput.value = ''; // لتفعيل التغيير مرة أخرى
+        }
+    });
+
     // بدء التشغيل
     if (profileUid) {
         loadPublicProfile(profileUid);
@@ -255,8 +356,8 @@
         });
     }
 
-    // زر الخروج
-    elements.logout?.addEventListener('click', async () => {
+    // تسجيل الخروج
+    elements.logout.addEventListener('click', async () => {
         if (confirm("هل تريد مغادرة المحيط؟")) {
             await auth.signOut();
             window.location.href = "index.html";
