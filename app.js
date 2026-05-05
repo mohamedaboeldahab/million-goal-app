@@ -841,17 +841,17 @@ if (pageName !== 'profile') {
         if (targetUID !== auth.currentUser?.uid) {
             // --- أزرار لملف تعريف مستخدم آخر ---
             // زر إرسال رسالة
-            const msgBtn = document.createElement('button');
+              const msgBtn = document.createElement('button');
             msgBtn.className = 'bg-sky-500 hover:bg-sky-600 text-white font-bold py-1.5 px-4 sm:py-2 sm:px-5 rounded-lg text-xs sm:text-sm';
             msgBtn.innerHTML = '<i class="fa-solid fa-message ml-1"></i> إرسال رسالة';
-            msgBtn.onclick = () => alert('سيتم تطوير ميزة المراسلة قريباً');
+            msgBtn.onclick = () => engine.sendMessage(targetUID, profile.displayName || 'مستخدم');
             actionsContainer.appendChild(msgBtn);
 
             // زر إضافة صديق
             const addFriendBtn = document.createElement('button');
             addFriendBtn.className = 'bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-1.5 px-4 sm:py-2 sm:px-5 rounded-lg text-xs sm:text-sm';
             addFriendBtn.innerHTML = '<i class="fa-solid fa-user-plus ml-1"></i> إضافة صديق';
-            addFriendBtn.onclick = () => alert('سيتم تطوير ميزة الصداقة قريباً');
+            addFriendBtn.onclick = () => engine.sendFriendRequest(targetUID);
             actionsContainer.appendChild(addFriendBtn);
 
             // عدم إظهار البريد الإلكتروني للآخرين
