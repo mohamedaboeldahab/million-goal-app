@@ -156,10 +156,13 @@ function waitForGlobals(cb) {
 }
 
 waitForGlobals(() => {
-    const { collection, query, orderBy, getDocs, addDoc, serverTimestamp, doc, getDoc, limit, startAfter } = window.__firestore_helpers;
+    const { collection, query, orderBy, getDocs, addDoc, serverTimestamp, doc, getDoc } = window.__firestore_helpers;
     const db = window.db, auth = window.auth, engine = window.engine;
 
-    const PAGE_SIZE = 10; // عدد العناصر في كل تحميلة
+    const PAGE_SIZE = 10;
+    let currentOffset = 0;
+    let allItemsCache = {};
+    let currentFilteredItems = [];
 
     function extractYouTubeID(url) {
         if (!url) return null;
@@ -178,16 +181,15 @@ waitForGlobals(() => {
     window.academy = {
         currentTab: 'courses',
         currentSubcategory: 'الكل',
-        allSubcategories: [],
-        lastDoc: null,      // آخر وثيقة تم تحميلها (للـ pagination)
-        isLoading: false,   // لمنع التحميل المتكرر
-        hasMore: true,      // هل يوجد المزيد من البيانات؟
-        itemsList: [],      // قائمة العناصر المحملة حالياً
+        allItems: [],
+        isLoading: false,
+        hasMore: true,
+        visibleCount: PAGE_SIZE,
 
         switchTab(tab) {
             this.currentTab = tab;
             this.currentSubcategory = 'الكل';
-            this.resetPagination();
+            this.resetAndLoad();
             ['courses','articles','videos'].forEach(t => {
                 const btn = document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1));
                 if (btn) {
@@ -198,118 +200,89 @@ waitForGlobals(() => {
                     }
                 }
             });
-            this.loadData(true);
         },
 
-        resetPagination() {
-            this.lastDoc = null;
+        resetAndLoad() {
+            this.allItems = [];
+            this.visibleCount = PAGE_SIZE;
             this.hasMore = true;
-            this.itemsList = [];
-            this.allSubcategories = [];
+            this.currentSubcategory = 'الكل';
+            this.loadAllData();
         },
 
-        async loadData(reset = true) {
-            if (reset) {
-                this.resetPagination();
-            }
-            
-            if (this.isLoading) return;
-            if (!this.hasMore && !reset) {
-                this.showToast('🎉 لقد وصلت إلى نهاية المحتوى!', 'info');
-                return;
-            }
+        async loadAllData() {
+            const grid = document.getElementById('academyGrid');
+            if (!grid) return;
             
             this.isLoading = true;
-            this.showLoading(true);
-            
-            const grid = document.getElementById('academyGrid');
-            if (reset && grid) {
-                grid.innerHTML = '<div class="flex justify-center py-20"><div class="w-6 h-6 border-2 border-sky-500 border-t-transparent rounded-full animate-spin"></div></div>';
-            }
+            grid.innerHTML = '<div class="flex justify-center py-20"><div class="w-6 h-6 border-2 border-sky-500 border-t-transparent rounded-full animate-spin"></div></div>';
             
             const map = { courses: 'academy_courses', articles: 'academy_articles', videos: 'academy_videos' };
             const col = map[this.currentTab];
 
             try {
-                // بناء الاستعلام مع pagination
-                let q;
-                if (this.lastDoc) {
-                    q = query(collection(db, col), orderBy('createdAt', 'desc'), startAfter(this.lastDoc), limit(PAGE_SIZE));
-                } else {
-                    q = query(collection(db, col), orderBy('createdAt', 'desc'), limit(PAGE_SIZE));
-                }
-                
+                const q = query(collection(db, col), orderBy('createdAt', 'desc'));
                 const snap = await getDocs(q);
                 
-                // تحديث آخر وثيقة
-                this.lastDoc = snap.docs[snap.docs.length - 1];
-                this.hasMore = snap.docs.length === PAGE_SIZE;
+                this.allItems = [];
+                const subcats = new Set(['الكل']);
                 
-                // تجميع الفئات الفرعية
-                const newItems = [];
                 snap.forEach(d => {
                     const data = d.data();
-                    newItems.push({ id: d.id, ...data });
-                    if (data.subcategory && !this.allSubcategories.includes(data.subcategory)) {
-                        this.allSubcategories.push(data.subcategory);
-                    }
+                    this.allItems.push({ id: d.id, ...data });
+                    if (data.subcategory) subcats.add(data.subcategory);
                 });
                 
-                this.itemsList = reset ? newItems : [...this.itemsList, ...newItems];
+                this.hasMore = this.allItems.length > PAGE_SIZE;
+                this.renderSubcategoryChips(Array.from(subcats));
+                this.renderItems();
                 
-                // عرض العناصر
-                this.renderItems(reset);
-                
-                // تحديث أزرار الفئات الفرعية (مرة واحدة فقط)
-                if (reset) {
-                    const subcatsArray = ['الكل', ...this.allSubcategories.sort()];
-                    this.renderSubcategoryChips(subcatsArray);
-                }
-                
-                // إظهار/إخفاء زر التحميل
-                const loadMoreContainer = document.getElementById('loadMoreContainer');
-                if (loadMoreContainer) {
-                    loadMoreContainer.classList.toggle('hidden', !this.hasMore);
-                }
-                
-                if (snap.empty && reset) {
+                if (this.allItems.length === 0) {
                     const msgs = { courses: '📚 لا توجد كورسات', articles: '📄 لا توجد مقالات', videos: '🎬 لا توجد فيديوهات' };
                     grid.innerHTML = `<div class="text-center py-16 text-gray-400 text-sm">${msgs[this.currentTab]}</div>`;
                 }
                 
             } catch(e) {
                 console.error(e);
-                const grid = document.getElementById('academyGrid');
-                if (grid && reset) {
-                    grid.innerHTML = '<div class="text-center py-16 text-red-400 text-sm">⚠️ فشل الاتصال بالخادم</div>';
-                }
+                grid.innerHTML = '<div class="text-center py-16 text-red-400 text-sm">⚠️ فشل الاتصال بالخادم</div>';
             } finally {
                 this.isLoading = false;
-                this.showLoading(false);
             }
         },
         
         loadMore() {
-            if (!this.isLoading && this.hasMore) {
-                this.loadData(false);
+            if (!this.isLoading && this.visibleCount < this.allItems.length) {
+                this.visibleCount = Math.min(this.visibleCount + PAGE_SIZE, this.allItems.length);
+                this.renderItems();
+                
+                const loadMoreContainer = document.getElementById('loadMoreContainer');
+                if (loadMoreContainer) {
+                    loadMoreContainer.classList.toggle('hidden', this.visibleCount >= this.allItems.length);
+                }
+                
+                if (this.visibleCount >= this.allItems.length) {
+                    this.showToast('🎉 لقد وصلت إلى نهاية المحتوى!', 'info');
+                }
             }
         },
 
-        renderItems(reset) {
+        renderItems() {
             const grid = document.getElementById('academyGrid');
             if (!grid) return;
             
             const filtered = this.currentSubcategory === 'الكل' 
-                ? this.itemsList 
-                : this.itemsList.filter(d => d.subcategory === this.currentSubcategory);
+                ? this.allItems 
+                : this.allItems.filter(d => d.subcategory === this.currentSubcategory);
             
-            if (filtered.length === 0 && this.itemsList.length > 0) {
+            const itemsToShow = filtered.slice(0, this.visibleCount);
+            
+            if (itemsToShow.length === 0) {
                 grid.innerHTML = '<div class="text-center py-16 text-gray-400 text-sm">📭 لا يوجد محتوى في هذه الفئة</div>';
                 return;
             }
             
             let html = '';
-            filtered.forEach(d => {
+            itemsToShow.forEach(d => {
                 const title = d.title || 'بدون عنوان';
                 const desc = d.desc || '';
                 const shortDesc = desc.length > 100 ? desc.substring(0,100)+'...' : desc;
@@ -353,10 +326,14 @@ waitForGlobals(() => {
                 </div>`;
             });
             
-            if (reset) {
-                grid.innerHTML = html;
-            } else {
-                grid.insertAdjacentHTML('beforeend', html);
+            grid.innerHTML = html;
+            
+            const loadMoreContainer = document.getElementById('loadMoreContainer');
+            if (loadMoreContainer) {
+                const hasMoreItems = this.currentSubcategory === 'الكل' 
+                    ? this.visibleCount < this.allItems.length
+                    : this.visibleCount < filtered.length;
+                loadMoreContainer.classList.toggle('hidden', !hasMoreItems);
             }
         },
 
@@ -385,73 +362,16 @@ waitForGlobals(() => {
 
         filterBySubcategory(sub) {
             this.currentSubcategory = sub;
-            const filtered = sub === 'الكل' ? this.itemsList : this.itemsList.filter(d => d.subcategory === sub);
-            this.renderFilteredItems(filtered);
-        },
-        
-        renderFilteredItems(filtered) {
-            const grid = document.getElementById('academyGrid');
-            if (!grid) return;
+            this.visibleCount = PAGE_SIZE;
+            this.renderItems();
             
-            if (filtered.length === 0) {
-                grid.innerHTML = '<div class="text-center py-16 text-gray-400 text-sm">📭 لا يوجد محتوى في هذه الفئة</div>';
-                return;
-            }
-            
-            let html = '';
-            filtered.forEach(d => {
-                const title = d.title || 'بدون عنوان';
-                const desc = d.desc || '';
-                const shortDesc = desc.length > 100 ? desc.substring(0,100)+'...' : desc;
-                const authorName = d.authorName || 'Shark UP';
-                const authorPhoto = d.authorPhoto || '';
-                const date = d.createdAt ? new Date(d.createdAt.seconds*1000).toLocaleDateString('ar-EG') : '';
-                const videoLink = d.videoLink || '';
-                const subcategory = d.subcategory || 'أخرى';
-
-                let icon = '📄';
-                let iconBg = 'from-sky-100 to-blue-100';
-                if (this.currentTab === 'courses') {
-                    icon = '📚';
-                    iconBg = 'from-emerald-100 to-teal-100';
-                } else if (this.currentTab === 'videos') {
-                    icon = '🎬';
-                    iconBg = 'from-rose-100 to-pink-100';
-                }
-
-                html += `
-                <div class="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm cursor-pointer card-hover hover:shadow-md transition-all duration-200"
-                     data-id="${d.id}" data-title="${title.replace(/"/g,'&quot;')}" data-author="${authorName.replace(/"/g,'&quot;')}"
-                     data-photo="${authorPhoto.replace(/"/g,'&quot;')}" data-date="${date}" data-video="${videoLink.replace(/"/g,'&quot;')}"
-                     data-tab="${this.currentTab}" onclick="academy.openFromElement(this)">
-                    <div class="flex items-start gap-3">
-                        <div class="w-12 h-12 rounded-xl bg-gradient-to-br ${iconBg} flex items-center justify-center text-2xl flex-shrink-0 shadow-sm">${icon}</div>
-                        <div class="flex-1 min-w-0">
-                            <div class="flex flex-wrap justify-between items-start gap-2">
-                                <h4 class="card-title flex-1">${title}</h4>
-                                <span class="text-[10px] bg-gray-100 px-2 py-0.5 rounded-full text-gray-600 whitespace-nowrap">${subcategory}</span>
-                            </div>
-                            <p class="text-xs text-gray-500 mt-2 mb-2 leading-relaxed">${shortDesc}</p>
-                            <div class="flex items-center gap-2 text-[10px] text-gray-400 mt-1">
-                                ${authorPhoto ? `<img src="${authorPhoto}" class="w-5 h-5 rounded-full object-cover border border-gray-200">` : '<div class="w-5 h-5 rounded-full bg-gradient-to-br from-sky-400 to-blue-500 flex items-center justify-center text-[8px] text-white">🦈</div>'}
-                                <span class="font-bold text-gray-500">${authorName}</span>
-                                <span>·</span>
-                                <span>${date || 'حديث'}</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>`;
-            });
-            grid.innerHTML = html;
-        },
-
-        showLoading(show) {
-            const indicator = document.getElementById('loadingIndicator');
-            if (indicator) {
-                indicator.classList.toggle('hidden', !show);
+            const filtered = sub === 'الكل' ? this.allItems : this.allItems.filter(d => d.subcategory === sub);
+            const loadMoreContainer = document.getElementById('loadMoreContainer');
+            if (loadMoreContainer) {
+                loadMoreContainer.classList.toggle('hidden', this.visibleCount >= filtered.length);
             }
         },
-        
+
         showToast(message, type = 'success') {
             const bgColor = type === 'success' ? 'bg-green-500' : 'bg-sky-500';
             const toast = document.createElement('div');
@@ -597,8 +517,7 @@ waitForGlobals(() => {
                 if (document.getElementById('acadVideoLink')) document.getElementById('acadVideoLink').value = '';
                 
                 this.closeAddModal();
-                this.resetPagination();
-                this.loadData(true);
+                this.resetAndLoad();
                 
                 this.showToast('تم النشر بنجاح! 🎉', 'success');
                 
@@ -617,6 +536,6 @@ waitForGlobals(() => {
         categorySelect.addEventListener('change', () => window.academy.toggleVideoLink());
     }
     
-    window.academy.loadData(true);
+    window.academy.resetAndLoad();
 });
 </script>
