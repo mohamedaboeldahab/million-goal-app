@@ -38,27 +38,18 @@ function fixPhotoUrl(url) {
 }
 
 const bgGradients = {
-    // كحلي ملكي مع أرجواني عميق
-    gradient1: 'linear-gradient(135deg, #0f0c29, #302b63, #24243e)', 
-    // أحمر نبيتي غامق مع أسود
-    gradient2: 'linear-gradient(135deg, #4b0000, #000000)', 
-    // أزرق ليل داكن
-    gradient3: 'linear-gradient(135deg, #141e30, #243b55)', 
-    // أخضر غابة عميق (فخم جداً)
-    gradient4: 'linear-gradient(135deg, #134e5e, #71b280)', 
-    // برتقالي محروق مع بني دافئ
-    gradient5: 'linear-gradient(135deg, #2c3e50, #bdc3c7)', 
-    // بنفسجي غامق جداً (Midnight Purple)
-    gradient6: 'linear-gradient(135deg, #200122, #6f0000)', 
-    // رمادي فحمي مع أزرق بترولي
-    gradient7: 'linear-gradient(135deg, #232526, #414345)', 
-    // بنفسجي مع كحلي (Mystic)
-    gradient8: 'linear-gradient(135deg, #2c3e50, #000000)', 
-    // أزرق المحيط المظلم
-    gradient9: 'linear-gradient(135deg, #061161, #781717)', 
-    // ذهبي مطفي مع أسود (Luxury)
-    gradient10: 'linear-gradient(135deg, #1f1c2c, #928dab)' 
+    gradient1: 'linear-gradient(135deg, #0f0c29, #302b63, #24243e)',
+    gradient2: 'linear-gradient(135deg, #4b0000, #000000)',
+    gradient3: 'linear-gradient(135deg, #141e30, #243b55)',
+    gradient4: 'linear-gradient(135deg, #134e5e, #71b280)',
+    gradient5: 'linear-gradient(135deg, #2c3e50, #bdc3c7)',
+    gradient6: 'linear-gradient(135deg, #200122, #6f0000)',
+    gradient7: 'linear-gradient(135deg, #232526, #414345)',
+    gradient8: 'linear-gradient(135deg, #2c3e50, #000000)',
+    gradient9: 'linear-gradient(135deg, #061161, #781717)',
+    gradient10: 'linear-gradient(135deg, #1f1c2c, #928dab)'
 };
+
 window.engine = {
     _allComments: {},
     _allPosts: [],
@@ -118,7 +109,7 @@ window.engine = {
         document.querySelectorAll('.nav-link').forEach(l => l.classList.toggle('active', l.dataset.page === pageName));
         content.innerHTML = '<div class="flex justify-center py-20"><div class="w-8 h-8 border-4 border-sky-500 border-t-transparent rounded-full animate-spin"></div></div>';
 
-        // --- إصلاح: تدمير المراقب القديم قبل تحميل الصفحة الجديدة ---
+        // تدمير المراقب القديم قبل تحميل أي صفحة جديدة
         if (this._observer) {
             this._observer.disconnect();
             this._observer = null;
@@ -141,7 +132,7 @@ window.engine = {
                     this.updateTypeButtons();
                     this.updateCreatorAvatar();
                     this.renderBgPicker();
-                    this.watchStoriesContainer(); // سينشئ observer جديد
+                    this.watchStoriesContainer(); // إنشاء مراقب جديد للقصص
                 }, 50);
             } else if (pageName === 'profile') {
                 setTimeout(() => {
@@ -152,110 +143,106 @@ window.engine = {
             if (typeof setActiveNavLink === 'function') setActiveNavLink(pageName);
         } catch (e) { content.innerHTML = `<div class="text-center py-20 text-slate-400">قريباً..</div>`; }
     },
-// دالة loadAssets بدون orderBy (ترتيب يدوي)
-async loadAssets(containerId) {
-    const userId = auth.currentUser?.uid;
-    if (!userId) return;
 
-    // استعلام بدون orderBy
-    const q = query(collection(db, "assets"), where("userId", "==", userId));
-    const snapshot = await getDocs(q);
-    const container = document.getElementById(containerId);
-    if (!container) return;
+    // ==================== محفظة الأصول ====================
+    async loadAssets(containerId) {
+        const userId = auth.currentUser?.uid;
+        if (!userId) return;
+        const q = query(collection(db, "assets"), where("userId", "==", userId));
+        const snapshot = await getDocs(q);
+        const container = document.getElementById(containerId);
+        if (!container) return;
 
-    if (snapshot.empty) {
-        container.innerHTML = `<div class="text-center py-10 text-gray-400 text-sm">محفظتك فارغة. أضف أصولك الآن!</div>`;
-        this.updateTotalBalance();
-        return;
-    }
+        if (snapshot.empty) {
+            container.innerHTML = `<div class="text-center py-10 text-gray-400 text-sm">محفظتك فارغة. أضف أصولك الآن!</div>`;
+            this.updateTotalBalance();
+            return;
+        }
 
-    // تحويل وترتيب يدوي (الأحدث أولاً)
-    const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-    docs.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+        const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        docs.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
 
-    let html = '';
-    docs.forEach(asset => {
-        const categoryIcons = {
-            'fixed_income': { icon: '🏦', color: 'from-blue-500 to-blue-700', label: 'دخل ثابت' },
-            'stocks': { icon: '📈', color: 'from-emerald-500 to-emerald-700', label: 'أسهم' },
-            'real_estate': { icon: '🏠', color: 'from-amber-500 to-amber-700', label: 'عقار' },
-            'gold': { icon: '🥇', color: 'from-yellow-500 to-yellow-700', label: 'ذهب' },
-            'crypto': { icon: '₿', color: 'from-orange-500 to-orange-700', label: 'عملات رقمية' },
-            'marketing': { icon: '📢', color: 'from-purple-500 to-purple-700', label: 'تسويق' },
-            'business': { icon: '💼', color: 'from-indigo-500 to-indigo-700', label: 'مشروع' },
-            'other': { icon: '📦', color: 'from-gray-500 to-gray-700', label: 'أخرى' }
-        };
-        const cat = categoryIcons[asset.category] || categoryIcons['other'];
+        let html = '';
+        docs.forEach(asset => {
+            const categoryIcons = {
+                'fixed_income': { icon: '🏦', color: 'from-blue-500 to-blue-700', label: 'دخل ثابت' },
+                'stocks': { icon: '📈', color: 'from-emerald-500 to-emerald-700', label: 'أسهم' },
+                'real_estate': { icon: '🏠', color: 'from-amber-500 to-amber-700', label: 'عقار' },
+                'gold': { icon: '🥇', color: 'from-yellow-500 to-yellow-700', label: 'ذهب' },
+                'crypto': { icon: '₿', color: 'from-orange-500 to-orange-700', label: 'عملات رقمية' },
+                'marketing': { icon: '📢', color: 'from-purple-500 to-purple-700', label: 'تسويق' },
+                'business': { icon: '💼', color: 'from-indigo-500 to-indigo-700', label: 'مشروع' },
+                'other': { icon: '📦', color: 'from-gray-500 to-gray-700', label: 'أخرى' }
+            };
+            const cat = categoryIcons[asset.category] || categoryIcons['other'];
 
-        html += `
-        <div class="bg-white rounded-2xl p-4 flex items-center gap-4 shadow-sm border border-gray-100 hover:shadow-md transition">
-            <div class="w-12 h-12 rounded-xl bg-gradient-to-br ${cat.color} flex items-center justify-center text-2xl shadow">
-                ${cat.icon}
-            </div>
-            <div class="flex-1">
-                <h4 class="font-extrabold text-gray-800 text-sm">${asset.name}</h4>
-                <span class="text-xs text-gray-400">${cat.label}</span>
-            </div>
-            <div class="text-right">
-                <div class="font-black text-sky-600">${Number(asset.value).toLocaleString()} ج.م</div>
-                <button onclick="engine.deleteAsset('${asset.id}')" class="text-red-400 text-xs mt-1 hover:underline">حذف</button>
-            </div>
-        </div>`;
-    });
-    container.innerHTML = html;
-    this.updateTotalBalance();
-},
-
-// حفظ أصل جديد
-async saveAsset() {
-    const name = document.getElementById('assetName').value.trim();
-    const value = parseFloat(document.getElementById('assetValue').value);
-    const category = document.getElementById('assetCategory').value;
-
-    if (!name || isNaN(value) || value <= 0) {
-        alert('يرجى إدخال اسم وقيمة صحيحة');
-        return;
-    }
-
-    const userId = auth.currentUser.uid;
-    try {
-        await addDoc(collection(db, "assets"), {
-            userId,
-            name,
-            value,
-            category,
-            createdAt: serverTimestamp()
+            html += `
+            <div class="bg-white rounded-2xl p-4 flex items-center gap-4 shadow-sm border border-gray-100 hover:shadow-md transition">
+                <div class="w-12 h-12 rounded-xl bg-gradient-to-br ${cat.color} flex items-center justify-center text-2xl shadow">
+                    ${cat.icon}
+                </div>
+                <div class="flex-1">
+                    <h4 class="font-extrabold text-gray-800 text-sm">${asset.name}</h4>
+                    <span class="text-xs text-gray-400">${cat.label}</span>
+                </div>
+                <div class="text-right">
+                    <div class="font-black text-sky-600">${Number(asset.value).toLocaleString()} ج.م</div>
+                    <button onclick="engine.deleteAsset('${asset.id}')" class="text-red-400 text-xs mt-1 hover:underline">حذف</button>
+                </div>
+            </div>`;
         });
-        document.getElementById('assetName').value = '';
-        document.getElementById('assetValue').value = '';
-        this.loadAssets('assetsContainer');
-    } catch (error) {
-        this.showToast('❌ حدث خطأ أثناء الحفظ');
-    }
-},
+        container.innerHTML = html;
+        this.updateTotalBalance();
+    },
 
-// حذف أصل
-async deleteAsset(assetId) {
-    if (confirm('هل أنت متأكد من حذف هذا الأصل؟')) {
-        await deleteDoc(doc(db, "assets", assetId));
-        this.loadAssets('assetsContainer');
-    }
-},
+    async saveAsset() {
+        const name = document.getElementById('assetName').value.trim();
+        const value = parseFloat(document.getElementById('assetValue').value);
+        const category = document.getElementById('assetCategory').value;
 
-// تحديث الإجمالي الظاهر
-async updateTotalBalance() {
-    const userId = auth.currentUser?.uid;
-    if (!userId) return;
+        if (!name || isNaN(value) || value <= 0) {
+            alert('يرجى إدخال اسم وقيمة صحيحة');
+            return;
+        }
 
-    const q = query(collection(db, "assets"), where("userId", "==", userId));
-    const snapshot = await getDocs(q);
-    let total = 0;
-    snapshot.forEach(doc => {
-        total += Number(doc.data().value) || 0;
-    });
-    const el = document.getElementById('totalBalance');
-    if (el) el.innerText = total.toLocaleString();
-},
+        const userId = auth.currentUser.uid;
+        try {
+            await addDoc(collection(db, "assets"), {
+                userId,
+                name,
+                value,
+                category,
+                createdAt: serverTimestamp()
+            });
+            document.getElementById('assetName').value = '';
+            document.getElementById('assetValue').value = '';
+            this.loadAssets('assetsContainer');
+        } catch (error) {
+            this.showToast('❌ حدث خطأ أثناء الحفظ');
+        }
+    },
+
+    async deleteAsset(assetId) {
+        if (confirm('هل أنت متأكد من حذف هذا الأصل؟')) {
+            await deleteDoc(doc(db, "assets", assetId));
+            this.loadAssets('assetsContainer');
+        }
+    },
+
+    async updateTotalBalance() {
+        const userId = auth.currentUser?.uid;
+        if (!userId) return;
+
+        const q = query(collection(db, "assets"), where("userId", "==", userId));
+        const snapshot = await getDocs(q);
+        let total = 0;
+        snapshot.forEach(doc => {
+            total += Number(doc.data().value) || 0;
+        });
+        const el = document.getElementById('totalBalance');
+        if (el) el.innerText = total.toLocaleString();
+    },
+
     async updateCreatorAvatar() {
         const img = document.getElementById('creatorAvatar');
         if (!img || !auth.currentUser) return;
@@ -412,12 +399,10 @@ async updateTotalBalance() {
         return views.includes(userId);
     },
 
-    // --- إصلاح: مراقب القصص يصبح جديداً في كل مرة ---
     watchStoriesContainer() {
         const row = document.getElementById('storiesRow');
         if (!row) return;
 
-        // تدمير المراقب السابق إن وجد
         if (this._observer) {
             this._observer.disconnect();
             this._observer = null;
@@ -600,16 +585,17 @@ async updateTotalBalance() {
         try { dateStr = p.createdAt?.toDate().toLocaleString('ar-EG'); } catch (e) { dateStr = '---'; }
         const img = fixPhotoUrl(p.authorPhoto);
         const bg = p.backgroundColor ? bgGradients[p.backgroundColor] : null;
-let html = `
-<div class="bg-white rounded-2xl p-4 mb-4 shadow-sm border border-gray-100">
-    <div class="flex items-center gap-3 mb-3 cursor-pointer" onclick="engine.viewUserProfile('${p.authorId}')">
-        <img src="${img}" class="w-10 h-10 rounded-full border border-sky-200 object-cover" loading="lazy" onerror="this.src='${DEFAULT_AVATAR}'">
-        <div>
-            <span class="font-extrabold text-gray-800 text-sm">${p.authorName || 'مستخدم'}</span>
-            <div class="text-xs text-gray-400">${dateStr}</div>
-        </div>
-    </div>`;
-        
+
+        let html = `
+        <div class="bg-white rounded-2xl p-4 mb-4 shadow-sm border border-gray-100">
+            <div class="flex items-center gap-3 mb-3 cursor-pointer" onclick="engine.viewUserProfile('${p.authorId}')">
+                <img src="${img}" class="w-10 h-10 rounded-full border border-sky-200 object-cover" loading="lazy" onerror="this.src='${DEFAULT_AVATAR}'">
+                <div>
+                    <span class="font-extrabold text-gray-800 text-sm">${p.authorName || 'مستخدم'}</span>
+                    <div class="text-xs text-gray-400">${dateStr}</div>
+                </div>
+            </div>`;
+
         if (bg) {
             html += `
             <div style="background: ${bg}; border-radius: 16px; padding: 16px; margin-bottom: 16px;">
@@ -617,8 +603,7 @@ let html = `
             </div>`;
         } else {
             html += `
-            
-           <p class="text-gray-700 text-sm leading-relaxed mb-4 whitespace-pre-wrap break-words overflow-hidden w-full max-w-full">${p.content}</p>`;
+            <p class="text-gray-700 text-sm leading-relaxed mb-4 whitespace-pre-wrap break-words overflow-hidden w-full max-w-full">${p.content}</p>`;
         }
 
         html += `
@@ -688,107 +673,100 @@ let html = `
         });
     },
 
-activateProfile() {
-    const self = this;
-    
-    // تبويبات التبديل
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            document.querySelectorAll('.tab-btn').forEach(b => { b.classList.remove('active','bg-gray-100'); b.classList.add('text-gray-500'); });
-            btn.classList.add('active','bg-gray-100');
-            btn.classList.remove('text-gray-500');
-            const target = btn.dataset.tab;
-            document.getElementById('tab-posts').classList.toggle('hidden', target !== 'posts');
-            document.getElementById('tab-about').classList.toggle('hidden', target !== 'about');
+    activateProfile() {
+        // تبويبات التبديل
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(b => { b.classList.remove('active','bg-gray-100'); b.classList.add('text-gray-500'); });
+                btn.classList.add('active','bg-gray-100');
+                btn.classList.remove('text-gray-500');
+                const target = btn.dataset.tab;
+                document.getElementById('tab-posts').classList.toggle('hidden', target !== 'posts');
+                document.getElementById('tab-about').classList.toggle('hidden', target !== 'about');
+            });
         });
-    });
 
-    const avatarImg = document.getElementById('profileAvatar');
-    const nameEl = document.getElementById('profileName');
-    const emailEl = document.getElementById('profileEmail');
-    const bioEl = document.getElementById('profileBio');
-    const aboutEl = document.getElementById('aboutBio');
+        const avatarImg = document.getElementById('profileAvatar');
+        const nameEl = document.getElementById('profileName');
+        const emailEl = document.getElementById('profileEmail');
+        const bioEl = document.getElementById('profileBio');
+        const aboutEl = document.getElementById('aboutBio');
 
-    // تحميل بيانات المستخدم
-    if (avatarImg && nameEl) {
-        this.getOrCreateUserProfile().then(profile => {
-            const u = auth.currentUser;
-            avatarImg.src = fixPhotoUrl(profile.photoURL || u.photoURL);
-            nameEl.textContent = profile.displayName || u.displayName || 'مستخدم';
-            const bio = profile.bio || '🦈 عضو في Shark Up';
-            if (bioEl) bioEl.textContent = bio;
-            if (aboutEl) aboutEl.textContent = bio;
-            if (emailEl) emailEl.textContent = u.email || '';
-        });
-    }
+        if (avatarImg && nameEl) {
+            this.getOrCreateUserProfile().then(profile => {
+                const u = auth.currentUser;
+                avatarImg.src = fixPhotoUrl(profile.photoURL || u.photoURL);
+                nameEl.textContent = profile.displayName || u.displayName || 'مستخدم';
+                const bio = profile.bio || '🦈 عضو في Shark Up';
+                if (bioEl) bioEl.textContent = bio;
+                if (aboutEl) aboutEl.textContent = bio;
+                if (emailEl) emailEl.textContent = u.email || '';
+            });
+        }
 
-    // أزرار تعديل وحفظ النبذة
-    const editBtn = document.getElementById('editProfileBtn');
-    const saveBtn = document.getElementById('saveProfileBtn');
-    if (editBtn && saveBtn) {
-        editBtn.addEventListener('click', () => {
-            if (nameEl) { nameEl.contentEditable = 'true'; nameEl.classList.add('bg-yellow-50','px-2','rounded','outline-none'); }
-            if (bioEl) { bioEl.contentEditable = 'true'; bioEl.classList.add('bg-yellow-50','px-2','rounded','outline-none'); }
-            editBtn.classList.add('hidden'); saveBtn.classList.remove('hidden');
-        });
-        saveBtn.addEventListener('click', async () => {
-            if (nameEl) { nameEl.contentEditable = 'false'; nameEl.classList.remove('bg-yellow-50','px-2','rounded','outline-none'); }
-            if (bioEl) { bioEl.contentEditable = 'false'; bioEl.classList.remove('bg-yellow-50','px-2','rounded','outline-none'); }
-            editBtn.classList.remove('hidden'); saveBtn.classList.add('hidden');
-            const n = nameEl ? nameEl.textContent.trim() : '';
-            const b = bioEl ? bioEl.textContent.trim() : '';
-            try {
-                await self.updateUserProfile({ displayName: n, bio: b });
-                if (aboutEl) aboutEl.textContent = b;
-                self.showToast('تم حفظ البيانات ☁️');
-            } catch(e) {
-                self.showToast('فشل الحفظ ⚠️');
-            }
-        });
-    }
-
-    // رفع الصورة مع ضغط
-    document.getElementById('avatarOverlay')?.addEventListener('click', () => document.getElementById('avatarFileInput').click());
-    document.getElementById('avatarFileInput')?.addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            const img = new Image();
-            img.onload = () => {
-                const canvas = document.createElement('canvas');
-                const maxSize = 200;
-                let width = img.width;
-                let height = img.height;
-                if (width > height) {
-                    if (width > maxSize) {
-                        height *= maxSize / width;
-                        width = maxSize;
-                    }
-                } else {
-                    if (height > maxSize) {
-                        width *= maxSize / height;
-                        height = maxSize;
-                    }
+        const editBtn = document.getElementById('editProfileBtn');
+        const saveBtn = document.getElementById('saveProfileBtn');
+        if (editBtn && saveBtn) {
+            editBtn.addEventListener('click', () => {
+                if (nameEl) { nameEl.contentEditable = 'true'; nameEl.classList.add('bg-yellow-50','px-2','rounded','outline-none'); }
+                if (bioEl) { bioEl.contentEditable = 'true'; bioEl.classList.add('bg-yellow-50','px-2','rounded','outline-none'); }
+                editBtn.classList.add('hidden'); saveBtn.classList.remove('hidden');
+            });
+            saveBtn.addEventListener('click', async () => {
+                if (nameEl) { nameEl.contentEditable = 'false'; nameEl.classList.remove('bg-yellow-50','px-2','rounded','outline-none'); }
+                if (bioEl) { bioEl.contentEditable = 'false'; bioEl.classList.remove('bg-yellow-50','px-2','rounded','outline-none'); }
+                editBtn.classList.remove('hidden'); saveBtn.classList.add('hidden');
+                const n = nameEl ? nameEl.textContent.trim() : '';
+                const b = bioEl ? bioEl.textContent.trim() : '';
+                try {
+                    await this.updateUserProfile({ displayName: n, bio: b });
+                    if (aboutEl) aboutEl.textContent = b;
+                    this.showToast('تم حفظ البيانات ☁️');
+                } catch(e) {
+                    this.showToast('فشل الحفظ ⚠️');
                 }
-                canvas.width = width;
-                canvas.height = height;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0, width, height);
-                const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.6);
-                
-                if (avatarImg) avatarImg.src = compressedDataUrl;
-                
-                self.updateUserProfile({ photoURL: compressedDataUrl })
-                    .then(() => self.showToast('تم تغيير الصورة وحفظها ☁️'))
-                    .catch(() => self.showToast('تعذر حفظ الصورة (حاول مجدداً) ⚠️'));
+            });
+        }
+
+        // رفع الصورة مع ضغط
+        document.getElementById('avatarOverlay')?.addEventListener('click', () => document.getElementById('avatarFileInput').click());
+        document.getElementById('avatarFileInput')?.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const maxSize = 200;
+                    let width = img.width, height = img.height;
+                    if (width > height) {
+                        if (width > maxSize) { height *= maxSize / width; width = maxSize; }
+                    } else {
+                        if (height > maxSize) { width *= maxSize / height; height = maxSize; }
+                    }
+                    canvas.width = width; canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.6);
+                    
+                    if (avatarImg) avatarImg.src = compressedDataUrl;
+                    
+                    this.updateUserProfile({ photoURL: compressedDataUrl })
+                        .then(() => this.showToast('تم تغيير الصورة وحفظها ☁️'))
+                        .catch(() => this.showToast('تعذر حفظ الصورة (حاول مجدداً) ⚠️'));
+                };
+                img.src = event.target.result;
             };
-            img.src = event.target.result;
-        };
-        reader.readAsDataURL(file);
-    });
-},
+            reader.readAsDataURL(file);
+        });
+    },
+
+    viewUserProfile(uid) {
+        // الانتقال إلى صفحة البروفايل الشخصي حالياً
+        this.loadPage('profile');
+    },
 
     showToast(message) {
         const toast = document.createElement('div');
@@ -813,23 +791,16 @@ activateProfile() {
         return defaultProfile;
     },
 
-async updateUserProfile(updates) {
-    const uid = auth.currentUser.uid;
-    const ref = doc(db, "users", uid);
-    // استخدام merge: true لدمج البيانات
-    await setDoc(ref, updates, { merge: true });
-    
-    // تحديث صورة زر المستخدم فوراً إذا تغيّرت
-    const userBtn = document.getElementById('userBtn');
-    if (updates.photoURL && userBtn) {
-        userBtn.innerHTML = `<img src="${fixPhotoUrl(updates.photoURL)}" class="w-full h-full object-cover rounded-2xl" loading="lazy">`;
-    }
-},
+    async updateUserProfile(updates) {
+        const uid = auth.currentUser.uid;
+        const ref = doc(db, "users", uid);
+        await setDoc(ref, updates, { merge: true });
+        const userBtn = document.getElementById('userBtn');
+        if (updates.photoURL && userBtn) {
+            userBtn.innerHTML = `<img src="${fixPhotoUrl(updates.photoURL)}" class="w-full h-full object-cover rounded-2xl" loading="lazy">`;
+        }
+    },
 
-    viewUserProfile(uid) {
-    // الانتقال إلى صفحة البروفايل مع تمرير معرف المستخدم
-    window.location.href = `profile.html?uid=${uid}`;
-}, 
     async addComment(postId) {
         const input = document.getElementById(`comm_${postId}`);
         if (!input?.value.trim()) return;
@@ -842,6 +813,7 @@ async updateUserProfile(updates) {
     }
 };
 
-// تصدير الدوال المساعدة للملفات الأخرى (مثل courses.html)
+// تصدير الدوال المساعدة للملفات الأخرى (مثل courses.html و assets.html)
 window.__firestore_helpers = { collection, query, orderBy, getDocs, addDoc, serverTimestamp, doc, getDoc, where };
+
 window.engine.init();
