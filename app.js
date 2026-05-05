@@ -1256,11 +1256,18 @@ window.engine = {
         return !snap.empty;
     },
 
-    viewUserProfile(uid) {
+ viewUserProfile(uid) {
+    // التحقق: إذا كان uid هو نفس المستخدم الحالي
+    if (uid === auth.currentUser?.uid) {
+        // مسح التخزين المؤقت للبروفايل
+        sessionStorage.removeItem('viewingProfileUID');
+        this.loadPage('profile');
+    } else {
+        // تخزين uid للشخص الآخر
         sessionStorage.setItem('viewingProfileUID', uid);
         this.loadPage('profile');
-    },
-
+    }
+},
     showToast(message) {
         const toast = document.createElement('div');
         toast.className = 'fixed bottom-4 right-4 bg-gray-800 text-white px-4 py-2 rounded-lg text-sm z-50 shadow-lg';
