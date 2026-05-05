@@ -26,22 +26,30 @@
         </button>
     </div>
 
-    <!-- أزرار الفئات الفرعية مع سكرول واضح -->
+    <!-- أزرار الفئات الفرعية -->
     <div class="relative">
         <div class="flex items-center justify-between mb-2 px-1">
-            <span class="text-[10px] text-gray-400 flex items-center gap-1">
-                <i class="fa-solid fa-tag"></i> التصنيفات
-            </span>
-            <span class="text-[10px] text-gray-400 flex items-center gap-1">
-                <i class="fa-solid fa-arrows-left-right"></i> اسحب للمزيد
-            </span>
+            <span class="text-[10px] text-gray-400 flex items-center gap-1"><i class="fa-solid fa-tag"></i> التصنيفات</span>
+            <span class="text-[10px] text-gray-400 flex items-center gap-1"><i class="fa-solid fa-arrows-left-right"></i> اسحب للمزيد</span>
         </div>
-        <div id="subcategoryFilter" class="flex gap-2 overflow-x-auto pb-2" style="scrollbar-width: thin; scrollbar-color: #0ea5e9 #e2e8f0; -webkit-overflow-scrolling: touch;">
-        </div>
+        <div id="subcategoryFilter" class="flex gap-2 overflow-x-auto pb-2" style="scrollbar-width: thin; scrollbar-color: #0ea5e9 #e2e8f0; -webkit-overflow-scrolling: touch;"></div>
     </div>
 
     <!-- قائمة البطاقات -->
     <div id="academyGrid" class="space-y-3 min-h-[150px]"></div>
+    
+    <!-- زر تحميل المزيد -->
+    <div id="loadMoreContainer" class="text-center py-4 hidden">
+        <button id="loadMoreBtn" onclick="academy.loadMore()" class="bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold py-2 px-6 rounded-full text-sm transition-all duration-200">
+            <i class="fa-solid fa-arrow-down ml-1"></i> تحميل المزيد
+        </button>
+    </div>
+    
+    <!-- مؤشر التحميل -->
+    <div id="loadingIndicator" class="text-center py-4 hidden">
+        <div class="w-6 h-6 border-2 border-sky-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+        <p class="text-xs text-gray-400 mt-1">جاري التحميل...</p>
+    </div>
 
     <!-- نافذة عرض المحتوى -->
     <div id="contentModal" class="hidden fixed inset-0 bg-black/90 z-[200] flex items-center justify-center p-4" onclick="if(event.target===this)academy.closeContentModal()">
@@ -114,32 +122,15 @@
 </div>
 
 <style>
-    /* تنسيق السكرول للأزرار */
     #subcategoryFilter {
         scrollbar-width: thin;
         scrollbar-color: #0ea5e9 #e2e8f0;
         -webkit-overflow-scrolling: touch;
     }
-
-    #subcategoryFilter::-webkit-scrollbar {
-        height: 4px;
-    }
-
-    #subcategoryFilter::-webkit-scrollbar-track {
-        background: #e2e8f0;
-        border-radius: 10px;
-    }
-
-    #subcategoryFilter::-webkit-scrollbar-thumb {
-        background: #0ea5e9;
-        border-radius: 10px;
-    }
-
-    #subcategoryFilter::-webkit-scrollbar-thumb:hover {
-        background: #0284c7;
-    }
-
-    /* تنسيق العناوين الطويلة */
+    #subcategoryFilter::-webkit-scrollbar { height: 4px; }
+    #subcategoryFilter::-webkit-scrollbar-track { background: #e2e8f0; border-radius: 10px; }
+    #subcategoryFilter::-webkit-scrollbar-thumb { background: #0ea5e9; border-radius: 10px; }
+    
     .card-title {
         font-weight: 800;
         font-size: 0.9rem;
@@ -147,25 +138,15 @@
         word-break: break-word;
         line-height: 1.4;
     }
-
-    /* تحريك الزر العائم */
+    
     @keyframes float {
         0%, 100% { transform: translateY(0); }
         50% { transform: translateY(-5px); }
     }
+    .fixed.bottom-24.left-6 { animation: float 3s ease-in-out infinite; }
     
-    .fixed.bottom-24.left-6 {
-        animation: float 3s ease-in-out infinite;
-    }
-
-    /* تنسيق البطاقات عند الضغط */
-    .card-hover {
-        transition: all 0.2s ease;
-    }
-    
-    .card-hover:active {
-        transform: scale(0.98);
-    }
+    .card-hover { transition: all 0.2s ease; }
+    .card-hover:active { transform: scale(0.98); }
 </style>
 
 <script>
@@ -175,8 +156,10 @@ function waitForGlobals(cb) {
 }
 
 waitForGlobals(() => {
-    const { collection, query, orderBy, getDocs, addDoc, serverTimestamp, doc, getDoc } = window.__firestore_helpers;
+    const { collection, query, orderBy, getDocs, addDoc, serverTimestamp, doc, getDoc, limit, startAfter } = window.__firestore_helpers;
     const db = window.db, auth = window.auth, engine = window.engine;
+
+    const PAGE_SIZE = 10; // عدد العناصر في كل تحميلة
 
     function extractYouTubeID(url) {
         if (!url) return null;
@@ -187,10 +170,7 @@ waitForGlobals(() => {
             /(?:youtu\.be\/)([A-Za-z0-9_-]{11})/,
             /(?:youtube\.com\/shorts\/)([A-Za-z0-9_-]{11})/
         ];
-        for (let p of patterns) { 
-            const m = url.match(p); 
-            if (m) return m[1]; 
-        }
+        for (let p of patterns) { const m = url.match(p); if (m) return m[1]; }
         const fallback = url.match(/[A-Za-z0-9_-]{11}/);
         return fallback ? fallback[0] : null;
     }
@@ -198,10 +178,16 @@ waitForGlobals(() => {
     window.academy = {
         currentTab: 'courses',
         currentSubcategory: 'الكل',
+        allSubcategories: [],
+        lastDoc: null,      // آخر وثيقة تم تحميلها (للـ pagination)
+        isLoading: false,   // لمنع التحميل المتكرر
+        hasMore: true,      // هل يوجد المزيد من البيانات؟
+        itemsList: [],      // قائمة العناصر المحملة حالياً
 
         switchTab(tab) {
             this.currentTab = tab;
             this.currentSubcategory = 'الكل';
+            this.resetPagination();
             ['courses','articles','videos'].forEach(t => {
                 const btn = document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1));
                 if (btn) {
@@ -212,89 +198,165 @@ waitForGlobals(() => {
                     }
                 }
             });
-            this.loadData();
+            this.loadData(true);
         },
 
-        async loadData() {
-            const grid = document.getElementById('academyGrid');
-            if (!grid) return;
-            grid.innerHTML = '<div class="flex justify-center py-20"><div class="w-6 h-6 border-2 border-sky-500 border-t-transparent rounded-full animate-spin"></div></div>';
+        resetPagination() {
+            this.lastDoc = null;
+            this.hasMore = true;
+            this.itemsList = [];
+            this.allSubcategories = [];
+        },
 
+        async loadData(reset = true) {
+            if (reset) {
+                this.resetPagination();
+            }
+            
+            if (this.isLoading) return;
+            if (!this.hasMore && !reset) {
+                this.showToast('🎉 لقد وصلت إلى نهاية المحتوى!', 'info');
+                return;
+            }
+            
+            this.isLoading = true;
+            this.showLoading(true);
+            
+            const grid = document.getElementById('academyGrid');
+            if (reset && grid) {
+                grid.innerHTML = '<div class="flex justify-center py-20"><div class="w-6 h-6 border-2 border-sky-500 border-t-transparent rounded-full animate-spin"></div></div>';
+            }
+            
             const map = { courses: 'academy_courses', articles: 'academy_articles', videos: 'academy_videos' };
             const col = map[this.currentTab];
 
             try {
-                const q = query(collection(db, col), orderBy('createdAt', 'desc'));
+                // بناء الاستعلام مع pagination
+                let q;
+                if (this.lastDoc) {
+                    q = query(collection(db, col), orderBy('createdAt', 'desc'), startAfter(this.lastDoc), limit(PAGE_SIZE));
+                } else {
+                    q = query(collection(db, col), orderBy('createdAt', 'desc'), limit(PAGE_SIZE));
+                }
+                
                 const snap = await getDocs(q);
                 
-                const subcats = new Set(['الكل']);
-                const docsArray = [];
+                // تحديث آخر وثيقة
+                this.lastDoc = snap.docs[snap.docs.length - 1];
+                this.hasMore = snap.docs.length === PAGE_SIZE;
+                
+                // تجميع الفئات الفرعية
+                const newItems = [];
                 snap.forEach(d => {
                     const data = d.data();
-                    docsArray.push({ id: d.id, ...data });
-                    if (data.subcategory) subcats.add(data.subcategory);
+                    newItems.push({ id: d.id, ...data });
+                    if (data.subcategory && !this.allSubcategories.includes(data.subcategory)) {
+                        this.allSubcategories.push(data.subcategory);
+                    }
                 });
                 
-                if (snap.empty) {
+                this.itemsList = reset ? newItems : [...this.itemsList, ...newItems];
+                
+                // عرض العناصر
+                this.renderItems(reset);
+                
+                // تحديث أزرار الفئات الفرعية (مرة واحدة فقط)
+                if (reset) {
+                    const subcatsArray = ['الكل', ...this.allSubcategories.sort()];
+                    this.renderSubcategoryChips(subcatsArray);
+                }
+                
+                // إظهار/إخفاء زر التحميل
+                const loadMoreContainer = document.getElementById('loadMoreContainer');
+                if (loadMoreContainer) {
+                    loadMoreContainer.classList.toggle('hidden', !this.hasMore);
+                }
+                
+                if (snap.empty && reset) {
                     const msgs = { courses: '📚 لا توجد كورسات', articles: '📄 لا توجد مقالات', videos: '🎬 لا توجد فيديوهات' };
                     grid.innerHTML = `<div class="text-center py-16 text-gray-400 text-sm">${msgs[this.currentTab]}</div>`;
-                    this.renderSubcategoryChips([]);
-                    return;
                 }
-
-                const subcatsArray = Array.from(subcats);
-                this.renderSubcategoryChips(subcatsArray);
-
-                const filtered = this.currentSubcategory === 'الكل' ? docsArray : docsArray.filter(d => d.subcategory === this.currentSubcategory);
-
-                let html = '';
-                filtered.forEach(d => {
-                    const title = d.title || 'بدون عنوان';
-                    const desc = d.desc || '';
-                    const shortDesc = desc.length > 100 ? desc.substring(0,100)+'...' : desc;
-                    const authorName = d.authorName || 'Shark UP';
-                    const authorPhoto = d.authorPhoto || '';
-                    const date = d.createdAt ? new Date(d.createdAt.seconds*1000).toLocaleDateString('ar-EG') : '';
-                    const videoLink = d.videoLink || '';
-                    const subcategory = d.subcategory || 'أخرى';
-
-                    let icon = '📄';
-                    let iconBg = 'from-sky-100 to-blue-100';
-                    if (this.currentTab === 'courses') {
-                        icon = '📚';
-                        iconBg = 'from-emerald-100 to-teal-100';
-                    } else if (this.currentTab === 'videos') {
-                        icon = '🎬';
-                        iconBg = 'from-rose-100 to-pink-100';
-                    }
-
-                    html += `
-                    <div class="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm cursor-pointer card-hover hover:shadow-md transition-all duration-200"
-                         data-id="${d.id}" data-title="${title.replace(/"/g,'&quot;')}" data-author="${authorName.replace(/"/g,'&quot;')}"
-                         data-photo="${authorPhoto.replace(/"/g,'&quot;')}" data-date="${date}" data-video="${videoLink.replace(/"/g,'&quot;')}"
-                         data-tab="${this.currentTab}" onclick="academy.openFromElement(this)">
-                        <div class="flex items-start gap-3">
-                            <div class="w-12 h-12 rounded-xl bg-gradient-to-br ${iconBg} flex items-center justify-center text-2xl flex-shrink-0 shadow-sm">${icon}</div>
-                            <div class="flex-1 min-w-0">
-                                <div class="flex flex-wrap justify-between items-start gap-2">
-                                    <h4 class="card-title flex-1">${title}</h4>
-                                    <span class="text-[10px] bg-gray-100 px-2 py-0.5 rounded-full text-gray-600 whitespace-nowrap">${subcategory}</span>
-                                </div>
-                                <p class="text-xs text-gray-500 mt-2 mb-2 leading-relaxed">${shortDesc}</p>
-                                <div class="flex items-center gap-2 text-[10px] text-gray-400 mt-1">
-                                    ${authorPhoto ? `<img src="${authorPhoto}" class="w-5 h-5 rounded-full object-cover border border-gray-200">` : '<div class="w-5 h-5 rounded-full bg-gradient-to-br from-sky-400 to-blue-500 flex items-center justify-center text-[8px] text-white">🦈</div>'}
-                                    <span class="font-bold text-gray-500">${authorName}</span>
-                                    <span>·</span>
-                                    <span>${date || 'حديث'}</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>`;
-                });
-                grid.innerHTML = html || '<div class="text-center py-16 text-gray-400 text-sm">لا يوجد محتوى في هذه الفئة</div>';
+                
             } catch(e) {
                 console.error(e);
-                grid.innerHTML = '<div class="text-center py-16 text-red-400 text-sm">⚠️ فشل الاتصال بالخادم</div>';
+                const grid = document.getElementById('academyGrid');
+                if (grid && reset) {
+                    grid.innerHTML = '<div class="text-center py-16 text-red-400 text-sm">⚠️ فشل الاتصال بالخادم</div>';
+                }
+            } finally {
+                this.isLoading = false;
+                this.showLoading(false);
+            }
+        },
+        
+        loadMore() {
+            if (!this.isLoading && this.hasMore) {
+                this.loadData(false);
+            }
+        },
+
+        renderItems(reset) {
+            const grid = document.getElementById('academyGrid');
+            if (!grid) return;
+            
+            const filtered = this.currentSubcategory === 'الكل' 
+                ? this.itemsList 
+                : this.itemsList.filter(d => d.subcategory === this.currentSubcategory);
+            
+            if (filtered.length === 0 && this.itemsList.length > 0) {
+                grid.innerHTML = '<div class="text-center py-16 text-gray-400 text-sm">📭 لا يوجد محتوى في هذه الفئة</div>';
+                return;
+            }
+            
+            let html = '';
+            filtered.forEach(d => {
+                const title = d.title || 'بدون عنوان';
+                const desc = d.desc || '';
+                const shortDesc = desc.length > 100 ? desc.substring(0,100)+'...' : desc;
+                const authorName = d.authorName || 'Shark UP';
+                const authorPhoto = d.authorPhoto || '';
+                const date = d.createdAt ? new Date(d.createdAt.seconds*1000).toLocaleDateString('ar-EG') : '';
+                const videoLink = d.videoLink || '';
+                const subcategory = d.subcategory || 'أخرى';
+
+                let icon = '📄';
+                let iconBg = 'from-sky-100 to-blue-100';
+                if (this.currentTab === 'courses') {
+                    icon = '📚';
+                    iconBg = 'from-emerald-100 to-teal-100';
+                } else if (this.currentTab === 'videos') {
+                    icon = '🎬';
+                    iconBg = 'from-rose-100 to-pink-100';
+                }
+
+                html += `
+                <div class="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm cursor-pointer card-hover hover:shadow-md transition-all duration-200"
+                     data-id="${d.id}" data-title="${title.replace(/"/g,'&quot;')}" data-author="${authorName.replace(/"/g,'&quot;')}"
+                     data-photo="${authorPhoto.replace(/"/g,'&quot;')}" data-date="${date}" data-video="${videoLink.replace(/"/g,'&quot;')}"
+                     data-tab="${this.currentTab}" onclick="academy.openFromElement(this)">
+                    <div class="flex items-start gap-3">
+                        <div class="w-12 h-12 rounded-xl bg-gradient-to-br ${iconBg} flex items-center justify-center text-2xl flex-shrink-0 shadow-sm">${icon}</div>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex flex-wrap justify-between items-start gap-2">
+                                <h4 class="card-title flex-1">${title}</h4>
+                                <span class="text-[10px] bg-gray-100 px-2 py-0.5 rounded-full text-gray-600 whitespace-nowrap">${subcategory}</span>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-2 mb-2 leading-relaxed">${shortDesc}</p>
+                            <div class="flex items-center gap-2 text-[10px] text-gray-400 mt-1">
+                                ${authorPhoto ? `<img src="${authorPhoto}" class="w-5 h-5 rounded-full object-cover border border-gray-200">` : '<div class="w-5 h-5 rounded-full bg-gradient-to-br from-sky-400 to-blue-500 flex items-center justify-center text-[8px] text-white">🦈</div>'}
+                                <span class="font-bold text-gray-500">${authorName}</span>
+                                <span>·</span>
+                                <span>${date || 'حديث'}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+            });
+            
+            if (reset) {
+                grid.innerHTML = html;
+            } else {
+                grid.insertAdjacentHTML('beforeend', html);
             }
         },
 
@@ -323,7 +385,80 @@ waitForGlobals(() => {
 
         filterBySubcategory(sub) {
             this.currentSubcategory = sub;
-            this.loadData();
+            const filtered = sub === 'الكل' ? this.itemsList : this.itemsList.filter(d => d.subcategory === sub);
+            this.renderFilteredItems(filtered);
+        },
+        
+        renderFilteredItems(filtered) {
+            const grid = document.getElementById('academyGrid');
+            if (!grid) return;
+            
+            if (filtered.length === 0) {
+                grid.innerHTML = '<div class="text-center py-16 text-gray-400 text-sm">📭 لا يوجد محتوى في هذه الفئة</div>';
+                return;
+            }
+            
+            let html = '';
+            filtered.forEach(d => {
+                const title = d.title || 'بدون عنوان';
+                const desc = d.desc || '';
+                const shortDesc = desc.length > 100 ? desc.substring(0,100)+'...' : desc;
+                const authorName = d.authorName || 'Shark UP';
+                const authorPhoto = d.authorPhoto || '';
+                const date = d.createdAt ? new Date(d.createdAt.seconds*1000).toLocaleDateString('ar-EG') : '';
+                const videoLink = d.videoLink || '';
+                const subcategory = d.subcategory || 'أخرى';
+
+                let icon = '📄';
+                let iconBg = 'from-sky-100 to-blue-100';
+                if (this.currentTab === 'courses') {
+                    icon = '📚';
+                    iconBg = 'from-emerald-100 to-teal-100';
+                } else if (this.currentTab === 'videos') {
+                    icon = '🎬';
+                    iconBg = 'from-rose-100 to-pink-100';
+                }
+
+                html += `
+                <div class="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm cursor-pointer card-hover hover:shadow-md transition-all duration-200"
+                     data-id="${d.id}" data-title="${title.replace(/"/g,'&quot;')}" data-author="${authorName.replace(/"/g,'&quot;')}"
+                     data-photo="${authorPhoto.replace(/"/g,'&quot;')}" data-date="${date}" data-video="${videoLink.replace(/"/g,'&quot;')}"
+                     data-tab="${this.currentTab}" onclick="academy.openFromElement(this)">
+                    <div class="flex items-start gap-3">
+                        <div class="w-12 h-12 rounded-xl bg-gradient-to-br ${iconBg} flex items-center justify-center text-2xl flex-shrink-0 shadow-sm">${icon}</div>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex flex-wrap justify-between items-start gap-2">
+                                <h4 class="card-title flex-1">${title}</h4>
+                                <span class="text-[10px] bg-gray-100 px-2 py-0.5 rounded-full text-gray-600 whitespace-nowrap">${subcategory}</span>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-2 mb-2 leading-relaxed">${shortDesc}</p>
+                            <div class="flex items-center gap-2 text-[10px] text-gray-400 mt-1">
+                                ${authorPhoto ? `<img src="${authorPhoto}" class="w-5 h-5 rounded-full object-cover border border-gray-200">` : '<div class="w-5 h-5 rounded-full bg-gradient-to-br from-sky-400 to-blue-500 flex items-center justify-center text-[8px] text-white">🦈</div>'}
+                                <span class="font-bold text-gray-500">${authorName}</span>
+                                <span>·</span>
+                                <span>${date || 'حديث'}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+            });
+            grid.innerHTML = html;
+        },
+
+        showLoading(show) {
+            const indicator = document.getElementById('loadingIndicator');
+            if (indicator) {
+                indicator.classList.toggle('hidden', !show);
+            }
+        },
+        
+        showToast(message, type = 'success') {
+            const bgColor = type === 'success' ? 'bg-green-500' : 'bg-sky-500';
+            const toast = document.createElement('div');
+            toast.className = `fixed bottom-24 right-4 ${bgColor} text-white px-4 py-2 rounded-lg text-sm z-50 shadow-lg transition-all duration-300`;
+            toast.innerHTML = `<i class="fa-regular fa-${type === 'success' ? 'check-circle' : 'info-circle'} ml-1"></i> ${message}`;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 2500);
         },
 
         openFromElement(el) {
@@ -396,7 +531,6 @@ waitForGlobals(() => {
                 modal.classList.remove('hidden');
                 document.getElementById('acadCategory').value = this.currentTab;
                 this.toggleVideoLink();
-                // تنظيف الحقول
                 document.getElementById('acadTitle').value = '';
                 document.getElementById('acadDesc').value = '';
                 if (document.getElementById('acadVideoLink')) document.getElementById('acadVideoLink').value = '';
@@ -423,11 +557,11 @@ waitForGlobals(() => {
             const videoLink = document.getElementById('acadVideoLink')?.value.trim() || '';
 
             if (!title) {
-                alert('✏️ الرجاء إدخال عنوان للمحتوى');
+                this.showToast('الرجاء إدخال عنوان للمحتوى', 'info');
                 return;
             }
             if (!desc) {
-                alert('📝 الرجاء إدخال وصف للمحتوى');
+                this.showToast('الرجاء إدخال وصف للمحتوى', 'info');
                 return;
             }
 
@@ -439,7 +573,7 @@ waitForGlobals(() => {
             try {
                 const user = auth.currentUser;
                 if (!user) {
-                    alert('⚠️ يجب تسجيل الدخول أولاً');
+                    this.showToast('يجب تسجيل الدخول أولاً', 'info');
                     return;
                 }
                 
@@ -458,24 +592,19 @@ waitForGlobals(() => {
 
                 await addDoc(collection(db, col), data);
 
-                // تنظيف الحقول
                 document.getElementById('acadTitle').value = '';
                 document.getElementById('acadDesc').value = '';
                 if (document.getElementById('acadVideoLink')) document.getElementById('acadVideoLink').value = '';
                 
                 this.closeAddModal();
-                this.loadData();
+                this.resetPagination();
+                this.loadData(true);
                 
-                // إشعار نجاح
-                const toast = document.createElement('div');
-                toast.className = 'fixed bottom-24 right-4 bg-green-500 text-white px-4 py-2 rounded-lg text-sm z-50 shadow-lg';
-                toast.innerHTML = '<i class="fa-regular fa-check-circle ml-1"></i> تم النشر بنجاح!';
-                document.body.appendChild(toast);
-                setTimeout(() => toast.remove(), 2500);
+                this.showToast('تم النشر بنجاح! 🎉', 'success');
                 
             } catch(e) {
                 console.error(e);
-                alert('⚠️ حدث خطأ أثناء النشر: ' + e.message);
+                this.showToast('حدث خطأ أثناء النشر', 'info');
             } finally {
                 btn.disabled = false; 
                 btn.innerHTML = originalText;
@@ -488,7 +617,6 @@ waitForGlobals(() => {
         categorySelect.addEventListener('change', () => window.academy.toggleVideoLink());
     }
     
-    // بدء تحميل البيانات
-    window.academy.loadData();
+    window.academy.loadData(true);
 });
 </script>
