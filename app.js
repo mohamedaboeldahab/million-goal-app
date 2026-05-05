@@ -794,12 +794,27 @@ if (pageName !== 'profile') {
             if (container) container.innerHTML = '<p class="text-center text-red-500">تعذر تحميل المنشورات</p>';
         });
     },
-     async activateProfile() {
-        const targetUID = sessionStorage.getItem('viewingProfileUID') || auth.currentUser?.uid;
+   async activateProfile() {
+        // عند فتح البروفايل من الأيقونة الرئيسية، نتأكد من مسح أي بيانات مؤقتة
+        // هذا يحل مشكلة عرض آخر بروفايل تمت زيارته
+        if (!sessionStorage.getItem('viewingProfileUID')) {
+            // إذا لم يتم تخزين uid لشخص آخر، فهذا يعني أن المستخدم فتح بروفايله الشخصي
+            // لا حاجة لمسح شيء هنا، ولكن يمكننا تخزين uid الحالي لتجنب التضارب
+            sessionStorage.removeItem('viewingProfileUID');
+        }
         
+        const targetUID = sessionStorage.getItem('viewingProfileUID') || auth.currentUser?.uid;
+        const isOwnProfile = targetUID === auth.currentUser?.uid;
+        
+        // إظهار/إخفاء تبويب الأصدقاء (يظهر فقط في البروفايل الشخصي)
+        const friendsTab = document.getElementById('friendsTabBtn');
+        if (friendsTab) {
+            friendsTab.classList.toggle('hidden', !isOwnProfile);
+        }
+
         // جلب بيانات المستخدم المستهدف
         let profile = {};
-        if (targetUID !== auth.currentUser?.uid) {
+        if (!isOwnProfile) {
             const ref = doc(db, "users", targetUID);
             const snap = await getDoc(ref);
             profile = snap.exists() ? snap.data() : {};
@@ -816,6 +831,7 @@ if (pageName !== 'profile') {
                 const target = btn.dataset.tab;
                 document.getElementById('tab-posts').classList.toggle('hidden', target !== 'posts');
                 document.getElementById('tab-about').classList.toggle('hidden', target !== 'about');
+                document.getElementById('tab-friends').classList.toggle('hidden', target !== 'friends');
             });
         });
 
@@ -838,23 +854,20 @@ if (pageName !== 'profile') {
 
         // بناء أزرار الإجراءات بناءً على من هو صاحب البروفايل
         actionsContainer.innerHTML = '';
-        if (targetUID !== auth.currentUser?.uid) {
+        if (!isOwnProfile) {
             // --- أزرار لملف تعريف مستخدم آخر ---
-            // زر إرسال رسالة
-              const msgBtn = document.createElement('button');
+            const msgBtn = document.createElement('button');
             msgBtn.className = 'bg-sky-500 hover:bg-sky-600 text-white font-bold py-1.5 px-4 sm:py-2 sm:px-5 rounded-lg text-xs sm:text-sm';
             msgBtn.innerHTML = '<i class="fa-solid fa-message ml-1"></i> إرسال رسالة';
             msgBtn.onclick = () => engine.sendMessage(targetUID, profile.displayName || 'مستخدم');
             actionsContainer.appendChild(msgBtn);
 
-            // زر إضافة صديق
             const addFriendBtn = document.createElement('button');
             addFriendBtn.className = 'bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-1.5 px-4 sm:py-2 sm:px-5 rounded-lg text-xs sm:text-sm';
             addFriendBtn.innerHTML = '<i class="fa-solid fa-user-plus ml-1"></i> إضافة صديق';
             addFriendBtn.onclick = () => engine.sendFriendRequest(targetUID);
             actionsContainer.appendChild(addFriendBtn);
 
-            // عدم إظهار البريد الإلكتروني للآخرين
             if (emailEl) emailEl.textContent = '';
 
         } else {
@@ -898,7 +911,7 @@ if (pageName !== 'profile') {
                 } catch(e) { this.showToast('فشل الحفظ ⚠️'); }
             });
 
-            // رفع الصورة مع ضغط
+            // رفع الصورة مع ضغط (للمستخدم الحالي فقط)
             document.getElementById('avatarOverlay')?.addEventListener('click', () => document.getElementById('avatarFileInput').click());
             document.getElementById('avatarFileInput')?.addEventListener('change', (e) => {
                 const file = e.target.files[0];
@@ -928,6 +941,78 @@ if (pageName !== 'profile') {
                 };
                 reader.readAsDataURL(file);
             });
+        }
+        
+        // إذا كان الملف الشخصي للمستخدم الحالي، قم بتحميل بيانات الأصدقاء
+        if (isOwnProfile) {
+            this.loadFriendsData();
+        }
+    },
+
+    // دالة تحميل بيانات الأصدقاء (للاستخدام من profile.html)
+    async loadFriendsData() {
+        const userId = auth.currentUser.uid;
+        if (!userId) return;
+
+        // --- تحميل طلبات الصداقة الواردة ---
+        const requestsQuery = query(
+            collection(db, "friend_requests"),
+            where("toUserId", "==", userId),
+            where("status", "==", "pending")
+        );
+        const requestsSnap = await getDocs(requestsQuery);
+        const requestsContainer = document.getElementById('friendRequestsList');
+        if (requestsContainer) {
+            requestsContainer.innerHTML = '';
+            if (requestsSnap.empty) {
+                requestsContainer.innerHTML = '<p class="text-gray-400 text-sm">لا توجد طلبات صداقة</p>';
+            } else {
+                requestsSnap.forEach(doc => {
+                    const data = doc.data();
+                    requestsContainer.innerHTML += `
+                    <div class="flex items-center justify-between bg-white p-3 rounded-xl shadow-sm">
+                        <div class="flex items-center gap-2">
+                            <img src="${data.fromPhotoURL}" class="w-8 h-8 rounded-full" onerror="this.src='${DEFAULT_AVATAR}'">
+                            <span class="font-bold text-sm">${data.fromUserName}</span>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="engine.acceptFriendRequest('${doc.id}', '${data.fromUserId}')" class="bg-green-500 text-white px-3 py-1 rounded-lg text-xs">قبول</button>
+                            <button onclick="engine.rejectFriendRequest('${doc.id}')" class="bg-red-500 text-white px-3 py-1 rounded-lg text-xs">رفض</button>
+                        </div>
+                    </div>`;
+                });
+            }
+        }
+
+        // --- تحميل قائمة الأصدقاء ---
+        const q1 = query(collection(db, "friendships"), where("user1", "==", userId));
+        const q2 = query(collection(db, "friendships"), where("user2", "==", userId));
+        const [snap1, snap2] = await Promise.all([getDocs(q1), getDocs(q2)]);
+        const friendsContainer = document.getElementById('friendsList');
+        if (friendsContainer) {
+            friendsContainer.innerHTML = '';
+            const friends = [];
+            snap1.forEach(d => friends.push(d.data().user2));
+            snap2.forEach(d => friends.push(d.data().user1));
+            
+            if (friends.length === 0) {
+                friendsContainer.innerHTML = '<p class="text-gray-400 text-sm">قائمة الأصدقاء فارغة</p>';
+            } else {
+                for (let friendId of friends) {
+                    const friendSnap = await getDoc(doc(db, "users", friendId));
+                    if (friendSnap.exists()) {
+                        const friend = friendSnap.data();
+                        friendsContainer.innerHTML += `
+                        <div class="flex items-center justify-between bg-white p-3 rounded-xl shadow-sm">
+                            <div class="flex items-center gap-2">
+                                <img src="${fixPhotoUrl(friend.photoURL)}" class="w-8 h-8 rounded-full" onerror="this.src='${DEFAULT_AVATAR}'">
+                                <span class="font-bold text-sm">${friend.displayName || 'مستخدم'}</span>
+                            </div>
+                            <button onclick="engine.sendMessage('${friendId}', '${friend.displayName || 'مستخدم'}')" class="bg-sky-500 text-white px-3 py-1 rounded-lg text-xs">📩 رسالة</button>
+                        </div>`;
+                    }
+                }
+            }
         }
     },
    viewUserProfile(uid) {
