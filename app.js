@@ -200,26 +200,39 @@ if (pageName !== 'profile') {
     // قبول طلب الصداقة
   // فتح نافذة المحادثة المباشرة (بدلاً من الـ prompt)
 openChat(receiverId, receiverName) {
+    console.log('فتح الشات مع:', receiverId, receiverName);
+    
+    if (!receiverId || !receiverName) {
+        this.showToast('❌ حدث خطأ في فتح المحادثة');
+        return;
+    }
+    
     // إنشاء نافذة شات جميلة
     const modal = document.createElement('div');
-    modal.className = 'fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4';
+    modal.className = 'fixed inset-0 bg-black/50 z-[9999] flex items-center justify-center p-4';
+    modal.style.backdropFilter = 'blur(4px)';
     modal.innerHTML = `
-        <div class="bg-white rounded-2xl w-full max-w-md overflow-hidden shadow-xl">
-            <div class="bg-sky-500 text-white p-4 flex justify-between items-center">
-                <h3 class="font-bold">محادثة مع ${receiverName}</h3>
-                <button onclick="this.closest('.fixed').remove()" class="text-white text-xl">&times;</button>
+        <div class="bg-white rounded-2xl w-full max-w-md overflow-hidden shadow-2xl" style="direction: rtl;">
+            <div class="bg-gradient-to-r from-sky-500 to-blue-600 text-white p-4 flex justify-between items-center">
+                <div class="flex items-center gap-2">
+                    <i class="fa-regular fa-comment-dots"></i>
+                    <h3 class="font-bold">محادثة مع ${receiverName}</h3>
+                </div>
+                <button onclick="this.closest('.fixed').remove()" class="text-white text-2xl hover:opacity-80">&times;</button>
             </div>
-            <div id="chatMessages" class="h-96 overflow-y-auto p-4 space-y-3 bg-gray-50"></div>
-            <div class="p-4 border-t flex gap-2">
-                <input type="text" id="chatInput" placeholder="اكتب رسالتك..." class="flex-1 border rounded-xl px-4 py-2 focus:outline-none focus:border-sky-500">
-                <button id="sendMessageBtn" class="bg-sky-500 text-white px-4 py-2 rounded-xl font-bold">إرسال</button>
+            <div id="chatMessagesContainer" class="h-96 overflow-y-auto p-4 space-y-3 bg-gray-50"></div>
+            <div class="p-4 border-t bg-white flex gap-2">
+                <input type="text" id="chatInput" placeholder="اكتب رسالتك..." class="flex-1 border rounded-xl px-4 py-2 focus:outline-none focus:border-sky-500 text-sm">
+                <button id="sendMessageBtn" class="bg-sky-500 hover:bg-sky-600 text-white px-5 py-2 rounded-xl font-bold transition">
+                    <i class="fa-regular fa-paper-plane"></i> إرسال
+                </button>
             </div>
         </div>
     `;
     document.body.appendChild(modal);
     
     // تحميل الرسائل السابقة
-    this.loadChatMessages(receiverId, modal.querySelector('#chatMessages'));
+    this.loadChatMessagesImproved(receiverId, modal.querySelector('#chatMessagesContainer'));
     
     // إرسال رسالة
     const sendBtn = modal.querySelector('#sendMessageBtn');
@@ -227,61 +240,161 @@ openChat(receiverId, receiverName) {
     
     const sendMessage = () => {
         const text = input.value.trim();
-        if (!text) return;
-        this.sendMessageDirect(receiverId, receiverName, text);
+        if (!text) {
+            this.showToast('✏️ اكتب رسالة أولاً');
+            return;
+        }
+        this.sendMessageDirectImproved(receiverId, receiverName, text);
         input.value = '';
+        setTimeout(() => input.focus(), 100);
     };
     
     sendBtn.onclick = sendMessage;
-    input.onkeypress = (e) => { if (e.key === 'Enter') sendMessage(); };
+    input.onkeypress = (e) => { 
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            sendMessage();
+        }
+    };
+    
+    setTimeout(() => input.focus(), 300);
 },
 
-// إرسال رسالة مباشرة (للاستخدام في الشات)
-async sendMessageDirect(receiverId, receiverName, messageText) {
+// إرسال رسالة مباشرة محسنة
+async sendMessageDirectImproved(receiverId, receiverName, messageText) {
     const senderId = auth.currentUser.uid;
     try {
-        await addDoc(collection(db, "messages"), {
-            senderId,
-            receiverId,
+        const messageData = {
+            senderId: senderId,
+            receiverId: receiverId,
             text: messageText,
-            senderName: auth.currentUser.displayName,
-            senderPhoto: auth.currentUser.photoURL,
+            senderName: auth.currentUser.displayName || 'مستخدم',
+            senderPhoto: auth.currentUser.photoURL || '',
             createdAt: serverTimestamp(),
             read: false
-        });
+        };
+        
+        await addDoc(collection(db, "messages"), messageData);
         this.showToast('✅ تم الإرسال');
     } catch (e) {
-        this.showToast('❌ فشل الإرسال');
+        console.error('خطأ في الإرسال:', e);
+        this.showToast('❌ فشل الإرسال: ' + e.message);
     }
 },
 
-// تحميل رسائل الشات
-async loadChatMessages(receiverId, container) {
+// تحميل رسائل الشات بطريقة محسنة
+loadChatMessagesImproved(receiverId, container) {
+    if (!container) return;
+    
     const senderId = auth.currentUser.uid;
-    const q = query(
+    
+    // طريقة أفضل: استخدام استعلامين منفصلين بدلاً من 'in'
+    const q1 = query(
         collection(db, "messages"),
-        where("senderId", "in", [senderId, receiverId]),
-        where("receiverId", "in", [senderId, receiverId]),
+        where("senderId", "==", senderId),
+        where("receiverId", "==", receiverId),
         orderBy("createdAt", "asc")
     );
     
-    onSnapshot(q, (snapshot) => {
+    const q2 = query(
+        collection(db, "messages"),
+        where("senderId", "==", receiverId),
+        where("receiverId", "==", senderId),
+        orderBy("createdAt", "asc")
+    );
+    
+    container.innerHTML = '<div class="text-center text-gray-400 py-10"><i class="fa-solid fa-spinner fa-spin"></i> جاري تحميل الرسائل...</div>';
+    
+    // دمج النتائج من كلا الاستعلامين
+    const allMessages = [];
+    
+    const onUpdate = () => {
+        // ترتيب الرسائل حسب الوقت
+        allMessages.sort((a, b) => {
+            const timeA = a.createdAt?.toDate?.()?.getTime() || 0;
+            const timeB = b.createdAt?.toDate?.()?.getTime() || 0;
+            return timeA - timeB;
+        });
+        
+        if (allMessages.length === 0) {
+            container.innerHTML = '<div class="text-center text-gray-400 py-10">✨ لا توجد رسائل بعد<br><span class="text-xs">ابدأ المحادثة الآن</span></div>';
+            return;
+        }
+        
         container.innerHTML = '';
-        snapshot.forEach(doc => {
-            const msg = doc.data();
+        let lastDate = null;
+        
+        allMessages.forEach(msg => {
             const isMe = msg.senderId === senderId;
+            const msgDate = msg.createdAt?.toDate();
+            
+            // إضافة فاصل زمني
+            if (msgDate) {
+                const today = new Date();
+                const isToday = msgDate.toDateString() === today.toDateString();
+                const dateStr = isToday ? 'اليوم' : msgDate.toLocaleDateString('ar-EG');
+                
+                if (lastDate !== dateStr) {
+                    const dateDiv = document.createElement('div');
+                    dateDiv.className = 'text-center my-2';
+                    dateDiv.innerHTML = `<span class="text-xs text-gray-400 bg-gray-100 px-3 py-1 rounded-full">${dateStr}</span>`;
+                    container.appendChild(dateDiv);
+                    lastDate = dateStr;
+                }
+            }
+            
             const div = document.createElement('div');
-            div.className = `flex ${isMe ? 'justify-end' : 'justify-start'}`;
+            div.className = `flex ${isMe ? 'justify-end' : 'justify-start'} animate-fade-in`;
             div.innerHTML = `
-                <div class="max-w-[70%] ${isMe ? 'bg-sky-500 text-white' : 'bg-white border'} rounded-2xl px-4 py-2">
-                    <p class="text-sm">${msg.text}</p>
-                    <span class="text-xs ${isMe ? 'text-sky-100' : 'text-gray-400'}">${msg.createdAt?.toDate?.().toLocaleTimeString() || ''}</span>
+                <div class="max-w-[75%] ${isMe ? 'bg-sky-500 text-white rounded-br-none' : 'bg-white border border-gray-200 text-gray-800 rounded-bl-none'} rounded-2xl px-4 py-2 shadow-sm">
+                    ${!isMe ? `<div class="text-xs text-sky-600 font-bold mb-1">${msg.senderName || 'مستخدم'}</div>` : ''}
+                    <p class="text-sm break-words">${escapeHtmlImproved(msg.text)}</p>
+                    <div class="text-xs ${isMe ? 'text-sky-100' : 'text-gray-400'} text-left mt-1">
+                        ${msg.createdAt?.toDate()?.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) || ''}
+                        ${isMe ? ' ✓' : ''}
+                    </div>
                 </div>
             `;
             container.appendChild(div);
         });
+        
         container.scrollTop = container.scrollHeight;
+    };
+    
+    // الاستماع للاستعلام الأول
+    onSnapshot(q1, (snapshot) => {
+        snapshot.docChanges().forEach(change => {
+            if (change.type === 'added') {
+                allMessages.push(change.doc.data());
+            }
+        });
+        onUpdate();
     });
+    
+    // الاستماع للاستعلام الثاني
+    onSnapshot(q2, (snapshot) => {
+        snapshot.docChanges().forEach(change => {
+            if (change.type === 'added') {
+                allMessages.push(change.doc.data());
+            }
+        });
+        onUpdate();
+    });
+},
+
+// استبدال دالة sendMessage القديمة لتعمل بشكل أفضل
+async sendMessage(receiverId, receiverName) {
+    // إذا كان receiverName عبارة عن نص طويل (رسالة)، نستخدم openChat بدلاً من ذلك
+    if (receiverName && receiverName.length > 50) {
+        // هذا يعني أن المستخدم استخدم الزر القديم
+        this.openChat(receiverId, "الصديق");
+        return;
+    }
+    
+    let messageText = prompt(`إرسال رسالة إلى ${receiverName}:`);
+    if (!messageText || !messageText.trim()) return;
+    
+    await this.sendMessageDirectImproved(receiverId, receiverName, messageText.trim());
 },
 
 // تحسين دالة acceptFriendRequest
